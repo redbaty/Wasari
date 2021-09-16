@@ -1,0 +1,12 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "CrunchyDownloader": {
+      "commandName": "Project",
+      "commandLineArgs": "series \"https://www.crunchyroll.com/jujutsu-kaisen\" -o \"D:\\Series\" -u redbaty -p jas@YUNK2scud3duck -e 20-24",
+      "environmentVariables": {
+        
+      }
+    }
+  }
+}
