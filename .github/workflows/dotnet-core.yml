@@ -1,0 +1,61 @@
+name: .NET Core
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.100
+    - name: Build Windows X64
+      run: dotnet publish --configuration Release --self-contained -r win-x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} -o build-win-x64 ./IntroFinder.Console/IntroFinder.Console.csproj
+    - name: Build Linux X64
+      run: dotnet publish --configuration Release --self-contained -r linux-x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} -o build-linux-x64 ./IntroFinder.Console/IntroFinder.Console.csproj
+    - name: Zip Windows Build
+      run: |
+        zip -r win-x64.zip build-win-x64
+    - name: Zip Linux Build
+      run: |
+        zip -r linux-x64.zip build-linux-x64
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.run_number }}
+        release_name: 'Build #${{ github.run_number }}'
+        body: |
+          Automagically created by github actions.
+        draft: false
+        prerelease: false
+    - name: Upload Windows X64 Asset
+      id: upload-win-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./win-x64.zip
+        asset_name: win-x64.zip
+        asset_content_type: application/zip
+    - name: Upload Linux X64 Asset
+      id: upload-linux-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./linux-x64.zip
+        asset_name: linux-x64.zip
+        asset_content_type: application/zip
