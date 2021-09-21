@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -105,6 +105,7 @@ namespace CrunchyDownloader.App
                         : $"-preset {downloadParameters.ConversionPreset}",
                     "-c:a copy",
                     "-scodec copy",
+                    "-y",
                     $"\"{newVideoFile}\""
                 }
                 .Where(i => !string.IsNullOrEmpty(i))
