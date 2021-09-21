@@ -1,24 +1,11 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CrunchyDownloader.App;
+using CrunchyDownloader.Models;
 
 namespace CrunchyDownloader.Commands
 {
-    public class TemporaryCookieFile : IDisposable
-    {
-        public string Path { get; init; }
-
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-
-            if (File.Exists(Path))
-                File.Delete(Path);
-        }
-    }
-
     public abstract class CrunchyAuthenticatedCommand
     {
         protected CrunchyAuthenticatedCommand(CrunchyRollAuthenticationService crunchyRollAuthenticationService)
