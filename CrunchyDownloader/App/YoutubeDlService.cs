@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -35,13 +35,15 @@ namespace CrunchyDownloader.App
                 ? Path.Combine(downloadParameters.OutputDirectory, episodeInfo.Series.Name)
                 : downloadParameters.OutputDirectory;
 
+            var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
+                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {episodeInfo.Name}_temp.mkv");
+            
             var episodeFile = Path.Combine(directory,
-                $"{episodeInfo.Number} - {episodeInfo.Name}{(downloadParameters.Subtitles ? "_temp" : string.Empty)}.mkv");
+                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {episodeInfo.Name}{(downloadParameters.Subtitles ? "_temp" : string.Empty)}.mkv");
 
             Logger.LogInformation("Starting download of episode {@Episode} of {@Season}...", episodeInfo.Name,
                 $"Season {episodeInfo.SeasonInfo?.Season}");
-
-
+            
             var arguments = new List<string>
             {
                 "--encoding UTF-8",
@@ -51,7 +53,7 @@ namespace CrunchyDownloader.App
                 $"--cookies \"{downloadParameters.CookieFilePath}\"",
                 $"--user-agent \"{downloadParameters.UserAgent}\"",
                 $"\"{episodeInfo.Url}\"",
-                $"-o \"{episodeFile}\""
+                $"-o \"{temporaryEpisodeFile}\""
             };
 
             if (downloadParameters.Subtitles)
@@ -115,9 +117,7 @@ namespace CrunchyDownloader.App
 
                 if (subFiles.Any())
                 {
-                    var newVideoFile = episode.Path.Replace("_temp.mkv", ".mkv");
-                    await FfmpegService.MergeSubsToVideo(episode.Path, subFiles,
-                        newVideoFile, downloadParameters);
+                    await FfmpegService.MergeSubsToVideo(episode.Path, subFiles, episodeFile, downloadParameters);
 
                     if (downloadParameters.DeleteTemporaryFiles)
                     {
@@ -131,6 +131,10 @@ namespace CrunchyDownloader.App
                 {
                     Logger.LogWarning("Subtitle not found!");
                 }
+            }
+            else
+            {
+                File.Move(temporaryEpisodeFile, episodeFile);
             }
         }
     }

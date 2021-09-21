@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -64,6 +64,9 @@ namespace CrunchyDownloader.Commands
 
         [CommandOption("gpuaccel")]
         public bool GpuAcceleration { get; init; } = true;
+
+        [CommandOption("temp-dir", 't')]
+        public string TemporaryDirectory { get; init; } = Path.GetTempPath();
 
         private YoutubeDlService YoutubeDlService { get; }
 
