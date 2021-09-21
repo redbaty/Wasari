@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -38,17 +38,20 @@ namespace CrunchyDownloader.Commands
         [CommandOption("output-directory", 'o')]
         public string OutputDirectory { get; init; } = Directory.GetCurrentDirectory();
 
-        [CommandOption("subtitles", 's')]
+        [CommandOption("sub")]
         public bool Subtitles { get; init; } = true;
 
         [CommandOption("sub-language", 'l')]
         public string SubtitleLanguage { get; init; }
 
         [CommandOption("batch", 'b')]
-        public int EpisodeBatchSize { get; init; } = 5;
+        public int EpisodeBatchSize { get; init; } = 3;
 
         [CommandOption("episodes", 'e')]
         public string EpisodeRange { get; init; }
+
+        [CommandOption("seasons", 's')]
+        public string SeasonsRange { get; init; }
 
         [CommandOption("preset")]
         public string ConversionPreset { get; init; }
@@ -57,7 +60,7 @@ namespace CrunchyDownloader.Commands
         public bool CleanTemporaryFiles { get; init; } = true;
 
         [CommandOption("hevc")]
-        public bool ConvertToHevc { get; init; } = false;
+        public bool ConvertToHevc { get; init; } = true;
 
         [CommandOption("haccel", 'a')]
         public bool HardwareAcceleration { get; init; } = true;
@@ -88,33 +91,22 @@ namespace CrunchyDownloader.Commands
                 .ThenBy(i => i.Number)
                 .ToArrayAsync();
 
-            var episodeRange = ParseEpisodeRange(EpisodeRange, episodes.Length);
-            
+            var episodeRange = ParseRange(EpisodeRange, episodes.Length);
+            var seasonsRange = ParseRange(SeasonsRange, episodes.Select(i => i.SeasonInfo.Season).Distinct().Count());
+
             Logger.LogInformation("Episodes range is {@Range}", episodeRange);
-            
-            episodes = episodes.Where(i => i.Number >= episodeRange[0] && i.Number <= episodeRange[1]).ToArray();
+            Logger.LogInformation("Seasons range is {@Range}", seasonsRange);
+
+            episodes = episodes.Where(i =>
+                i.Number >= episodeRange[0]
+                && i.Number <= episodeRange[1]
+                && i.SeasonInfo.Season >= seasonsRange[0]
+                && i.SeasonInfo.Season <= seasonsRange[1]).ToArray();
 
             var userAgent = await Browser.GetUserAgentAsync();
             await Browser.DisposeAsync();
-
-            var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
-
-            if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
-
-            var downloadParameters = new DownloadParameters
-            {
-                CookieFilePath = cookieFile.Path,
-                CreateSubdirectory = CreateSubdirectory,
-                SubtitleLanguage = SubtitleLanguage,
-                Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
-                OutputDirectory = OutputDirectory,
-                UserAgent = userAgent,
-                UseNvidiaAcceleration = isNvidiaAvailable,
-                UseHardwareAcceleration = HardwareAcceleration,
-                ConversionPreset = ConversionPreset,
-                DeleteTemporaryFiles = CleanTemporaryFiles,
-                UseX265 = ConvertToHevc
-            };
+            
+            var downloadParameters = await CreateDownloadParameters(cookieFile, userAgent);
 
             foreach (var episodesBatch in episodes.Batch(EpisodeBatchSize))
             {
@@ -134,17 +126,40 @@ namespace CrunchyDownloader.Commands
             Logger.LogInformation("Completed");
         }
 
-        private static int[] ParseEpisodeRange(string episodeRange, int numberOfEpisodes)
+        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile cookieFile, string userAgent)
         {
-            if (string.IsNullOrEmpty(episodeRange))
-                return new[] { 1, numberOfEpisodes };
+            var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
 
-            if (episodeRange.Any(i => !char.IsDigit(i) && i != '-'))
+            if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
+            
+            return new DownloadParameters
+            {
+                CookieFilePath = cookieFile.Path,
+                CreateSubdirectory = CreateSubdirectory,
+                SubtitleLanguage = SubtitleLanguage,
+                Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
+                OutputDirectory = OutputDirectory,
+                UserAgent = userAgent,
+                UseNvidiaAcceleration = isNvidiaAvailable,
+                UseHardwareAcceleration = HardwareAcceleration,
+                ConversionPreset = ConversionPreset,
+                DeleteTemporaryFiles = CleanTemporaryFiles,
+                UseX265 = ConvertToHevc,
+                TemporaryDirectory = TemporaryDirectory
+            };
+        }
+
+        private static int[] ParseRange(string range, int max)
+        {
+            if (string.IsNullOrEmpty(range))
+                return new[] { 0, max };
+
+            if (range.Any(i => !char.IsDigit(i) && i != '-'))
                 throw new InvalidEpisodeRangeException();
 
-            if (episodeRange.Contains('-'))
+            if (range.Contains('-'))
             {
-                var episodesNumbers = episodeRange.Split('-');
+                var episodesNumbers = range.Split('-');
 
                 if (episodesNumbers.Length != 2 || episodesNumbers.All(string.IsNullOrEmpty))
                     throw new InvalidEpisodeRangeException();
@@ -153,13 +168,13 @@ namespace CrunchyDownloader.Commands
                     return episodesNumbers.Select(int.Parse).ToArray();
 
                 if (string.IsNullOrEmpty(episodesNumbers[0]))
-                    return new[] { 1, int.Parse(episodesNumbers[1]) };
+                    return new[] { 0, int.Parse(episodesNumbers[1]) };
 
                 if (string.IsNullOrEmpty(episodesNumbers[1]))
-                    return new[] { int.Parse(episodesNumbers[0]), numberOfEpisodes };
+                    return new[] { int.Parse(episodesNumbers[0]), max };
             }
 
-            return new[] { numberOfEpisodes, numberOfEpisodes };
+            return new[] { max, max };
         }
     }
 }
