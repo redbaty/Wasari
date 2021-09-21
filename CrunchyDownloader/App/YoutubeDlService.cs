@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
+using CrunchyDownloader.Exceptions;
 using CrunchyDownloader.Extensions;
 using CrunchyDownloader.Models;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ namespace CrunchyDownloader.App
         {
             if (!File.Exists(downloadParameters.CookieFilePath))
             {
-                throw new Exception("Cookie file not found.");
+                throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
             }
 
             var directory = downloadParameters.CreateSubdirectory
