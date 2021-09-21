@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -98,7 +98,7 @@ namespace CrunchyDownloader.App
                     $"-i \"{videoFile}\"",
                     $"{subtitleArguments}",
                     downloadParameters.UseX265
-                        ? downloadParameters.UseNvidiaAcceleration ? "-c:v hevc_nvenc" : "-c:v libx265"
+                        ? downloadParameters.UseNvidiaAcceleration ? "-c:v hevc_nvenc -pix_fmt p010le" : "-pix_fmt yuv420p10le -c:v libx265 -x265-params profile=main10"
                         : "-c:v copy",
                     string.IsNullOrEmpty(downloadParameters.ConversionPreset)
                         ? null
