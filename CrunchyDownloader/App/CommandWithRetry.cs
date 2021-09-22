@@ -60,23 +60,11 @@ namespace CrunchyDownloader.App
                     {
                         stdOutputBuilder.AppendLine(standardErrorCommandEvent.Text);
                         Logger?.LogTrace("[StdErr] {@Text}", standardErrorCommandEvent.Text);
-
-                        if (standardErrorCommandEvent.Text.StartsWith("[download]"))
-                        {
-                            Logger?.LogInformation("[StdErr] Progress update: {@Text}",
-                                standardErrorCommandEvent.Text);
-                        }
                     }
                     else if (commandEvent is StandardOutputCommandEvent standardOutputCommandEvent)
                     {
                         stdErrBuilder.AppendLine(standardOutputCommandEvent.Text);
                         Logger?.LogTrace("[StdOut] {@Text}", standardOutputCommandEvent.Text);
-
-                        if (standardOutputCommandEvent.Text.StartsWith("[download]"))
-                        {
-                            Logger?.LogInformation("[StdOut] Progress update: {@Text}",
-                                standardOutputCommandEvent.Text);
-                        }
                     }
                 }
             }
