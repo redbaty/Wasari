@@ -21,6 +21,8 @@ namespace CrunchyDownloader.App
         
         private Browser Browser { get; }
 
+        private static string[] BannedKeywords = new[] { "(Russian)", "Dub)" }; 
+
         private async IAsyncEnumerable<SeasonInfo> GetSeasonsInfo(Page seriesPage)
         {
             var seasonsHandles = await seriesPage.XPathAsync("//ul[@class='list-of-seasons cf']/li/a");
@@ -33,8 +35,16 @@ namespace CrunchyDownloader.App
                 foreach (var seasonHandle in seasonsHandles.Reverse())
                 {
                     var title = await seasonHandle.GetPropertyValue<string>("title");
-                    Logger.LogDebug("Returning season {@SeasonNumber} '{@SeasonTile}'", seasonNumber + 1, title);
-                    yield return new SeasonInfo(seasonNumber + 1, title);
+                    var trimmedTitle = title.Trim();
+
+                    if (BannedKeywords.Any(i => trimmedTitle.EndsWith(i)))
+                    {
+                        Logger.LogWarning("Ignoring season due to blacklisted words {@SeasonName}", trimmedTitle);
+                        continue;
+                    }
+                    
+                    Logger.LogDebug("Returning season {@SeasonNumber} '{@SeasonTile}'", seasonNumber + 1, trimmedTitle);
+                    yield return new SeasonInfo(seasonNumber + 1, trimmedTitle);
                     seasonNumber++;
                 }
             }
@@ -45,22 +55,6 @@ namespace CrunchyDownloader.App
             }
         }
 
-        // private async Task<EpisodeInfo> GetEpisodeInfo(string episodeUrl)
-        // {
-        //     await using var episodePage = await Browser.NewPageAsync();
-        //     await episodePage.GoToAsync(episodeUrl);
-        //
-        //     var elements = await episodePage.XPathAsync("//div[@class='showmedia-header cf']/h1");
-        //     var titleElement = elements.Single();
-        //     var titleProperty = await titleElement.GetPropertyAsync("innerText");
-        //     var title = await titleProperty.JsonValueAsync<string>();
-        //     await episodePage.DisposeAsync();
-        //
-        //     //Todo: Implement epiosde number parser Array.from(document.querySelectorAll("script")).map(i => i.innerText).join('|')
-        //     //TODO: Implement series parser
-        //     return new EpisodeInfo(null, title, episodeUrl, null);
-        // }
-        
         private async Task<SeriesInfo> GetSeriesInfo(Page seriesPage)
         {
             Logger.LogDebug("Parsing series page");
@@ -100,15 +94,19 @@ namespace CrunchyDownloader.App
                 var seasonTitle = seasonTitleHandle != null
                     ? await seasonTitleHandle.GetPropertyValue<string>("title")
                     : string.Empty;
-                var season = seasonsDictionary.GetValueOrDefault(seasonTitle);
-             
-                
                 await using var imageHandle = await episodeHandle.SingleOrDefaultXPathAsync("./img");
                 var name = await imageHandle.GetPropertyValue<string>("alt");
                 var url = await episodeHandle.GetPropertyValue<string>("href");
                 var episodeUrl = url[url.LastIndexOf("/", StringComparison.Ordinal)..];
                 var episode = episodeUrl.Split('-').Skip(1).First();
                 
+                if (BannedKeywords.Any(i => seasonTitle.EndsWith(i)))
+                {
+                    Logger.LogWarning("Ignoring episode due to blacklisted words {@EpisodeName} {@SeasonTitle}", episode, seasonTitle);
+                    continue;
+                }
+                
+                var season = seasonsDictionary.GetValueOrDefault(seasonTitle);
                 yield return new EpisodeInfo(seriesInfo, name, url, season, int.Parse(episode));
             }
         }

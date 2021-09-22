@@ -84,8 +84,6 @@ namespace CrunchyDownloader.Commands
 
             var episodes = await CrunchyRollService
                 .GetEpisodes(SeriesUrl)
-                .Where(i => i.SeasonInfo?.Title == null ||
-                            !i.SeasonInfo.Title.Contains("Dub", StringComparison.InvariantCultureIgnoreCase))
                 .OrderBy(i => i.SeasonInfo.Season)
                 .ThenBy(i => i.Number)
                 .ToArrayAsync();
