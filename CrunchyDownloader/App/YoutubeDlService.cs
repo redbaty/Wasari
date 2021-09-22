@@ -14,6 +14,24 @@ using Microsoft.Extensions.Logging;
 
 namespace CrunchyDownloader.App
 {
+    public class SanitizedFileName
+    {
+        private static readonly Regex RemoveInvalidChars = new($"[{Regex.Escape(new string(Path.GetInvalidFileNameChars()))}]",
+            RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        public SanitizedFileName(string fileName, string replacement = "_")
+        {
+            Value = RemoveInvalidChars.Replace(fileName, replacement);
+        }
+
+        public string Value { get; }
+
+        public override string ToString()
+        {
+            return Value;
+        }
+    }
+    
     internal class YoutubeDlService
     {
         public YoutubeDlService(ILogger<YoutubeDlService> logger, FfmpegService ffmpegService, DownloadProgressManager downloadProgressManager)
@@ -28,6 +46,7 @@ namespace CrunchyDownloader.App
         private FfmpegService FfmpegService { get; }
         
         private DownloadProgressManager DownloadProgressManager { get; }
+        
 
         public async Task DownloadEpisode(EpisodeInfo episodeInfo, DownloadParameters downloadParameters)
         {
@@ -40,11 +59,13 @@ namespace CrunchyDownloader.App
                 ? Path.Combine(downloadParameters.OutputDirectory, episodeInfo.Series.Name)
                 : downloadParameters.OutputDirectory;
 
+            var fileSafeName = new SanitizedFileName(episodeInfo.Name, string.Empty);
+            
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
-                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {episodeInfo.Name}_temp.mkv");
+                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {fileSafeName}_temp.mkv");
             
             var episodeFile = Path.Combine(directory,
-                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {episodeInfo.Name}.mkv");
+                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {fileSafeName}.mkv");
 
             var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(episodeFile) ?? throw new InvalidOperationException("Invalid output directory"));
             
@@ -116,7 +137,7 @@ namespace CrunchyDownloader.App
                 });
             await command.Execute();
 
-            if (downloadParameters.Subtitles)
+            if (downloadParameters.Subtitles || downloadParameters.UseX265)
             {
                 var episode = files.Single(i => i.Type == FileType.VideoFile);
                 var subFiles = files
@@ -137,7 +158,7 @@ namespace CrunchyDownloader.App
                         .Where(File.Exists)) File.Delete(unusedSub);
                 }
 
-                if (subFiles.Any())
+                if (subFiles.Any() || downloadParameters.UseX265)
                 {
                     await FfmpegService.MergeSubsToVideo(episode.Path, subFiles, episodeFile, downloadParameters, progressBar);
 
@@ -149,7 +170,7 @@ namespace CrunchyDownloader.App
                         }
                     }
                 }
-                else
+                else if(downloadParameters.Subtitles && !subFiles.Any())
                 {
                     Logger.LogWarning("Subtitle not found!");
                 }
