@@ -103,10 +103,13 @@ namespace CrunchyDownloader.App
                         else if (standardOutputCommandEvent.Text.StartsWith("[download]") &&
                                  standardOutputCommandEvent.Text.Contains("%"))
                         {
-                            var match = Regex.Match(standardOutputCommandEvent.Text, @"(\d+\.\d+)%");
-                            if (match.Success && match.Groups.Count == 2 && double.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedPercentage))
+                            if (standardOutputCommandEvent.Text.GetValueFromRegex<double>(@"(\d+\.\d+)%",
+                                    out var parsedPercentage) &&
+                                standardOutputCommandEvent.Text.GetValueFromRegex<string>(@"at (\d+\.\d+MiB/s)",
+                                    out var speed))
                             {
-                                progressBar.Refresh((int)parsedPercentage, $"[YT-DLP] {Path.GetFileName(files.Last().Path)}");
+                                var currentFile = files.Last();
+                                progressBar.Refresh((int)parsedPercentage, $"[YT-DLP][{currentFile.Type}]({speed}) {Path.GetFileName(currentFile.Path)}");   
                             }
                         }
                     }
