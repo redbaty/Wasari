@@ -17,20 +17,22 @@ namespace CrunchyDownloader.App
         }
 
         private Browser Browser { get; }
-        
+
         private ILogger<CrunchyRollAuthenticationService> Logger { get; }
-        
+
         public async Task<string> GetCookies(string userName, string password)
         {
+            Logger.LogDebug("Logging in...");
+
             await using var loginPage = await Browser.NewPageAsync();
             await loginPage.GoToAsync("https://www.crunchyroll.com/login");
-            
+
             await using var emailInput = await loginPage.QuerySelectorAsync("#login_form_name");
             await emailInput.TypeAsync(userName);
 
             await using var passwordInput = await loginPage.QuerySelectorAsync("#login_form_password");
             await passwordInput.TypeAsync(password);
-            
+
             var captcha = await loginPage.XPathAsync("//*[@id=\"recaptcha-anchor-label\"]");
             if (captcha.Any())
             {
@@ -52,13 +54,15 @@ namespace CrunchyDownloader.App
             var cookies = await loginPage.GetCookiesAsync();
             var cookieStringBuilder = new StringBuilder();
             cookieStringBuilder.AppendLine("# Netscape HTTP Cookie File");
-            
+
             foreach (var cookie in cookies)
             {
-                var expireAt = cookie.Expires.HasValue ? (int) (cookie.Expires.Value < 0 ? 0 : cookie.Expires.Value) : 0;
+                var expireAt = cookie.Expires.HasValue ? (int)(cookie.Expires.Value < 0 ? 0 : cookie.Expires.Value) : 0;
+                var hostOnly = cookie.Domain.StartsWith(".") ? "TRUE" : "FALSE";
+                
                 cookieStringBuilder.Append(cookie.Domain);
                 cookieStringBuilder.Append('\t');
-                cookieStringBuilder.Append("FALSE");
+                cookieStringBuilder.Append(hostOnly);
                 cookieStringBuilder.Append('\t');
                 cookieStringBuilder.Append(cookie.Path);
                 cookieStringBuilder.Append('\t');
