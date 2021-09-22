@@ -27,13 +27,12 @@ jobs:
     - name: Zip Linux Build
       run: |
         zip -r linux-x64.zip build-linux-x64
-    - name: Piriries
-      id: aufa
+    - name: Create release
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: "latest"
-        prerelease: true
+        prerelease: false
         title: 'Build #${{ github.run_number }}'
         files: |
           win-x64.zip
