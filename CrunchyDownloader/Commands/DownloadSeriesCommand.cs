@@ -68,7 +68,7 @@ namespace CrunchyDownloader.Commands
         public bool GpuAcceleration { get; init; } = true;
 
         [CommandOption("temp-dir", 't')]
-        public string TemporaryDirectory { get; init; } = Path.GetTempPath();
+        public string TemporaryDirectory { get; init; } = Path.Combine(Path.GetTempPath(), "CrunchyDownloader");
 
         private YoutubeDlService YoutubeDlService { get; }
 
