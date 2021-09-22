@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CliFx.Attributes;
 using CrunchyDownloader.App;
+using CrunchyDownloader.Exceptions;
 using CrunchyDownloader.Models;
 
 namespace CrunchyDownloader.Commands
@@ -13,16 +14,27 @@ namespace CrunchyDownloader.Commands
             CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
         }
 
-        [CommandOption("username", 'u', Description = "Crunchyroll username.", IsRequired = true)]
+        [CommandOption("username", 'u', Description = "Crunchyroll username.")]
         public string Username { get; set; }
 
-        [CommandOption("password", 'p', Description = "Crunchyroll password.", IsRequired = true)]
+        [CommandOption("password", 'p', Description = "Crunchyroll password.")]
         public string Password { get; set; }
 
         protected CrunchyRollAuthenticationService CrunchyRollAuthenticationService { get; }
 
         public async Task<TemporaryCookieFile> CreateCookiesFile()
         {
+            if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password))
+            {
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(Username))
+                throw new CrunchyrollAuthenticationException("Missing username", Username, Password);
+            
+            if (string.IsNullOrEmpty(Password))
+                throw new CrunchyrollAuthenticationException("Missing password", Username, Password);
+            
             var cookies = await CrunchyRollAuthenticationService.GetCookies(Username, Password);
             var cookieFileName = Path.GetTempFileName();
             await File.WriteAllTextAsync(cookieFileName, cookies);
