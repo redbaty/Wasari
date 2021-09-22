@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
 using CrunchyDownloader.Models;
+using FFMpegCore;
+using Konsole;
 using Microsoft.Extensions.Logging;
 
 namespace CrunchyDownloader.App
@@ -66,8 +70,10 @@ namespace CrunchyDownloader.App
                 .AnyAsync(i => i.Contains("hevc_nvenc", StringComparison.InvariantCultureIgnoreCase));
 
         public async Task MergeSubsToVideo(string videoFile, string[] subtitlesFiles, string newVideoFile,
-            DownloadParameters downloadParameters)
+            DownloadParameters downloadParameters, ProgressBar progressBar)
         {
+            progressBar.Refresh(0, "FFMPEG - Merge Video To Subtitles");
+            
             subtitlesFiles = subtitlesFiles?.OrderBy(i => i).ToArray();
 
             var aggregate = subtitlesFiles?
@@ -98,7 +104,8 @@ namespace CrunchyDownloader.App
                     $"-i \"{videoFile}\"",
                     $"{subtitleArguments}",
                     downloadParameters.UseX265
-                        ? downloadParameters.UseNvidiaAcceleration ? "-c:v hevc_nvenc -pix_fmt p010le" : "-pix_fmt yuv420p10le -c:v libx265 -x265-params profile=main10"
+                        ? downloadParameters.UseNvidiaAcceleration ? "-c:v hevc_nvenc -pix_fmt p010le" :
+                        "-pix_fmt yuv420p10le -c:v libx265 -x265-params profile=main10"
                         : "-c:v copy",
                     string.IsNullOrEmpty(downloadParameters.ConversionPreset)
                         ? null
@@ -111,15 +118,35 @@ namespace CrunchyDownloader.App
                 .Where(i => !string.IsNullOrEmpty(i))
                 .ToArray();
 
+            var mediaAnalysis = await FFProbe.AnalyseAsync(videoFile);
+            progressBar.Max = (int)mediaAnalysis.Duration.TotalSeconds;
+
             var command = Cli.Wrap("ffmpeg")
                 .WithArguments(arguments, false);
 
-            Logger.LogDebug(
-                "Merging video file with subtitles. {@Command} {@OriginalVideoFile} {@Subtitles} {@NewVideoFile}",
-                command.ToString(), videoFile, subtitlesFiles, newVideoFile);
+            Logger.LogDebug("Merging video file with subtitles. {@Command}", command.ToString());
 
             var stopwatch = Stopwatch.StartNew();
-            await command.ExecuteAsync();
+
+            await foreach (var commandEvent in command.ListenAsync())
+            {
+                var text = commandEvent switch
+                {
+                    StandardErrorCommandEvent standardErrorCommandEvent => standardErrorCommandEvent.Text,
+                    StandardOutputCommandEvent standardOutputCommandEvent => standardOutputCommandEvent.Text,
+                    _ => null
+                };
+
+                if (!string.IsNullOrEmpty(text) && Regex.Match(text, @"time=(\d+:\d+:\d+.\d+)") is { Success: true } match)
+                {
+                    var value = match.Groups[1].Value;
+                    var timespan = TimeSpan.Parse(value);
+                    progressBar.Refresh((int)timespan.TotalSeconds, $"[FFMPEG] {Path.GetFileName(newVideoFile)}");
+                }
+                
+                Logger?.LogTrace("[FFMpeg] {@Text}", text);
+            }
+
             stopwatch.Stop();
 
             Logger.LogDebug("Merging {@OriginalVideoFile} with {@Subtitles} to {@NewVideoFile} took {@Elapsed}",

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -13,21 +14,24 @@ using Microsoft.Extensions.Logging;
 
 namespace CrunchyDownloader.App
 {
-    public class YoutubeDlService
+    internal class YoutubeDlService
     {
-        public YoutubeDlService(ILogger<YoutubeDlService> logger, FfmpegService ffmpegService)
+        public YoutubeDlService(ILogger<YoutubeDlService> logger, FfmpegService ffmpegService, DownloadProgressManager downloadProgressManager)
         {
             Logger = logger;
             FfmpegService = ffmpegService;
+            DownloadProgressManager = downloadProgressManager;
         }
 
         private ILogger<YoutubeDlService> Logger { get; }
 
         private FfmpegService FfmpegService { get; }
+        
+        private DownloadProgressManager DownloadProgressManager { get; }
 
         public async Task DownloadEpisode(EpisodeInfo episodeInfo, DownloadParameters downloadParameters)
         {
-            if (!File.Exists(downloadParameters.CookieFilePath))
+            if (downloadParameters.CookieFilePath != null && !File.Exists(downloadParameters.CookieFilePath))
             {
                 throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
             }
@@ -40,31 +44,35 @@ namespace CrunchyDownloader.App
                 $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {episodeInfo.Name}_temp.mkv");
             
             var episodeFile = Path.Combine(directory,
-                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {episodeInfo.Name}{(downloadParameters.Subtitles ? "_temp" : string.Empty)}.mkv");
+                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {episodeInfo.Name}.mkv");
+
+            var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(episodeFile) ?? throw new InvalidOperationException("Invalid output directory"));
+            
+            if(!outputDirectory.Exists)
+                outputDirectory.Create();
 
             Logger.LogInformation("Starting download of episode {@Episode} of {@Season}...", episodeInfo.Name,
                 $"Season {episodeInfo.SeasonInfo?.Season}");
-            
-            var arguments = new List<string>
+
+            var progressBar = DownloadProgressManager.CreateProgressTracker();
+
+            var arguments = new []
             {
                 "--encoding UTF-8",
+                "--force-overwrites",
                 "--newline",
                 "--no-continue",
                 "--no-part",
-                $"--cookies \"{downloadParameters.CookieFilePath}\"",
+                string.IsNullOrEmpty(downloadParameters.CookieFilePath) ? null : $"--cookies \"{downloadParameters.CookieFilePath}\"",
+                downloadParameters.Subtitles ? "--all-subs" : null,
                 $"--user-agent \"{downloadParameters.UserAgent}\"",
                 $"\"{episodeInfo.Url}\"",
                 $"-o \"{temporaryEpisodeFile}\""
-            };
-
-            if (downloadParameters.Subtitles)
-            {
-                arguments.Add("--all-subs");
-            }
-
+            }.Where(i => !string.IsNullOrEmpty(i));
+            
             var files = new List<DownloadedFile>();
 
-            var command = Cli.Wrap("youtube-dl")
+            var command = Cli.Wrap("yt-dlp")
                 .WithArguments(arguments, false)
                 .WithRetryCount(10)
                 .WithLogger(Logger)
@@ -81,15 +89,25 @@ namespace CrunchyDownloader.App
                                 Path = path
                             });
                         }
-
-                        if (standardOutputCommandEvent.Text.StartsWith("[download] Destination:"))
+                        else if (standardOutputCommandEvent.Text.StartsWith("[download] Destination:"))
                         {
                             var path = Regex.Match(standardOutputCommandEvent.Text, @"[A-Z]\:\\.*").Value;
+                            var extension = Path.GetExtension(path);
+                            
                             files.Add(new DownloadedFile
                             {
-                                Type = FileType.VideoFile,
+                                Type = extension == ".ass" ? FileType.Subtitle : FileType.VideoFile,
                                 Path = path
                             });
+                        }
+                        else if (standardOutputCommandEvent.Text.StartsWith("[download]") &&
+                                 standardOutputCommandEvent.Text.Contains("%"))
+                        {
+                            var match = Regex.Match(standardOutputCommandEvent.Text, @"(\d+\.\d+)%");
+                            if (match.Success && match.Groups.Count == 2 && double.TryParse(match.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedPercentage))
+                            {
+                                progressBar.Refresh((int)parsedPercentage, $"[YT-DLP] {Path.GetFileName(files.Last().Path)}");
+                            }
                         }
                     }
                 });
@@ -118,7 +136,7 @@ namespace CrunchyDownloader.App
 
                 if (subFiles.Any())
                 {
-                    await FfmpegService.MergeSubsToVideo(episode.Path, subFiles, episodeFile, downloadParameters);
+                    await FfmpegService.MergeSubsToVideo(episode.Path, subFiles, episodeFile, downloadParameters, progressBar);
 
                     if (downloadParameters.DeleteTemporaryFiles)
                     {
@@ -137,6 +155,8 @@ namespace CrunchyDownloader.App
             {
                 File.Move(temporaryEpisodeFile, episodeFile);
             }
+            
+            progressBar.Refresh(progressBar.Max, $"[DONE] {Path.GetFileName(episodeFile)}");
         }
     }
 }
