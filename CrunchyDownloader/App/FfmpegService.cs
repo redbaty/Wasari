@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
+using CrunchyDownloader.Extensions;
 using CrunchyDownloader.Models;
 using FFMpegCore;
 using Konsole;
@@ -73,7 +75,7 @@ namespace CrunchyDownloader.App
             DownloadParameters downloadParameters, ProgressBar progressBar)
         {
             progressBar.Refresh(0, "FFMPEG - Merge Video To Subtitles");
-            
+
             subtitlesFiles = subtitlesFiles?.OrderBy(i => i).ToArray();
 
             var aggregate = subtitlesFiles?
@@ -137,13 +139,14 @@ namespace CrunchyDownloader.App
                     _ => null
                 };
 
-                if (!string.IsNullOrEmpty(text) && Regex.Match(text, @"time=(\d+:\d+:\d+.\d+)") is { Success: true } match)
+                if (text.GetValueFromRegex<double>(@"speed=(\d+.\d+)x", out var speed) &&
+                    text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time))
                 {
-                    var value = match.Groups[1].Value;
-                    var timespan = TimeSpan.Parse(value);
-                    progressBar.Refresh((int)timespan.TotalSeconds, $"[FFMPEG] {Path.GetFileName(newVideoFile)}");
+                    var timespan = TimeSpan.Parse(time);
+                    progressBar.Refresh((int)timespan.TotalSeconds,
+                        $"[FFMPEG]({speed:0.000}x) {Path.GetFileName(newVideoFile)}");
                 }
-                
+
                 Logger?.LogTrace("[FFMpeg] {@Text}", text);
             }
 
