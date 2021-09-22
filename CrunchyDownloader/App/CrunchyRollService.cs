@@ -107,7 +107,11 @@ namespace CrunchyDownloader.App
                 }
                 
                 var season = seasonsDictionary.GetValueOrDefault(seasonTitle);
-                yield return new EpisodeInfo(seriesInfo, name, url, season, int.Parse(episode));
+
+                if (int.TryParse(episode, out var episodeNumber))
+                {
+                    yield return new EpisodeInfo(seriesInfo, name, url, season, episodeNumber);
+                }
             }
         }
     }
