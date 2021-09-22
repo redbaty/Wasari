@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using CliFx;
 using CrunchyDownloader.App;
 using CrunchyDownloader.Commands;
@@ -15,9 +14,7 @@ namespace CrunchyDownloader
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.Console(
-                    outputTemplate:
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} <s:{SourceContext}>{NewLine}{Exception}")
+                .WriteTo.Sink<KonsoleSink>()
                 .CreateLogger();
 
             var browserFetcher = new BrowserFetcher();
@@ -38,6 +35,7 @@ namespace CrunchyDownloader
             serviceCollection.AddTransient<CrunchyRollService>();
             serviceCollection.AddTransient<DownloadSeriesCommand>();
             serviceCollection.AddLogging(c => c.AddSerilog());
+            serviceCollection.AddSingleton<DownloadProgressManager>();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return await new CliApplicationBuilder()
