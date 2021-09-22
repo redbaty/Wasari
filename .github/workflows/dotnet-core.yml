@@ -27,35 +27,14 @@ jobs:
     - name: Zip Linux Build
       run: |
         zip -r linux-x64.zip build-linux-x64
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Piriries
+      id: aufa
+      uses: "marvinpinto/action-automatic-releases@latest"
       with:
-        tag_name: ${{ github.run_number }}
-        release_name: 'Build #${{ github.run_number }}'
-        body: |
-          Automagically created by github actions.
-        draft: false
-        prerelease: false
-    - name: Upload Windows X64 Asset
-      id: upload-win-release-asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./win-x64.zip
-        asset_name: win-x64.zip
-        asset_content_type: application/zip
-    - name: Upload Linux X64 Asset
-      id: upload-linux-release-asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./linux-x64.zip
-        asset_name: linux-x64.zip
-        asset_content_type: application/zip
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: 'Build #${{ github.run_number }}'
+        files: |
+          win-x64.zip
+          linux-x64.zip
