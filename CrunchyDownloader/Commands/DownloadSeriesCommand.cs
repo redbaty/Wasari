@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,7 +8,6 @@ using CliFx.Attributes;
 using CliFx.Infrastructure;
 using CrunchyDownloader.App;
 using CrunchyDownloader.Exceptions;
-using CrunchyDownloader.Extensions;
 using CrunchyDownloader.Models;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
@@ -16,7 +15,7 @@ using PuppeteerSharp;
 namespace CrunchyDownloader.Commands
 {
     [Command("series")]
-    public class DownloadSeriesCommand : CrunchyAuthenticatedCommand, ICommand
+    internal class DownloadSeriesCommand : CrunchyAuthenticatedCommand, ICommand
     {
         public DownloadSeriesCommand(YoutubeDlService youtubeDlService, CrunchyRollService crunchyRollService,
             CrunchyRollAuthenticationService crunchyRollAuthenticationService, Browser browser,
@@ -90,9 +89,11 @@ namespace CrunchyDownloader.Commands
                 .OrderBy(i => i.SeasonInfo.Season)
                 .ThenBy(i => i.Number)
                 .ToArrayAsync();
+            var userAgent = await Browser.GetUserAgentAsync();
+            await Browser.DisposeAsync();
 
             var episodeRange = ParseRange(EpisodeRange, episodes.Length);
-            var seasonsRange = ParseRange(SeasonsRange, episodes.Select(i => i.SeasonInfo.Season).Distinct().Count());
+            var seasonsRange = ParseRange(SeasonsRange, episodes.Select(i => i.SeasonInfo.Season).Max());
 
             Logger.LogInformation("Episodes range is {@Range}", episodeRange);
             Logger.LogInformation("Seasons range is {@Range}", seasonsRange);
@@ -103,38 +104,41 @@ namespace CrunchyDownloader.Commands
                 && i.SeasonInfo.Season >= seasonsRange[0]
                 && i.SeasonInfo.Season <= seasonsRange[1]).ToArray();
 
-            var userAgent = await Browser.GetUserAgentAsync();
-            await Browser.DisposeAsync();
-            
             var downloadParameters = await CreateDownloadParameters(cookieFile, userAgent);
+            var taskPool = new List<Task>(EpisodeBatchSize);
 
-            foreach (var episodesBatch in episodes.Batch(EpisodeBatchSize))
+            foreach (var episode in episodes)
             {
-                var stopwatch = Stopwatch.StartNew();
-                var tasks = episodesBatch
-                    .Select(episodeInfo => YoutubeDlService.DownloadEpisode(episodeInfo, downloadParameters))
-                    .ToArray();
-                await Task.WhenAll(tasks);
-                stopwatch.Stop();
+                if (taskPool.Count >= EpisodeBatchSize)
+                {
+                    var taskEnded = await Task.WhenAny(taskPool);
+                    taskPool.Remove(taskEnded);
+                }
 
-                Logger.LogDebug("Batch took {@TotalRunTime} to run", stopwatch.Elapsed);
+                taskPool.Add(YoutubeDlService.DownloadEpisode(episode, downloadParameters));
             }
 
-            Logger.LogDebug("Cleaning cookie file {@CookieFile}", cookieFile);
-            cookieFile.Dispose();
+            await Task.WhenAll(taskPool);
+
+            if (cookieFile != null)
+            {
+                Logger.LogDebug("Cleaning cookie file {@CookieFile}", cookieFile);
+                cookieFile?.Dispose();
+            }
 
             Logger.LogInformation("Completed");
         }
 
-        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile cookieFile, string userAgent)
+        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile cookieFile,
+            string userAgent)
         {
             var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
-            
+
             return new DownloadParameters
             {
-                CookieFilePath = cookieFile.Path,
+                CookieFilePath = cookieFile?.Path,
                 CreateSubdirectory = CreateSubdirectory,
                 SubtitleLanguage = SubtitleLanguage,
                 Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
@@ -174,7 +178,12 @@ namespace CrunchyDownloader.Commands
                     return new[] { int.Parse(episodesNumbers[0]), max };
             }
 
-            return new[] { max, max };
+            if (int.TryParse(range, out var episode))
+            {
+                return new[] { episode, episode };
+            }
+
+            throw new InvalidOperationException($"Invalid episode range. {range}");
         }
     }
 }
