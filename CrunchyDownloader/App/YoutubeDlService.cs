@@ -137,6 +137,10 @@ namespace CrunchyDownloader.App
                 });
             await command.Execute();
 
+            files = files.GroupBy(i => new { i.Path, i.Type })
+                .Select(i => i.First())
+                .ToList();
+
             if (downloadParameters.Subtitles || downloadParameters.UseX265)
             {
                 var episode = files.Single(i => i.Type == FileType.VideoFile);
