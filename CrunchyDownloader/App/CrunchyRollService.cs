@@ -78,7 +78,11 @@ namespace CrunchyDownloader.App
             
             Logger.LogDebug("Found {@Handles} title handles", titleHandles.Length);
 
-            await using var titleHandle = titleHandles.Single();
+            await using var titleHandle = titleHandles.SingleOrDefault();
+
+            if (titleHandle == null)
+                throw new Exception("Failed to find title handle. Is this a series URL?");
+            
             var name = await titleHandle.GetPropertyValue<string>("innerText");
             
             Logger.LogDebug("Parsing seasons for series {@SeriesName}", name);

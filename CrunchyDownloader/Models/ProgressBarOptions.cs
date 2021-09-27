@@ -1,4 +1,4 @@
-﻿namespace CrunchyDownloader.App
+﻿namespace CrunchyDownloader.Models
 {
     internal class ProgressBarOptions
     {

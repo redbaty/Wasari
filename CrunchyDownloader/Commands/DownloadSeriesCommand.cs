@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
+using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using CrunchyDownloader.App;
 using CrunchyDownloader.Exceptions;
@@ -15,7 +16,7 @@ using PuppeteerSharp;
 
 namespace CrunchyDownloader.Commands
 {
-    [Command("series")]
+    [Command]
     internal class DownloadSeriesCommand : CrunchyAuthenticatedCommand, ICommand
     {
         public DownloadSeriesCommand(YoutubeDlService youtubeDlService, CrunchyRollService crunchyRollService,
@@ -101,8 +102,27 @@ namespace CrunchyDownloader.Commands
             }
         }
 
+        private bool IsValidSeriesUrl()
+        {
+            if (Uri.TryCreate(SeriesUrl, UriKind.Absolute, out var parsedUri))
+            {
+                var crunchyHost = parsedUri.Host.EndsWith("crunchyroll.com", StringComparison.InvariantCultureIgnoreCase);
+                var rightSegmentsCount = parsedUri.Segments.Length == 2;
+                return crunchyHost && rightSegmentsCount;
+            }
+
+            return true;
+        }
+
         public async ValueTask ExecuteAsync(IConsole console)
         {
+            var isValidSeriesUrl = IsValidSeriesUrl();
+
+            if (!isValidSeriesUrl)
+            {
+                throw new CommandException("The URL provided doesnt seem to be a crunchyroll SERIES page URL.", 1);
+            }
+
             using var cookieFile = await CreateCookiesFile();
 
             var seriesInfo = await CrunchyRollService.GetSeriesInfo(SeriesUrl);
@@ -164,7 +184,7 @@ namespace CrunchyDownloader.Commands
             Logger.LogInformation("Completed");
         }
 
-        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile cookieFile,
+        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file,
             string userAgent, SeriesInfo seriesInfo)
         {
             var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
@@ -180,7 +200,7 @@ namespace CrunchyDownloader.Commands
 
             return new DownloadParameters
             {
-                CookieFilePath = cookieFile?.Path,
+                CookieFilePath = file?.Path,
                 SubtitleLanguage = SubtitleLanguage,
                 Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
                 OutputDirectory = outputDirectory,

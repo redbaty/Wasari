@@ -16,20 +16,16 @@ namespace CrunchyDownloader.App
 {
     internal class YoutubeDlService
     {
-        public YoutubeDlService(ILogger<YoutubeDlService> logger, FfmpegService ffmpegService,
-            DownloadProgressManager downloadProgressManager)
+        public YoutubeDlService(ILogger<YoutubeDlService> logger, FfmpegService ffmpegService)
         {
             Logger = logger;
             FfmpegService = ffmpegService;
-            DownloadProgressManager = downloadProgressManager;
         }
 
         private ILogger<YoutubeDlService> Logger { get; }
 
         private FfmpegService FfmpegService { get; }
 
-        private DownloadProgressManager DownloadProgressManager { get; }
-        
         [SuppressMessage("ReSharper", "AccessToModifiedClosure")]
         public async Task DownloadEpisode(EpisodeInfo episodeInfo, DownloadParameters downloadParameters)
         {
@@ -39,12 +35,13 @@ namespace CrunchyDownloader.App
             }
 
             var fileSafeName = new SanitizedFileName(episodeInfo.Name, string.Empty);
+            var episodeId = $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00}";
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
-                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {fileSafeName}_temp.mkv");
+                $"{episodeId} - {fileSafeName}_temp.mkv");
 
             var episodeFile = Path.Combine(downloadParameters.OutputDirectory,
-                $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00} - {fileSafeName}.mkv");
+                $"{episodeId} - {fileSafeName}.mkv");
 
             var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(episodeFile) ??
                                                     throw new InvalidOperationException("Invalid output directory"));
@@ -54,8 +51,6 @@ namespace CrunchyDownloader.App
 
             Logger.LogInformation("Starting download of episode {@Episode} of {@Season}...", episodeInfo.Name,
                 $"Season {episodeInfo.SeasonInfo?.Season}");
-
-            var progressBar = DownloadProgressManager.CreateProgressTracker();
 
             var arguments = new[]
             {
@@ -112,8 +107,17 @@ namespace CrunchyDownloader.App
                                     out var speed))
                             {
                                 var currentFile = files.Last();
-                                progressBar?.Refresh((int)parsedPercentage,
-                                    $"[YT-DLP][{currentFile.Type}]({speed}) {Path.GetFileName(currentFile.Path)}");
+
+                                var update = new ProgressUpdate
+                                {
+                                    Title =
+                                        $"[YT-DLP][{currentFile.Type}]({speed}) {Path.GetFileName(currentFile.Path)}",
+                                    Type = ProgressUpdateTypes.Current,
+                                    Value = (int)parsedPercentage,
+                                    EpisodeId = episodeId
+                                };
+
+                                Logger.LogProgressUpdate(update);
                             }
                         }
                     }
@@ -147,8 +151,8 @@ namespace CrunchyDownloader.App
 
                 if (subFiles.Any() || downloadParameters.UseHevc)
                 {
-                    await FfmpegService.MergeSubsToVideo(episode.Path, subFiles, episodeFile, downloadParameters,
-                        progressBar);
+                    await FfmpegService.MergeSubsToVideo(episodeId, episode.Path, subFiles, episodeFile,
+                        downloadParameters);
 
                     if (downloadParameters.DeleteTemporaryFiles)
                     {
@@ -168,7 +172,14 @@ namespace CrunchyDownloader.App
                 File.Move(temporaryEpisodeFile, episodeFile);
             }
 
-            progressBar?.Refresh(progressBar.Max, $"[DONE] {Path.GetFileName(episodeFile)}");
+            var update = new ProgressUpdate
+            {
+                Type = ProgressUpdateTypes.Completed,
+                EpisodeId = episodeId,
+                Title = $"[DONE] {Path.GetFileName(episodeFile)}"
+            };
+            
+            Logger.LogProgressUpdate(update);
         }
     }
 }

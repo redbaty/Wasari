@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CliFx;
 using CrunchyDownloader.App;
 using CrunchyDownloader.Commands;
+using CrunchyDownloader.Models;
 using Microsoft.Extensions.DependencyInjection;
 using PuppeteerSharp;
 using Serilog;
@@ -16,12 +17,22 @@ namespace CrunchyDownloader
         private static async Task<int> Main()
         {
             Console.CursorVisible = false;
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.Sink<KonsoleSink>(LogEventLevel.Information)
+            var loggerConfiguration = new LoggerConfiguration();
+
+            var konsoleAvailable = KonsoleSink.AvailableHeight > 10;
+            loggerConfiguration = konsoleAvailable
+                ? loggerConfiguration.WriteTo.Sink<KonsoleSink>()
+                : loggerConfiguration.WriteTo.Console();
+
+            Log.Logger = loggerConfiguration
                 .WriteTo.File(
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                        "CrunchyDownloader", "logs", "log.txt"), rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: LogEventLevel.Verbose)
+                        "CrunchyDownloader", "logs", "log.txt"), rollingInterval: RollingInterval.Day,
+                    restrictedToMinimumLevel: LogEventLevel.Verbose)
                 .CreateLogger();
+            
+            if(!konsoleAvailable)
+                Log.Logger.Warning("There isn't enough space available for Konsole, falling back to regular Console sink");
 
             Log.Logger.Information("Setting up chrome");
             var browserFetcher = new BrowserFetcher();
@@ -35,7 +46,7 @@ namespace CrunchyDownloader
 #endif
                 });
             Log.Logger.Information("Chrome set up");
-            
+
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton(browser);
             serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
@@ -44,15 +55,11 @@ namespace CrunchyDownloader
             serviceCollection.AddTransient<CrunchyRollService>();
             serviceCollection.AddTransient<DownloadSeriesCommand>();
             serviceCollection.AddLogging(c => c.AddSerilog());
-            serviceCollection.AddSingleton<DownloadProgressManager>();
-            serviceCollection.Configure<ProgressBarOptions>(o =>
-            {
-                o.Enabled = true;
-            });
+            serviceCollection.Configure<ProgressBarOptions>(o => { o.Enabled = true; });
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return await new CliApplicationBuilder()
-                .AddCommandsFromThisAssembly()
+                .AddCommand<DownloadSeriesCommand>()
                 .UseTypeActivator(serviceProvider.GetService)
                 .Build()
                 .RunAsync();

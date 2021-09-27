@@ -9,14 +9,13 @@ using CliWrap.EventStream;
 using CrunchyDownloader.Extensions;
 using CrunchyDownloader.Models;
 using FFMpegCore;
-using Konsole;
 using Microsoft.Extensions.Logging;
 
 namespace CrunchyDownloader.App
 {
     public class FfmpegService
     {
-        public FfmpegService(ILogger<FfmpegService> logger)
+        public FfmpegService(ILogger<FfmpegService> logger, ILoggerFactory loggerFactory)
         {
             Logger = logger;
         }
@@ -69,14 +68,15 @@ namespace CrunchyDownloader.App
             && await GetAvailableEncoders()
                 .AnyAsync(i => i.Contains("hevc_nvenc", StringComparison.InvariantCultureIgnoreCase));
 
-        private static IEnumerable<string> CreateArguments(string videoFile, string[] subtitlesFiles, string newVideoFile, DownloadParameters downloadParameters)
+        private static IEnumerable<string> CreateArguments(string videoFile, string[] subtitlesFiles,
+            string newVideoFile, DownloadParameters downloadParameters)
         {
             if (downloadParameters.UseHardwareAcceleration)
                 yield return $"-hwaccel {(downloadParameters.UseNvidiaAcceleration ? "cuda" : "auto")}";
 
             yield return $"-i \"{videoFile}\"";
             yield return CreateSubtitleArguments(subtitlesFiles);
-            
+
             if (downloadParameters.UseHevc)
             {
                 if (downloadParameters.UseNvidiaAcceleration)
@@ -88,7 +88,7 @@ namespace CrunchyDownloader.App
             {
                 yield return "-c:v copy";
             }
-            
+
             if (!string.IsNullOrEmpty(downloadParameters.ConversionPreset))
             {
                 yield return $"-preset {downloadParameters.ConversionPreset}";
@@ -127,15 +127,31 @@ namespace CrunchyDownloader.App
             return subtitleArguments;
         }
 
-        public async Task MergeSubsToVideo(string videoFile, string[] subtitlesFiles, string newVideoFile,
-            DownloadParameters downloadParameters, ProgressBar progressBar)
+        public async Task MergeSubsToVideo(string episodeId, string videoFile, string[] subtitlesFiles,
+            string newVideoFile,
+            DownloadParameters downloadParameters)
         {
-            if (progressBar != null)
+            var update = new ProgressUpdate
             {
-                progressBar.Refresh(0, "FFMPEG - Merge Video To Subtitles");
-                var mediaAnalysis = await FFProbe.AnalyseAsync(videoFile);
-                progressBar.Max = (int)mediaAnalysis.Duration.TotalSeconds;
-            }
+                Title = "[FFMPEG] Merge Video To Subtitles",
+                Type = ProgressUpdateTypes.Current,
+                Value = 0,
+                EpisodeId = episodeId
+            };
+
+            Logger.LogProgressUpdate(update);
+
+            var mediaAnalysis = await FFProbe.AnalyseAsync(videoFile);
+
+            update = new ProgressUpdate
+            {
+                Title = "FFMPEG - Merge Video To Subtitles",
+                Type = ProgressUpdateTypes.Max,
+                Value = (int)mediaAnalysis.Duration.TotalSeconds,
+                EpisodeId = episodeId
+            };
+
+            Logger.LogProgressUpdate(update);
 
             var command = Cli.Wrap("ffmpeg")
                 .WithArguments(CreateArguments(videoFile, subtitlesFiles, newVideoFile, downloadParameters)
@@ -158,7 +174,16 @@ namespace CrunchyDownloader.App
                     text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time))
                 {
                     var timespan = TimeSpan.Parse(time);
-                    progressBar?.Refresh((int)timespan.TotalSeconds, $"[FFMPEG]({speed:0.000}x) {Path.GetFileName(newVideoFile)}");
+
+                    update = new ProgressUpdate
+                    {
+                        Title = $"[FFMPEG]({speed:0.000}x) {Path.GetFileName(newVideoFile)}",
+                        Type = ProgressUpdateTypes.Current,
+                        Value = (int)timespan.TotalSeconds,
+                        EpisodeId = episodeId
+                    };
+
+                    Logger.LogProgressUpdate(update);
                 }
 
                 Logger?.LogTrace("[FFMpeg] {@Text}", text);
