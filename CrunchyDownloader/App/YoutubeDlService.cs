@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -14,24 +14,6 @@ using Microsoft.Extensions.Logging;
 
 namespace CrunchyDownloader.App
 {
-    public class SanitizedFileName
-    {
-        private static readonly Regex RemoveInvalidChars = new($"[{Regex.Escape(new string(Path.GetInvalidFileNameChars()))}]",
-            RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-        public SanitizedFileName(string fileName, string replacement = "_")
-        {
-            Value = RemoveInvalidChars.Replace(fileName, replacement);
-        }
-
-        public string Value { get; }
-
-        public override string ToString()
-        {
-            return Value;
-        }
-    }
-    
     internal class YoutubeDlService
     {
         public YoutubeDlService(ILogger<YoutubeDlService> logger, FfmpegService ffmpegService, DownloadProgressManager downloadProgressManager)
