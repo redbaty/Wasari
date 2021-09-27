@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -112,36 +112,48 @@ namespace CrunchyDownloader.Commands
                 .OrderBy(i => i.SeasonInfo.Season)
                 .ThenBy(i => i.Number)
                 .ToList();
+            
             var userAgent = await Browser.GetUserAgentAsync();
             await Browser.DisposeAsync();
 
-            var episodeRange = ParseRange(EpisodeRange, episodes.Length);
             var seasonsRange = ParseRange(SeasonsRange, episodes.Select(i => i.SeasonInfo.Season).Max());
-
-            Logger.LogInformation("Episodes range is {@Range}", episodeRange);
             Logger.LogInformation("Seasons range is {@Range}", seasonsRange);
-
             episodes = episodes.Where(i =>
-                i.Number >= episodeRange[0]
-                && i.Number <= episodeRange[1]
-                && i.SeasonInfo.Season >= seasonsRange[0]
-                && i.SeasonInfo.Season <= seasonsRange[1]).ToArray();
+                    i.SeasonInfo.Season >= seasonsRange[0]
+                    && i.SeasonInfo.Season <= seasonsRange[1])
+                .ToList();
 
-            var downloadParameters = await CreateDownloadParameters(cookieFile, userAgent);
+            var episodeRange = ParseRange(EpisodeRange, episodes.Count);
+            Logger.LogInformation("Episodes range is {@Range}", episodeRange);
+            episodes = episodes.Where(i =>
+                    i.Number >= episodeRange[0]
+                    && i.Number <= episodeRange[1])
+                .ToList();
+
+            var downloadParameters = await CreateDownloadParameters(cookieFile, userAgent, seriesInfo);
             if (SkipExistingEpisodes) FilterExistingEpisodes(downloadParameters.OutputDirectory, episodes);
 
-            foreach (var episode in episodes)
+            if (episodes.Any())
             {
-                if (taskPool.Count >= EpisodeBatchSize)
+                var taskPool = new List<Task>(EpisodeBatchSize);
+
+                foreach (var episode in episodes)
                 {
-                    var taskEnded = await Task.WhenAny(taskPool);
-                    taskPool.Remove(taskEnded);
+                    if (taskPool.Count >= EpisodeBatchSize)
+                    {
+                        var taskEnded = await Task.WhenAny(taskPool);
+                        taskPool.Remove(taskEnded);
+                    }
+
+                    taskPool.Add(YoutubeDlService.DownloadEpisode(episode, downloadParameters));
                 }
 
-                taskPool.Add(YoutubeDlService.DownloadEpisode(episode, downloadParameters));
+                await Task.WhenAll(taskPool);
             }
-
-            await Task.WhenAll(taskPool);
+            else
+            {
+                Logger.LogWarning("No episodes found");
+            }
 
             if (cookieFile != null)
             {
@@ -153,25 +165,31 @@ namespace CrunchyDownloader.Commands
         }
 
         private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile cookieFile,
-            string userAgent)
+            string userAgent, SeriesInfo seriesInfo)
         {
             var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
 
+            var outputDirectory = CreateSubdirectory
+                ? Path.Combine(OutputDirectory, seriesInfo.Name)
+                : OutputDirectory;
+
+            if (!Directory.Exists(outputDirectory))
+                Directory.CreateDirectory(outputDirectory);
+
             return new DownloadParameters
             {
                 CookieFilePath = cookieFile?.Path,
-                CreateSubdirectory = CreateSubdirectory,
                 SubtitleLanguage = SubtitleLanguage,
                 Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
-                OutputDirectory = OutputDirectory,
+                OutputDirectory = outputDirectory,
                 UserAgent = userAgent,
                 UseNvidiaAcceleration = isNvidiaAvailable,
                 UseHardwareAcceleration = HardwareAcceleration,
                 ConversionPreset = ConversionPreset,
                 DeleteTemporaryFiles = CleanTemporaryFiles,
-                UseX265 = ConvertToHevc,
+                UseHevc = ConvertToHevc,
                 TemporaryDirectory = TemporaryDirectory
             };
         }

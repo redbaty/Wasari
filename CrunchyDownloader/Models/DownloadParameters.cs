@@ -4,13 +4,11 @@
     {
         public string OutputDirectory { get; init; }
 
-        public bool CreateSubdirectory { get; init; } = true;
-
         public string SubtitleLanguage { get; init; }
 
         public string CookieFilePath { get; init; }
 
-        public bool UseX265 { get; init; } = true;
+        public bool UseHevc { get; init; } = true;
 
         public string ConversionPreset { get; init; }
 

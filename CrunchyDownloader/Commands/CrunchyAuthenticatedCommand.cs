@@ -15,14 +15,14 @@ namespace CrunchyDownloader.Commands
         }
 
         [CommandOption("username", 'u', Description = "Crunchyroll username.")]
-        public string Username { get; set; }
+        public string Username { get; init; }
 
         [CommandOption("password", 'p', Description = "Crunchyroll password.")]
-        public string Password { get; set; }
+        public string Password { get; init; }
 
         protected CrunchyRollAuthenticationService CrunchyRollAuthenticationService { get; }
 
-        public async Task<TemporaryCookieFile> CreateCookiesFile()
+        protected async Task<TemporaryCookieFile> CreateCookiesFile()
         {
             if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password))
             {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading.Tasks;
 using CliFx;
@@ -23,6 +23,7 @@ namespace CrunchyDownloader
                         "CrunchyDownloader", "logs", "log.txt"), rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: LogEventLevel.Verbose)
                 .CreateLogger();
 
+            Log.Logger.Information("Setting up chrome");
             var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();
             await using var browser = await Puppeteer.LaunchAsync(
@@ -33,6 +34,8 @@ namespace CrunchyDownloader
                     Args = new[] {"--no-sandbox"}
 #endif
                 });
+            Log.Logger.Information("Chrome set up");
+            
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton(browser);
             serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
@@ -49,7 +52,7 @@ namespace CrunchyDownloader
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return await new CliApplicationBuilder()
-                .AddCommand<DownloadSeriesCommand>()
+                .AddCommandsFromThisAssembly()
                 .UseTypeActivator(serviceProvider.GetService)
                 .Build()
                 .RunAsync();
