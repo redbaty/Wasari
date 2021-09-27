@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -82,11 +82,13 @@ namespace CrunchyDownloader.Commands
         {
             using var cookieFile = await CreateCookiesFile();
 
-            var episodes = await CrunchyRollService
-                .GetEpisodes(SeriesUrl)
+            var seriesInfo = await CrunchyRollService.GetSeriesInfo(SeriesUrl);
+
+            var episodes = seriesInfo.Seasons
+                .SelectMany(i => i.Episodes)
                 .OrderBy(i => i.SeasonInfo.Season)
                 .ThenBy(i => i.Number)
-                .ToArrayAsync();
+                .ToList();
             var userAgent = await Browser.GetUserAgentAsync();
             await Browser.DisposeAsync();
 

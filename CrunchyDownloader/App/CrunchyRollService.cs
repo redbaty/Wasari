@@ -21,7 +21,7 @@ namespace CrunchyDownloader.App
         
         private Browser Browser { get; }
 
-        private static string[] BannedKeywords = new[] { "(Russian)", "Dub)" }; 
+        private static string[] BannedKeywords = { "(Russian)", "Dub)" }; 
 
         private async IAsyncEnumerable<SeasonInfo> GetSeasonsInfo(Page seriesPage)
         {
@@ -44,19 +44,34 @@ namespace CrunchyDownloader.App
                     }
                     
                     Logger.LogDebug("Returning season {@SeasonNumber} '{@SeasonTile}'", seasonNumber + 1, trimmedTitle);
-                    yield return new SeasonInfo(seasonNumber + 1, trimmedTitle);
+                    yield return new SeasonInfo
+                    {
+                        Season = seasonNumber + 1,
+                        Title = trimmedTitle,
+                        Episodes = new List<EpisodeInfo>()
+                    };
                     seasonNumber++;
                 }
             }
             else
             {
                 Logger.LogDebug("No seasons found, returning a default one");
-                yield return new SeasonInfo(1, null);
+                yield return new SeasonInfo
+                {
+                    Season = 1,
+                    Title = null,
+                    Episodes = new List<EpisodeInfo>()
+                };
             }
         }
 
-        private async Task<SeriesInfo> GetSeriesInfo(Page seriesPage)
+        public async Task<SeriesInfo> GetSeriesInfo(string seriesUrl)
         {
+            Logger.LogDebug("Creating browser tab...");
+            await using var seriesPage = await Browser.NewPageAsync();
+            Logger.LogDebug("Navigating to {@Url}", seriesUrl);
+            await seriesPage.GoToAsync(seriesUrl);
+            
             Logger.LogDebug("Parsing series page");
             var titleHandles =
                 await seriesPage.XPathAsync("//*[@id=\"showview-content-header\"]/div[@class='ch-left']/h1");
@@ -69,19 +84,14 @@ namespace CrunchyDownloader.App
             Logger.LogDebug("Parsing seasons for series {@SeriesName}", name);
             
             var seasons = await GetSeasonsInfo(seriesPage).ToArrayAsync();
-
-            return new SeriesInfo(name, seasons);
+            var seriesInfo = new SeriesInfo(name, seasons);
+            await GetEpisodes(seriesPage, seriesInfo);
+            
+            return seriesInfo;
         }
 
-        public async IAsyncEnumerable<EpisodeInfo> GetEpisodes(string seriesUrl)
+        private async Task GetEpisodes(Page seriesPage, SeriesInfo seriesInfo)
         {
-            Logger.LogDebug("Creating browser tab...");
-            await using var seriesPage = await Browser.NewPageAsync();
-            
-            Logger.LogDebug("Navigating to {@Url}", seriesUrl);
-            await seriesPage.GoToAsync(seriesUrl);
-            
-            var seriesInfo = await GetSeriesInfo(seriesPage);
             var seasonsDictionary = seriesInfo.Seasons.ToDictionary(i => i.Title ?? string.Empty);
 
             var episodesHandles =
@@ -107,10 +117,16 @@ namespace CrunchyDownloader.App
                 }
                 
                 var season = seasonsDictionary.GetValueOrDefault(seasonTitle);
-
-                if (int.TryParse(episode, out var episodeNumber))
+                
+                if (season != null && int.TryParse(episode, out var episodeNumber))
                 {
-                    yield return new EpisodeInfo(seriesInfo, name, url, season, episodeNumber);
+                    season.Episodes.Add(new EpisodeInfo
+                    {
+                        Name = name,
+                        Url = url,
+                        SeasonInfo = season,
+                        Number = episodeNumber
+                    });
                 }
             }
         }

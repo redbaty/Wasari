@@ -2,23 +2,12 @@
 {
     public class EpisodeInfo
     {
-        public SeriesInfo Series { get; }
-        
-        public SeasonInfo SeasonInfo { get; }
-        
-        public string Name { get; }
-        
-        public string Url { get; }
-        
-        public int Number { get; }
+        public SeasonInfo SeasonInfo { get; init; }
 
-        public EpisodeInfo(SeriesInfo series, string name, string url, SeasonInfo seasonInfo, int number)
-        {
-            Series = series;
-            Name = name;
-            Url = url;
-            SeasonInfo = seasonInfo;
-            Number = number;
-        }
+        public string Name { get; init; }
+
+        public string Url { get; init; }
+
+        public int Number { get; init; }
     }
 }
