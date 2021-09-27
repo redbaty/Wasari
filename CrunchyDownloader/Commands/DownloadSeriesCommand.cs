@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
@@ -70,6 +71,9 @@ namespace CrunchyDownloader.Commands
         [CommandOption("temp-dir", 't')]
         public string TemporaryDirectory { get; init; } = Path.Combine(Path.GetTempPath(), "CrunchyDownloader");
 
+        [CommandOption("skip-episodes")]
+        public bool SkipExistingEpisodes { get; init; } = true;
+
         private YoutubeDlService YoutubeDlService { get; }
 
         private CrunchyRollService CrunchyRollService { get; }
@@ -77,6 +81,25 @@ namespace CrunchyDownloader.Commands
         private ILogger<DownloadSeriesCommand> Logger { get; }
 
         private Browser Browser { get; }
+
+        private void FilterExistingEpisodes(string outputDirectory, List<EpisodeInfo> episodes)
+        {
+            const string regex = @"S(?<season>\d+)E(?<episode>\d+) -";
+
+            foreach (var episodeFile in Directory.GetFiles(outputDirectory, "*.mkv"))
+            {
+                var episodeMatch = Regex.Match(episodeFile, regex);
+
+                if (!episodeMatch.Success
+                    || !int.TryParse(episodeMatch.Groups["episode"].Value, out var episode)
+                    || !int.TryParse(episodeMatch.Groups["season"].Value, out var season)) continue;
+
+                Logger.LogWarning(
+                    "Skipping episode {@EpisodeNumber} from season {@SeasonNumber} due to existing file {@FilePath}",
+                    episode, season, episodeFile);
+                episodes.RemoveAll(i => i.SeasonInfo.Season == season && i.Number == episode);
+            }
+        }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -105,7 +128,7 @@ namespace CrunchyDownloader.Commands
                 && i.SeasonInfo.Season <= seasonsRange[1]).ToArray();
 
             var downloadParameters = await CreateDownloadParameters(cookieFile, userAgent);
-            var taskPool = new List<Task>(EpisodeBatchSize);
+            if (SkipExistingEpisodes) FilterExistingEpisodes(downloadParameters.OutputDirectory, episodes);
 
             foreach (var episode in episodes)
             {
