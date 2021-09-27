@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
@@ -71,11 +69,39 @@ namespace CrunchyDownloader.App
             && await GetAvailableEncoders()
                 .AnyAsync(i => i.Contains("hevc_nvenc", StringComparison.InvariantCultureIgnoreCase));
 
-        public async Task MergeSubsToVideo(string videoFile, string[] subtitlesFiles, string newVideoFile,
-            DownloadParameters downloadParameters, ProgressBar progressBar)
+        private static IEnumerable<string> CreateArguments(string videoFile, string[] subtitlesFiles, string newVideoFile, DownloadParameters downloadParameters)
         {
-            progressBar.Refresh(0, "FFMPEG - Merge Video To Subtitles");
+            if (downloadParameters.UseHardwareAcceleration)
+                yield return $"-hwaccel {(downloadParameters.UseNvidiaAcceleration ? "cuda" : "auto")}";
 
+            yield return $"-i \"{videoFile}\"";
+            yield return CreateSubtitleArguments(subtitlesFiles);
+            
+            if (downloadParameters.UseHevc)
+            {
+                if (downloadParameters.UseNvidiaAcceleration)
+                    yield return "-c:v hevc_nvenc -rc vbr -cq 24 -qmin 24 -qmax 24 -profile:v main10 -pix_fmt p010le";
+                else
+                    yield return "-pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10";
+            }
+            else
+            {
+                yield return "-c:v copy";
+            }
+            
+            if (!string.IsNullOrEmpty(downloadParameters.ConversionPreset))
+            {
+                yield return $"-preset {downloadParameters.ConversionPreset}";
+            }
+
+            yield return "-c:a copy";
+            yield return "-scodec copy";
+            yield return "-y";
+            yield return $"\"{newVideoFile}\"";
+        }
+
+        private static string CreateSubtitleArguments(string[] subtitlesFiles)
+        {
             subtitlesFiles = subtitlesFiles?.OrderBy(i => i).ToArray();
 
             var aggregate = subtitlesFiles?
@@ -98,33 +124,22 @@ namespace CrunchyDownloader.App
                 ? $"{aggregate} -map 0 {mappings} {metadataMappings}"
                 : null;
 
-            var arguments = new[]
-                {
-                    downloadParameters.UseHardwareAcceleration
-                        ? $"-hwaccel {(downloadParameters.UseNvidiaAcceleration ? "cuda" : "auto")}"
-                        : null,
-                    $"-i \"{videoFile}\"",
-                    $"{subtitleArguments}",
-                    downloadParameters.UseX265
-                        ? downloadParameters.UseNvidiaAcceleration ? "-c:v hevc_nvenc -pix_fmt p010le" :
-                        "-pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10"
-                        : "-c:v copy",
-                    string.IsNullOrEmpty(downloadParameters.ConversionPreset)
-                        ? null
-                        : $"-preset {downloadParameters.ConversionPreset}",
-                    "-c:a copy",
-                    "-scodec copy",
-                    "-y",
-                    $"\"{newVideoFile}\""
-                }
-                .Where(i => !string.IsNullOrEmpty(i))
-                .ToArray();
+            return subtitleArguments;
+        }
 
-            var mediaAnalysis = await FFProbe.AnalyseAsync(videoFile);
-            progressBar.Max = (int)mediaAnalysis.Duration.TotalSeconds;
+        public async Task MergeSubsToVideo(string videoFile, string[] subtitlesFiles, string newVideoFile,
+            DownloadParameters downloadParameters, ProgressBar progressBar)
+        {
+            if (progressBar != null)
+            {
+                progressBar.Refresh(0, "FFMPEG - Merge Video To Subtitles");
+                var mediaAnalysis = await FFProbe.AnalyseAsync(videoFile);
+                progressBar.Max = (int)mediaAnalysis.Duration.TotalSeconds;
+            }
 
             var command = Cli.Wrap("ffmpeg")
-                .WithArguments(arguments, false);
+                .WithArguments(CreateArguments(videoFile, subtitlesFiles, newVideoFile, downloadParameters)
+                    .Where(i => !string.IsNullOrEmpty(i)), false);
 
             Logger.LogDebug("Merging video file with subtitles. {@Command}", command.ToString());
 
@@ -143,8 +158,7 @@ namespace CrunchyDownloader.App
                     text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time))
                 {
                     var timespan = TimeSpan.Parse(time);
-                    progressBar.Refresh((int)timespan.TotalSeconds,
-                        $"[FFMPEG]({speed:0.000}x) {Path.GetFileName(newVideoFile)}");
+                    progressBar?.Refresh((int)timespan.TotalSeconds, $"[FFMPEG]({speed:0.000}x) {Path.GetFileName(newVideoFile)}");
                 }
 
                 Logger?.LogTrace("[FFMpeg] {@Text}", text);
