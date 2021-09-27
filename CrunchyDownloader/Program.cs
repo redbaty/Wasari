@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using CliFx;
@@ -42,6 +42,10 @@ namespace CrunchyDownloader
             serviceCollection.AddTransient<DownloadSeriesCommand>();
             serviceCollection.AddLogging(c => c.AddSerilog());
             serviceCollection.AddSingleton<DownloadProgressManager>();
+            serviceCollection.Configure<ProgressBarOptions>(o =>
+            {
+                o.Enabled = true;
+            });
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return await new CliApplicationBuilder()
