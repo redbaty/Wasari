@@ -116,7 +116,7 @@ namespace CrunchyDownloader.App
                 
                 if (BannedKeywords.Any(i => seasonTitle.EndsWith(i)))
                 {
-                    Logger.LogWarning("Ignoring episode due to blacklisted words {@EpisodeName} {@SeasonTitle}", episode, seasonTitle);
+                    Logger.LogWarning("Ignoring episode due to blacklisted words {@EpisodeName} {@SeasonTitle}", name, seasonTitle);
                     continue;
                 }
                 
