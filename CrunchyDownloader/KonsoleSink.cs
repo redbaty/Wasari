@@ -11,10 +11,14 @@ namespace CrunchyDownloader
     internal class KonsoleSink : ILogEventSink
     {
         private IConsole Console { get; }
-        
+
         private IConsole ProgressBox { get; }
 
         private Dictionary<string, ProgressBar> ProgressBars { get; } = new();
+
+        private HashSet<ProgressBar> FinishedProgressBars { get; } = new();
+
+        private int OriginalBoxHeight { get; }
 
         public static int AvailableHeight => System.Console.WindowHeight - System.Console.CursorTop;
 
@@ -22,18 +26,21 @@ namespace CrunchyDownloader
         {
             var width = System.Console.WindowWidth;
             var height = AvailableHeight / 2 - 1;
+            var console = Window.Open();
 
-            Console = Window.OpenBox("Logs", width, height, new BoxStyle()
+            Console = console.OpenBox("Logs", width, height, new BoxStyle
             {
                 ThickNess = LineThickNess.Single,
                 Title = new Colors(ConsoleColor.White, ConsoleColor.Red)
             });
-            
-            ProgressBox = Window.OpenBox("Downloads", width, height, new BoxStyle
+
+            ProgressBox = console.OpenBox("Downloads", width, height, new BoxStyle
             {
                 ThickNess = LineThickNess.Single,
                 Title = new Colors(ConsoleColor.White, ConsoleColor.Black)
             });
+
+            OriginalBoxHeight = ProgressBox.WindowHeight - 1;
         }
 
         private static ConsoleColor GetColor(LogEventLevel level) =>
@@ -59,14 +66,33 @@ namespace CrunchyDownloader
             _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
         };
 
-        private void EmitProgressUpdate(LogEvent logEvent)
+        private ProgressUpdate EmitProgressUpdate(LogEvent logEvent)
         {
-            var episodeId = logEvent.Properties["Id"]  is ScalarValue scalarValue ? scalarValue.Value.ToString() : null;
+            var episodeId = logEvent.Properties["Id"] is ScalarValue scalarValue ? scalarValue.Value.ToString() : null;
 
             if (!string.IsNullOrEmpty(episodeId))
             {
-                if(!ProgressBars.ContainsKey(episodeId))
-                    ProgressBars.Add(episodeId, new ProgressBar(ProgressBox, PbStyle.SingleLine, 100, System.Console.WindowWidth / 2));
+                if (!ProgressBars.ContainsKey(episodeId))
+                {
+                    if (ProgressBars.Count >= OriginalBoxHeight && FinishedProgressBars.Any())
+                    {
+                        var (key, finishedProgressBar) = ProgressBars.FirstOrDefault(i =>
+                            i.Value.Max == 1 && FinishedProgressBars.Contains(i.Value));
+                        ProgressBars.Remove(key);
+                        FinishedProgressBars.Remove(finishedProgressBar);
+
+                        var oldPosition = ProgressBox.CursorTop;
+                        ProgressBox.CursorTop = finishedProgressBar.Y;
+                        ProgressBars.Add(episodeId,
+                            new ProgressBar(ProgressBox, PbStyle.SingleLine, 100, System.Console.WindowWidth / 2));
+                        ProgressBox.CursorTop = oldPosition;
+                    }
+                    else
+                    {
+                        ProgressBars.Add(episodeId,
+                            new ProgressBar(ProgressBox, PbStyle.SingleLine, 100, System.Console.WindowWidth / 2));
+                    }
+                }
 
                 var progressBar = ProgressBars[episodeId];
                 var progressUpdate = logEvent.ObjectFromLogEvent<ProgressUpdate>();
@@ -86,9 +112,13 @@ namespace CrunchyDownloader
                     progressBar.Refresh(0, progressUpdate.Title);
                     progressBar.Max = 1;
                     progressBar.Refresh(1, progressUpdate.Title);
+                    FinishedProgressBars.Add(progressBar);
                 }
+
+                return progressUpdate;
             }
-            
+
+            return null;
         }
 
         public void Emit(LogEvent logEvent)
@@ -97,11 +127,13 @@ namespace CrunchyDownloader
             {
                 if (logEvent.MessageTemplate.Text.StartsWith("[Progress Update]"))
                 {
-                    EmitProgressUpdate(logEvent);
-                    return;
+                    var update = EmitProgressUpdate(logEvent);
+
+                    if (update != null && update.Type != ProgressUpdateTypes.Completed)
+                        return;
                 }
             }
-            
+
             var level = GetShortLevel(logEvent.Level);
             var renderMessage = logEvent.RenderMessage();
             Console.Write("[");
