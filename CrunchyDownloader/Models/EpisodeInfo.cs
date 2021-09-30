@@ -9,5 +9,7 @@
         public string Url { get; init; }
 
         public int Number { get; init; }
+
+        public string Id => $"S{SeasonInfo?.Season:00}E{Number:00}";
     }
 }

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CrunchyDownloader.App
 {
-    public class FfmpegService
+    internal class FfmpegService
     {
         public FfmpegService(ILogger<FfmpegService> logger, ILoggerFactory loggerFactory)
         {
@@ -68,7 +68,7 @@ namespace CrunchyDownloader.App
             && await GetAvailableEncoders()
                 .AnyAsync(i => i.Contains("hevc_nvenc", StringComparison.InvariantCultureIgnoreCase));
 
-        private static IEnumerable<string> CreateArguments(string videoFile, string[] subtitlesFiles,
+        private static IEnumerable<string> CreateArguments(string videoFile, IEnumerable<string> subtitlesFiles,
             string newVideoFile, DownloadParameters downloadParameters)
         {
             if (downloadParameters.UseHardwareAcceleration)
@@ -100,9 +100,9 @@ namespace CrunchyDownloader.App
             yield return $"\"{newVideoFile}\"";
         }
 
-        private static string CreateSubtitleArguments(string[] subtitlesFiles)
+        private static string CreateSubtitleArguments(IEnumerable<string> subs)
         {
-            subtitlesFiles = subtitlesFiles?.OrderBy(i => i).ToArray();
+            var subtitlesFiles = subs?.OrderBy(i => i).ToArray();
 
             var aggregate = subtitlesFiles?
                 .Select(i => $"-f ass -i \"{i}\"")
@@ -127,9 +127,13 @@ namespace CrunchyDownloader.App
             return subtitleArguments;
         }
 
-        public async Task MergeSubsToVideo(string episodeId, string videoFile, string[] subtitlesFiles,
-            string newVideoFile,
-            DownloadParameters downloadParameters)
+        public Task Encode(YoutubeDlResult youtubeDlResult, string newVideoFile, DownloadParameters downloadParameters)
+        {
+            return Encode(youtubeDlResult.Episode?.Id, youtubeDlResult.TemporaryEpisodeFile?.Path,
+                youtubeDlResult.Subtitles?.Select(i => i.Path), newVideoFile, downloadParameters);
+        }
+
+        public async Task Encode(string episodeId, string videoFile, IEnumerable<string> subtitlesFiles, string newVideoFile, DownloadParameters downloadParameters)
         {
             var update = new ProgressUpdate
             {
@@ -191,7 +195,7 @@ namespace CrunchyDownloader.App
 
             stopwatch.Stop();
 
-            Logger.LogDebug("Merging {@OriginalVideoFile} with {@Subtitles} to {@NewVideoFile} took {@Elapsed}",
+            Logger.LogInformation("Merging {@OriginalVideoFile} with {@Subtitles} to {@NewVideoFile} took {@Elapsed}",
                 videoFile, subtitlesFiles, newVideoFile, stopwatch.Elapsed);
         }
     }

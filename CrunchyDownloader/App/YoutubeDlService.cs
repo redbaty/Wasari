@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -27,7 +26,8 @@ namespace CrunchyDownloader.App
         private FfmpegService FfmpegService { get; }
 
         [SuppressMessage("ReSharper", "AccessToModifiedClosure")]
-        public async Task DownloadEpisode(EpisodeInfo episodeInfo, DownloadParameters downloadParameters)
+        public async Task<YoutubeDlResult> DownloadEpisode(EpisodeInfo episodeInfo,
+            DownloadParameters downloadParameters)
         {
             if (downloadParameters.CookieFilePath != null && !File.Exists(downloadParameters.CookieFilePath))
             {
@@ -35,19 +35,9 @@ namespace CrunchyDownloader.App
             }
 
             var fileSafeName = new SanitizedFileName(episodeInfo.Name, string.Empty);
-            var episodeId = $"S{episodeInfo.SeasonInfo.Season:00}E{episodeInfo.Number:00}";
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
-                $"{episodeId} - {fileSafeName}_temp.mkv");
-
-            var episodeFile = Path.Combine(downloadParameters.OutputDirectory,
-                $"{episodeId} - {fileSafeName}.mkv");
-
-            var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(episodeFile) ??
-                                                    throw new InvalidOperationException("Invalid output directory"));
-
-            if (!outputDirectory.Exists)
-                outputDirectory.Create();
+                $"{episodeInfo.Id} - {fileSafeName}_temp.mkv");
 
             Logger.LogInformation("Starting download of episode {@Episode} of {@Season}...", episodeInfo.Name,
                 $"Season {episodeInfo.SeasonInfo?.Season}");
@@ -114,7 +104,7 @@ namespace CrunchyDownloader.App
                                         $"[YT-DLP][{currentFile.Type}]({speed}) {Path.GetFileName(currentFile.Path)}",
                                     Type = ProgressUpdateTypes.Current,
                                     Value = (int)parsedPercentage,
-                                    EpisodeId = episodeId
+                                    EpisodeId = episodeInfo.Id
                                 };
 
                                 Logger.LogProgressUpdate(update);
@@ -128,58 +118,11 @@ namespace CrunchyDownloader.App
                 .Select(i => i.First())
                 .ToList();
 
-            if (downloadParameters.Subtitles || downloadParameters.UseHevc)
+            return new YoutubeDlResult
             {
-                var episode = files.Single(i => i.Type == FileType.VideoFile);
-                var subFiles = files
-                    .Where(i => i.Type == FileType.Subtitle && downloadParameters.Subtitles &&
-                                (string.IsNullOrEmpty(downloadParameters.SubtitleLanguage) ||
-                                 i.Path.EndsWith($"{downloadParameters.SubtitleLanguage}.ass",
-                                     StringComparison.InvariantCultureIgnoreCase)))
-                    .Select(i => i.Path)
-                    .Where(File.Exists)
-                    .ToArray();
-
-                if (downloadParameters.DeleteTemporaryFiles)
-                {
-                    foreach (var unusedSub in files
-                        .Where(i => i.Type == FileType.Subtitle)
-                        .Select(i => i.Path)
-                        .Except(subFiles)
-                        .Where(File.Exists)) File.Delete(unusedSub);
-                }
-
-                if (subFiles.Any() || downloadParameters.UseHevc)
-                {
-                    await FfmpegService.MergeSubsToVideo(episodeId, episode.Path, subFiles, episodeFile,
-                        downloadParameters);
-
-                    if (downloadParameters.DeleteTemporaryFiles)
-                    {
-                        foreach (var temporaryFile in files.Select(i => i.Path).Where(File.Exists))
-                        {
-                            File.Delete(temporaryFile);
-                        }
-                    }
-                }
-                else if (downloadParameters.Subtitles && !subFiles.Any())
-                {
-                    Logger.LogWarning("Subtitle not found!");
-                }
-            }
-            else
-            {
-                File.Move(temporaryEpisodeFile, episodeFile);
-            }
-
-            var update = new ProgressUpdate
-            {
-                Type = ProgressUpdateTypes.Completed,
-                EpisodeId = episodeId,
-                Title = $"[DONE] {Path.GetFileName(episodeFile)}"
+                Files = files,
+                Episode = episodeInfo
             };
-            
-            Logger.LogProgressUpdate(update);
         }
     }
 }

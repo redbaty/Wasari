@@ -21,13 +21,15 @@ namespace CrunchyDownloader.Commands
     {
         public DownloadSeriesCommand(YoutubeDlService youtubeDlService, CrunchyRollService crunchyRollService,
             CrunchyRollAuthenticationService crunchyRollAuthenticationService, Browser browser,
-            ILogger<DownloadSeriesCommand> logger) : base(
+            ILogger<DownloadSeriesCommand> logger, YoutubeDlQueueService youtubeDlQueueService, FfmpegQueueService ffmpegQueueService) : base(
             crunchyRollAuthenticationService)
         {
             YoutubeDlService = youtubeDlService;
             CrunchyRollService = crunchyRollService;
             Browser = browser;
             Logger = logger;
+            YoutubeDlQueueService = youtubeDlQueueService;
+            FfmpegQueueService = ffmpegQueueService;
         }
 
         [CommandParameter(0, Description = "Series URL.")]
@@ -47,6 +49,8 @@ namespace CrunchyDownloader.Commands
 
         [CommandOption("batch", 'b')]
         public int EpisodeBatchSize { get; init; } = 3;
+        
+        public int ParallelDownloadPoolSize { get; init; } = 3;
 
         [CommandOption("episodes", 'e')]
         public string EpisodeRange { get; init; }
@@ -80,6 +84,10 @@ namespace CrunchyDownloader.Commands
         private CrunchyRollService CrunchyRollService { get; }
 
         private ILogger<DownloadSeriesCommand> Logger { get; }
+        
+        private YoutubeDlQueueService YoutubeDlQueueService { get; }
+        
+        private FfmpegQueueService FfmpegQueueService { get; }
 
         private Browser Browser { get; }
 
@@ -143,7 +151,7 @@ namespace CrunchyDownloader.Commands
                     && i.SeasonInfo.Season <= seasonsRange[1])
                 .ToList();
 
-            var episodeRange = ParseRange(EpisodeRange, episodes.Count);
+            var episodeRange = ParseRange(EpisodeRange, episodes.Select(i => i.Number).Max());
             Logger.LogInformation("Episodes range is {@Range}", episodeRange);
             episodes = episodes.Where(i =>
                     i.Number >= episodeRange[0]
@@ -155,20 +163,32 @@ namespace CrunchyDownloader.Commands
 
             if (episodes.Any())
             {
-                var taskPool = new List<Task>(EpisodeBatchSize);
-
-                foreach (var episode in episodes)
+                var ytDlTask = YoutubeDlQueueService.Start(episodes, downloadParameters, ParallelDownloadPoolSize);
+                var ffmpegTask = FfmpegQueueService.Start(downloadParameters, EpisodeBatchSize);
+                
+                await foreach (var youtubeDlResult in YoutubeDlQueueService.Reader.ReadAllAsync())
                 {
-                    if (taskPool.Count >= EpisodeBatchSize)
+                    if (downloadParameters.Subtitles || downloadParameters.UseHevc)
                     {
-                        var taskEnded = await Task.WhenAny(taskPool);
-                        taskPool.Remove(taskEnded);
+                        await FfmpegQueueService.Enqueue(youtubeDlResult);
                     }
+                    else
+                    {
+                        var finalEpisodeFile = youtubeDlResult.FinalEpisodeFile(downloadParameters);
+                        File.Move(youtubeDlResult.TemporaryEpisodeFile.Path, finalEpisodeFile);
 
-                    taskPool.Add(YoutubeDlService.DownloadEpisode(episode, downloadParameters));
+                        Logger.LogProgressUpdate(new ProgressUpdate
+                        {
+                            Type = ProgressUpdateTypes.Completed,
+                            EpisodeId = youtubeDlResult.Episode.Id,
+                            Title = $"[DONE] {Path.GetFileName(finalEpisodeFile)}"
+                        });
+                    }
                 }
-
-                await Task.WhenAll(taskPool);
+                
+                FfmpegQueueService.Ended();
+                await ytDlTask;
+                await ffmpegTask;
             }
             else
             {

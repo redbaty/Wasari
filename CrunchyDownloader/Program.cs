@@ -54,6 +54,8 @@ namespace CrunchyDownloader
             serviceCollection.AddTransient<FfmpegService>();
             serviceCollection.AddTransient<CrunchyRollService>();
             serviceCollection.AddTransient<DownloadSeriesCommand>();
+            serviceCollection.AddSingleton<YoutubeDlQueueService>();
+            serviceCollection.AddSingleton<FfmpegQueueService>();
             serviceCollection.AddLogging(c => c.AddSerilog());
             serviceCollection.Configure<ProgressBarOptions>(o => { o.Enabled = true; });
             var serviceProvider = serviceCollection.BuildServiceProvider();
