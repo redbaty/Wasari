@@ -12,7 +12,7 @@
       <PackageReference Include="FFMpegCore" Version="4.5.0" />
       <PackageReference Include="Goblinfactory.Konsole" Version="6.2.2" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
-      <PackageReference Include="PuppeteerSharp" Version="5.0.0" />
+      <PackageReference Include="PuppeteerSharp" Version="5.1.0" />
       <PackageReference Include="Serilog.Extensions.Hosting" Version="4.1.2" />
       <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
       <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
