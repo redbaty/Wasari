@@ -19,12 +19,11 @@ namespace CrunchyDownloader.Commands
     [Command]
     internal class DownloadSeriesCommand : CrunchyAuthenticatedCommand, ICommand
     {
-        public DownloadSeriesCommand(YoutubeDlService youtubeDlService, CrunchyRollService crunchyRollService,
+        public DownloadSeriesCommand(CrunchyRollService crunchyRollService,
             CrunchyRollAuthenticationService crunchyRollAuthenticationService, Browser browser,
             ILogger<DownloadSeriesCommand> logger, YoutubeDlQueueService youtubeDlQueueService, FfmpegQueueService ffmpegQueueService) : base(
             crunchyRollAuthenticationService)
         {
-            YoutubeDlService = youtubeDlService;
             CrunchyRollService = crunchyRollService;
             Browser = browser;
             Logger = logger;
@@ -78,8 +77,6 @@ namespace CrunchyDownloader.Commands
 
         [CommandOption("skip-episodes")]
         public bool SkipExistingEpisodes { get; init; } = true;
-
-        private YoutubeDlService YoutubeDlService { get; }
 
         private CrunchyRollService CrunchyRollService { get; }
 
