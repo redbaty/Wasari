@@ -10,6 +10,7 @@ using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using CrunchyDownloader.App;
 using CrunchyDownloader.Exceptions;
+using CrunchyDownloader.Extensions;
 using CrunchyDownloader.Models;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;

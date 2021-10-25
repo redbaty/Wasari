@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using CrunchyDownloader.Extensions;
 using CrunchyDownloader.Models;
 
 namespace CrunchyDownloader.App
