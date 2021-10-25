@@ -17,6 +17,6 @@ namespace CrunchyDownloader.App
 
         public string FinalEpisodeFile(DownloadParameters downloadParameters) => Path.Combine(
             downloadParameters.OutputDirectory,
-            $"{Episode.Id} - {new SanitizedFileName(Episode.Name, string.Empty)}.mkv");
+            $"{Episode.Id} - {Episode.Name.AsSafePath()}.mkv");
     }
 }

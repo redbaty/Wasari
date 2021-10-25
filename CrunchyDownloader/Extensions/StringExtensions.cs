@@ -1,11 +1,20 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace CrunchyDownloader.Extensions
 {
     internal static class StringExtensions
     {
+        private static readonly Regex RemoveInvalidChars = new($"[{Regex.Escape(new string(Path.GetInvalidFileNameChars()))}]",
+            RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        
+        public static string AsSafePath(this string fileOrDirectoryName)
+        {
+            return RemoveInvalidChars.Replace(fileOrDirectoryName, string.Empty);
+        }
+        
         public static bool GetValueFromRegex<T>(this string input, string regex, out T @out)
         {
             var canParseFromRegex = GetValueFromRegex(input, regex, out var value);

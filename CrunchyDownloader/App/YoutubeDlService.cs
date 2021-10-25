@@ -34,7 +34,7 @@ namespace CrunchyDownloader.App
                 throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
             }
 
-            var fileSafeName = new SanitizedFileName(episodeInfo.Name, string.Empty);
+            var fileSafeName = episodeInfo.Name.AsSafePath();
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
                 $"{episodeInfo.Id} - {fileSafeName}_temp.mkv");
