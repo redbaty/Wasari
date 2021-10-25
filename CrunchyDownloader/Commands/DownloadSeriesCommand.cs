@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -113,7 +113,7 @@ namespace CrunchyDownloader.Commands
             if (Uri.TryCreate(SeriesUrl, UriKind.Absolute, out var parsedUri))
             {
                 var crunchyHost = parsedUri.Host.EndsWith("crunchyroll.com", StringComparison.InvariantCultureIgnoreCase);
-                var rightSegmentsCount = parsedUri.Segments.Length == 2;
+                var rightSegmentsCount = parsedUri.Segments.Length >= 2;
                 return crunchyHost && rightSegmentsCount;
             }
 
