@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -211,8 +211,10 @@ namespace CrunchyDownloader.Commands
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
 
+            var safeSeriesName = seriesInfo.Name.AsSafePath();
+            
             var outputDirectory = CreateSubdirectory
-                ? Path.Combine(OutputDirectory, seriesInfo.Name)
+                ? Path.Combine(OutputDirectory, safeSeriesName)
                 : OutputDirectory;
 
             if (!Directory.Exists(outputDirectory))
