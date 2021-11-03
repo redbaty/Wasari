@@ -1,11 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CrunchyDownloader.Models
 {
     public class SeasonInfo
     {
-        public string Id { get; init; }
-        
+        private string _id;
+
+        public string Id
+        {
+            get => _id;
+            internal set
+            {
+                if (!string.IsNullOrEmpty(_id))
+                    throw new InvalidOperationException("Trying to change season ID");
+                
+                _id = value;
+            }
+        }
+
         public int Season { get; init; }
         
         public string Title { get; init; }
