@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -75,7 +75,10 @@ namespace CrunchyDownloader.App
                 yield return $"-hwaccel {(downloadParameters.UseNvidiaAcceleration ? "cuda" : "auto")}";
 
             yield return $"-i \"{videoFile}\"";
-            yield return CreateSubtitleArguments(subtitlesFiles);
+            var subtitleArguments = CreateSubtitleArguments(subtitlesFiles);
+
+            if (!string.IsNullOrEmpty(subtitleArguments))
+                yield return subtitleArguments;
 
             if (downloadParameters.UseHevc)
             {
@@ -104,27 +107,22 @@ namespace CrunchyDownloader.App
         {
             var subtitlesFiles = subs?.OrderBy(i => i).ToArray();
 
-            var aggregate = subtitlesFiles?
-                .Select(i => $"-f ass -i \"{i}\"")
+            if (subtitlesFiles is not { Length: > 0 })
+                return null;
+
+            var aggregate = subtitlesFiles.Select(i => $"-f ass -i \"{i}\"")
                 .Aggregate((x, y) => $"{x} {y}");
 
-            var mappings = subtitlesFiles?
-                .Select((s, i) => $"-map {i + 1}")
+            var mappings = subtitlesFiles.Select((s, i) => $"-map {i + 1}")
                 .Aggregate((x, y) => $"{x} {y}");
 
-            var metadata = subtitlesFiles?
-                .Select((i, index) =>
+            var metadata = subtitlesFiles.Select((i, index) =>
                     $"-metadata:s:s:{index} language={i.Split(".").Reverse().Skip(1).First()}")
                 .ToArray();
 
-            var metadataMappings = metadata?
-                .Aggregate((x, y) => $"{x} {y}");
+            var metadataMappings = metadata.Aggregate((x, y) => $"{x} {y}");
 
-            var subtitleArguments = subtitlesFiles != null && subtitlesFiles.Any()
-                ? $"{aggregate} -map 0 {mappings} {metadataMappings}"
-                : null;
-
-            return subtitleArguments;
+            return $"{aggregate} -map 0 {mappings} {metadataMappings}";
         }
 
         public Task Encode(YoutubeDlResult youtubeDlResult, string newVideoFile, DownloadParameters downloadParameters)
@@ -133,7 +131,8 @@ namespace CrunchyDownloader.App
                 youtubeDlResult.Subtitles?.Select(i => i.Path), newVideoFile, downloadParameters);
         }
 
-        public async Task Encode(string episodeId, string videoFile, IEnumerable<string> subtitlesFiles, string newVideoFile, DownloadParameters downloadParameters)
+        public async Task Encode(string episodeId, string videoFile, IEnumerable<string> subtitlesFiles,
+            string newVideoFile, DownloadParameters downloadParameters)
         {
             var update = new ProgressUpdate
             {
