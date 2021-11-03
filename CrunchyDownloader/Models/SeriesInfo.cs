@@ -4,14 +4,10 @@ namespace CrunchyDownloader.Models
 {
     public class SeriesInfo
     {
-        public string Name { get; }
+        public string Id { get; init; }
         
-        public ICollection<SeasonInfo> Seasons { get; }
-
-        public SeriesInfo(string name, ICollection<SeasonInfo> seasons)
-        {
-            Name = name;
-            Seasons = seasons;
-        }
+        public string Name { get; init; }
+        
+        public ICollection<SeasonInfo> Seasons { get; init; }
     }
 }

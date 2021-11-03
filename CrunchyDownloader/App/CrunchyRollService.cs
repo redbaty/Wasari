@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using CrunchyDownloader.Extensions;
 using CrunchyDownloader.Models;
+using Crunchyroll.API;
+using Crunchyroll.API.Models;
+using Flurl;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 
@@ -11,10 +14,12 @@ namespace CrunchyDownloader.App
 {
     public class CrunchyRollService
     {
-        public CrunchyRollService(Browser browser, ILogger<CrunchyRollService> logger)
+        public CrunchyRollService(Browser browser, ILogger<CrunchyRollService> logger,
+            CrunchyrollApiService crunchyrollApiService)
         {
             Browser = browser;
             Logger = logger;
+            CrunchyrollApiService = crunchyrollApiService;
         }
 
         private ILogger<CrunchyRollService> Logger { get; }
@@ -23,7 +28,10 @@ namespace CrunchyDownloader.App
 
         private static string[] BannedKeywords = { "(Russian)", "Dub)" };
 
-        private async IAsyncEnumerable<SeasonInfo> GetSeasonsInfo(Page seriesPage)
+        private CrunchyrollApiService CrunchyrollApiService { get; }
+
+        private async IAsyncEnumerable<SeasonInfo> GetSeasonsInfo(Page seriesPage,
+            Dictionary<string, ApiEpisode> episodesDictionary)
         {
             var seasonsHandles = await seriesPage.XPathAsync("//ul[@class='list-of-seasons cf']/li/a");
             var seasonNumber = 0;
@@ -34,6 +42,7 @@ namespace CrunchyDownloader.App
             {
                 foreach (var seasonHandle in seasonsHandles.Reverse())
                 {
+                    await using var realSeasonHandle = await seasonHandle.SingleOrDefaultXPathAsync("./..");
                     var title = await seasonHandle.GetPropertyValue<string>("title");
                     var trimmedTitle = title.Trim();
 
@@ -44,12 +53,19 @@ namespace CrunchyDownloader.App
                     }
 
                     Logger.LogDebug("Returning season {@SeasonNumber} '{@SeasonTile}'", seasonNumber + 1, trimmedTitle);
-                    yield return new SeasonInfo
+                    var seasonsInfo = new SeasonInfo
                     {
                         Season = seasonNumber + 1,
                         Title = trimmedTitle,
                         Episodes = new List<EpisodeInfo>()
                     };
+
+                    await foreach (var episodeInfo in GetEpisodes(realSeasonHandle, episodesDictionary, seasonsInfo))
+                    {
+                        seasonsInfo.Episodes.Add(episodeInfo);
+                    }
+
+                    yield return seasonsInfo;
                     seasonNumber++;
                 }
             }
@@ -73,12 +89,8 @@ namespace CrunchyDownloader.App
             await seriesPage.GoToAsync(seriesUrl);
 
             Logger.LogDebug("Parsing series page");
-            var titleHandles =
-                await seriesPage.XPathAsync("//*[@id=\"showview-content-header\"]/div[@class='ch-left']/h1");
-
-            Logger.LogDebug("Found {@Handles} title handles", titleHandles.Length);
-
-            await using var titleHandle = titleHandles.SingleOrDefault();
+            await using var titleHandle =
+                await seriesPage.WaitForXPathAsync("//*[@id=\"showview-content-header\"]/div[@class='ch-left']/h1");
 
             if (titleHandle == null)
                 throw new Exception("Failed to find title handle. Is this a series URL?");
@@ -87,20 +99,28 @@ namespace CrunchyDownloader.App
 
             Logger.LogDebug("Parsing seasons for series {@SeriesName}", name);
 
-            var seasons = await GetSeasonsInfo(seriesPage).ToArrayAsync();
-            var seriesInfo = new SeriesInfo(name, seasons);
-            await GetEpisodes(seriesPage, seriesInfo);
-
-            return seriesInfo;
+            await seriesPage.WaitForXPathAsync("//*[@id=\"sidebar_elements\"]/li[1]/div");
+            var id = await seriesPage.EvaluateExpressionAsync<string>(
+                "JSON.parse(document.getElementsByClassName(\"show-actions\")[0]?.attributes['data-contentmedia'].value).mediaId");
+            var episodesDictionary = await CrunchyrollApiService.GetAllEpisodes(id).ToDictionaryAsync(i => i.ThumbnailIds.Single());
+            
+            var seasons = await GetSeasonsInfo(seriesPage, episodesDictionary).ToArrayAsync();
+            return new SeriesInfo
+            {
+                Name = name,
+                Seasons = seasons,
+                Id = id
+            };
         }
 
-        private async Task GetEpisodes(Page seriesPage, SeriesInfo seriesInfo)
+        private async IAsyncEnumerable<EpisodeInfo> GetEpisodes(ElementHandle seriesHandle,
+            Dictionary<string, ApiEpisode> episodesDictionary, SeasonInfo seasonsInfo)
         {
-            var seasonsDictionary = seriesInfo.Seasons.ToDictionary(i => i.Title ?? string.Empty);
-
             var episodesHandles =
-                await seriesPage.XPathAsync("//a[@class='portrait-element block-link titlefix episode']");
-            foreach (var episodeHandle in episodesHandles)
+                await seriesHandle.XPathAsync(".//a[@class='portrait-element block-link titlefix episode']");
+            var lastEpisode = 0;
+
+            foreach (var episodeHandle in episodesHandles.Reverse())
             {
                 await using var seasonHandle = await episodeHandle.SingleOrDefaultXPathAsync("./../../../..");
                 await using var seasonTitleHandle =
@@ -109,7 +129,14 @@ namespace CrunchyDownloader.App
                     ? await seasonTitleHandle.GetPropertyValue<string>("title")
                     : string.Empty;
                 await using var imageHandle = await episodeHandle.SingleOrDefaultXPathAsync("./img");
+                await using var srcHandle = await imageHandle.SingleOrDefaultXPathAsync("./@data-thumbnailurl") ?? await imageHandle.SingleOrDefaultXPathAsync("./@src");
+                var srcValue = await srcHandle.GetPropertyValue<string>("value");
                 var name = await imageHandle.GetPropertyValue<string>("alt");
+                
+                var thumbnailUrl = Url.ParsePathSegments(srcValue).LastOrDefault();
+                var thumbnailId = thumbnailUrl?[..32];
+                var apiEpisode = episodesDictionary.GetValueOrDefault(thumbnailId);
+                
                 var url = await episodeHandle.GetPropertyValue<string>("href");
                 var episodeUrl = url[url.LastIndexOf("/", StringComparison.Ordinal)..];
                 var episode = episodeUrl.Split('-').Skip(1).First();
@@ -121,25 +148,22 @@ namespace CrunchyDownloader.App
                     continue;
                 }
 
-                var season = seasonsDictionary.GetValueOrDefault(seasonTitle);
+                var episodeNumber = int.TryParse(episode, out var parsedEpisodeNumber)
+                    ? parsedEpisodeNumber
+                    : lastEpisode;
 
-                if (season != null)
+                yield return new EpisodeInfo
                 {
-                    var episodeNumber = int.TryParse(episode, out var parsedEpisodeNumber)
-                        ? parsedEpisodeNumber
-                        : season.Episodes
-                            .Select(i => i.Number)
-                            .DefaultIfEmpty()
-                            .Max() + 1;
+                    Name = name,
+                    Url = url,
+                    SequenceNumber = apiEpisode?.SequenceNumber ?? episodeNumber,
+                    ThumbnailId = thumbnailId,
+                    Number = apiEpisode?.Episode ?? apiEpisode?.SequenceNumber.ToString("00") ?? episodeNumber.ToString("00"),
+                    Id = apiEpisode?.Id,
+                    SeasonInfo = seasonsInfo
+                };
 
-                    season.Episodes.Add(new EpisodeInfo
-                    {
-                        Name = name,
-                        Url = url,
-                        SeasonInfo = season,
-                        Number = episodeNumber
-                    });
-                }
+                lastEpisode++;
             }
         }
     }

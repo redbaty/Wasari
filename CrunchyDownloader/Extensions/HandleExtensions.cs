@@ -6,6 +6,13 @@ namespace CrunchyDownloader.Extensions
 {
     internal static class HandleExtensions
     {
+        public static async Task<ElementHandle> SingleOrDefaultXPathAsync(this Page page,
+            string xpath)
+        {
+            var handles = await page.XPathAsync(xpath);
+            return handles.SingleOrDefault();
+        }
+        
         public static async Task<ElementHandle> SingleOrDefaultXPathAsync(this ElementHandle elementHandle,
             string xpath)
         {

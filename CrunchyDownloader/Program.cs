@@ -1,10 +1,12 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading.Tasks;
 using CliFx;
 using CrunchyDownloader.App;
 using CrunchyDownloader.Commands;
 using CrunchyDownloader.Models;
+using Crunchyroll.API;
+using Crunchyroll.API.Models;
 using Microsoft.Extensions.DependencyInjection;
 using PuppeteerExtraSharp;
 using PuppeteerExtraSharp.Plugins.ExtraStealth;
@@ -63,6 +65,7 @@ namespace CrunchyDownloader
             serviceCollection.AddSingleton<FfmpegQueueService>();
             serviceCollection.AddLogging(c => c.AddSerilog());
             serviceCollection.Configure<ProgressBarOptions>(o => { o.Enabled = true; });
+            serviceCollection.AddCrunchyrollApiService();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return await new CliApplicationBuilder()

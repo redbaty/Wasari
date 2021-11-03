@@ -104,7 +104,7 @@ namespace CrunchyDownloader.Commands
                 Logger.LogWarning(
                     "Skipping episode {@EpisodeNumber} from season {@SeasonNumber} due to existing file {@FilePath}",
                     episode, season, episodeFile);
-                episodes.RemoveAll(i => i.SeasonInfo.Season == season && i.Number == episode);
+                episodes.RemoveAll(i => i.SeasonInfo.Season == season && i.SequenceNumber == episode);
             }
         }
 
@@ -136,7 +136,7 @@ namespace CrunchyDownloader.Commands
             var episodes = seriesInfo.Seasons
                 .SelectMany(i => i.Episodes)
                 .OrderBy(i => i.SeasonInfo.Season)
-                .ThenBy(i => i.Number)
+                .ThenBy(i => i.SequenceNumber)
                 .ToList();
             
             var userAgent = await Browser.GetUserAgentAsync();
@@ -149,11 +149,11 @@ namespace CrunchyDownloader.Commands
                     && i.SeasonInfo.Season <= seasonsRange[1])
                 .ToList();
 
-            var episodeRange = ParseRange(EpisodeRange, episodes.Select(i => i.Number).Max());
+            var episodeRange = ParseRange(EpisodeRange, (int)episodes.Select(i => i.SequenceNumber).Max());
             Logger.LogInformation("Episodes range is {@Range}", episodeRange);
             episodes = episodes.Where(i =>
-                    i.Number >= episodeRange[0]
-                    && i.Number <= episodeRange[1])
+                    i.SequenceNumber >= episodeRange[0]
+                    && i.SequenceNumber <= episodeRange[1])
                 .ToList();
 
             var downloadParameters = await CreateDownloadParameters(cookieFile, userAgent, seriesInfo);
@@ -178,7 +178,7 @@ namespace CrunchyDownloader.Commands
                         Logger.LogProgressUpdate(new ProgressUpdate
                         {
                             Type = ProgressUpdateTypes.Completed,
-                            EpisodeId = youtubeDlResult.Episode.Id,
+                            EpisodeId = youtubeDlResult.Episode.FilePrefix,
                             Title = $"[DONE] {Path.GetFileName(finalEpisodeFile)}"
                         });
                     }
