@@ -30,5 +30,8 @@ namespace Crunchyroll.API.Models
         [JsonPropertyName("images")]
         [JsonConverter(typeof(ThumbnailsConverter))]
         public string[] ThumbnailIds { get; init; }
+
+        [JsonPropertyName("is_clip")]
+        public bool IsClip { get; init; }
     }
 }
