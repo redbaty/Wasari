@@ -350,6 +350,6 @@ MigrationBackup/
 .ionide/
 
 .idea/
-CrunchyDownloader/Properties/launchSettings.json
+**/Properties/launchSettings.json
 
-CrunchyDownloader/.local-chromium/
+.local-chromium/

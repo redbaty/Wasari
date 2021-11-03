@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrunchyDownloader", "CrunchyDownloader\CrunchyDownloader.csproj", "{15D1992A-18F2-4E36-A496-34A02C7CB366}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari", "Wasari\Wasari.csproj", "{15D1992A-18F2-4E36-A496-34A02C7CB366}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crunchyroll.API", "Crunchyroll.API\Crunchyroll.API.csproj", "{B1A7D98E-2518-4907-B39C-85DB6A25D37E}"
 EndProject
