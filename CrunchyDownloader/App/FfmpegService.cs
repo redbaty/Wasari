@@ -129,7 +129,7 @@ namespace CrunchyDownloader.App
 
         public Task Encode(YoutubeDlResult youtubeDlResult, string newVideoFile, DownloadParameters downloadParameters)
         {
-            return Encode(youtubeDlResult.Episode?.Id, youtubeDlResult.TemporaryEpisodeFile?.Path,
+            return Encode(youtubeDlResult.Episode?.FilePrefix, youtubeDlResult.TemporaryEpisodeFile?.Path,
                 youtubeDlResult.Subtitles?.Select(i => i.Path), newVideoFile, downloadParameters);
         }
 

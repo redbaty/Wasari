@@ -1,4 +1,4 @@
-﻿namespace CrunchyDownloader.Models
+namespace CrunchyDownloader.Models
 {
     public class EpisodeInfo
     {
@@ -10,6 +10,6 @@
 
         public int Number { get; init; }
 
-        public string Id => $"S{SeasonInfo?.Season:00}E{Number:00}";
+        public string FilePrefix => $"S{SeasonInfo?.Season:00}E{Number}";
     }
 }

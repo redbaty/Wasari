@@ -60,13 +60,13 @@ namespace CrunchyDownloader.App
                     Logger.LogProgressUpdate(new ProgressUpdate
                     {
                         Type = ProgressUpdateTypes.Completed,
-                        EpisodeId = youtubeDlResult.Episode?.Id,
+                        EpisodeId = youtubeDlResult.Episode?.FilePrefix,
                         Title = $"[DONE] {Path.GetFileName(episodeFile)}"
                     });
 
                     if (!t.IsCompletedSuccessfully)
                     {
-                        Logger.LogError(t.Exception, "Failed while running encoding for episode {@Id}", youtubeDlResult.Episode?.Id);
+                        Logger.LogError(t.Exception, "Failed while running encoding for episode {@Id}", youtubeDlResult.Episode?.FilePrefix);
                     }
                 }));
             }

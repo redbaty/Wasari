@@ -37,7 +37,7 @@ namespace CrunchyDownloader.App
             var fileSafeName = episodeInfo.Name.AsSafePath();
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
-                $"{episodeInfo.Id} - {fileSafeName}_temp.mkv");
+                $"{episodeInfo.FilePrefix} - {fileSafeName}_temp.mkv");
 
             Logger.LogInformation("Starting download of episode {@Episode} of {@Season}...", episodeInfo.Name,
                 $"Season {episodeInfo.SeasonInfo?.Season}");
@@ -104,7 +104,7 @@ namespace CrunchyDownloader.App
                                         $"[YT-DLP][{currentFile.Type}]({speed}) {Path.GetFileName(currentFile.Path)}",
                                     Type = ProgressUpdateTypes.Current,
                                     Value = (int)parsedPercentage,
-                                    EpisodeId = episodeInfo.Id
+                                    EpisodeId = episodeInfo.FilePrefix
                                 };
 
                                 Logger.LogProgressUpdate(update);
