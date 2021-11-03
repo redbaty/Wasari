@@ -1,4 +1,4 @@
-﻿namespace CrunchyDownloader.Models
+﻿namespace Wasari.Models
 {
     internal class DownloadedFile
     {
