@@ -18,8 +18,6 @@
 
         public bool DeleteTemporaryFiles { get; init; } = true;
 
-        public string UserAgent { get; init; }
-        
         public string TemporaryDirectory { get; init; }
         
         public bool Subtitles { get; set; }

@@ -53,7 +53,6 @@ namespace CrunchyDownloader.App
                     ? null
                     : $"--cookies \"{downloadParameters.CookieFilePath}\"",
                 downloadParameters.Subtitles ? "--all-subs" : null,
-                $"--user-agent \"{downloadParameters.UserAgent}\"",
                 $"\"{episodeInfo.Url}\"",
                 $"-o \"{temporaryEpisodeFile}\""
             }.Where(i => !string.IsNullOrEmpty(i));

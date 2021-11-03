@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -139,7 +139,6 @@ namespace CrunchyDownloader.Commands
                 .ThenBy(i => i.SequenceNumber)
                 .ToList();
             
-            var userAgent = await Browser.GetUserAgentAsync();
             await Browser.DisposeAsync();
 
             var seasonsRange = ParseRange(SeasonsRange, episodes.Select(i => i.SeasonInfo.Season).Max());
@@ -156,7 +155,7 @@ namespace CrunchyDownloader.Commands
                     && i.SequenceNumber <= episodeRange[1])
                 .ToList();
 
-            var downloadParameters = await CreateDownloadParameters(cookieFile, userAgent, seriesInfo);
+            var downloadParameters = await CreateDownloadParameters(cookieFile, seriesInfo);
             if (SkipExistingEpisodes) FilterExistingEpisodes(downloadParameters.OutputDirectory, episodes);
 
             if (episodes.Any())
@@ -202,8 +201,7 @@ namespace CrunchyDownloader.Commands
             Logger.LogInformation("Completed");
         }
 
-        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file,
-            string userAgent, SeriesInfo seriesInfo)
+        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file, SeriesInfo seriesInfo)
         {
             var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
 
@@ -224,7 +222,6 @@ namespace CrunchyDownloader.Commands
                 SubtitleLanguage = SubtitleLanguage,
                 Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
                 OutputDirectory = outputDirectory,
-                UserAgent = userAgent,
                 UseNvidiaAcceleration = isNvidiaAvailable,
                 UseHardwareAcceleration = HardwareAcceleration,
                 ConversionPreset = ConversionPreset,
