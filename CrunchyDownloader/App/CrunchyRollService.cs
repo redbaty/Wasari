@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -88,7 +88,7 @@ namespace CrunchyDownloader.App
             Logger.LogDebug("Navigating to {@Url}", seriesUrl);
             await seriesPage.GoToAsync(seriesUrl);
 
-            Logger.LogDebug("Parsing series page");
+            Logger.LogInformation("Parsing series page {@Url}", seriesUrl);
             await using var titleHandle =
                 await seriesPage.WaitForXPathAsync("//*[@id=\"showview-content-header\"]/div[@class='ch-left']/h1");
 
@@ -102,15 +102,61 @@ namespace CrunchyDownloader.App
             await seriesPage.WaitForXPathAsync("//*[@id=\"sidebar_elements\"]/li[1]/div");
             var id = await seriesPage.EvaluateExpressionAsync<string>(
                 "JSON.parse(document.getElementsByClassName(\"show-actions\")[0]?.attributes['data-contentmedia'].value).mediaId");
-            var episodesDictionary = await CrunchyrollApiService.GetAllEpisodes(id).ToDictionaryAsync(i => i.ThumbnailIds.Single());
-            
-            var seasons = await GetSeasonsInfo(seriesPage, episodesDictionary).ToArrayAsync();
+            var episodesDictionary = await CrunchyrollApiService.GetAllEpisodes(id)
+                .ToDictionaryAsync(i => i.ThumbnailIds.Single());
+
+            var seasons = await GetSeasonsInfo(seriesPage, episodesDictionary).ToListAsync();
+            var specialSeason = CreateSpecialSeason(seasons);
+
+            if (specialSeason.Episodes.Any())
+                seasons.Add(specialSeason);
+
             return new SeriesInfo
             {
                 Name = name,
                 Seasons = seasons,
                 Id = id
             };
+        }
+
+        private static SeasonInfo CreateSpecialSeason(List<SeasonInfo> seasons)
+        {
+            var specialSeason = new SeasonInfo
+            {
+                Episodes = new List<EpisodeInfo>(),
+                Season = 0,
+                Title = "Specials"
+            };
+
+            foreach (var seasonInfo in seasons)
+            {
+                if (seasonInfo.Episodes.Any(o => o.Special))
+                {
+                    var specialEpisodes = seasonInfo.Episodes.Where(i => i.Special).ToArray();
+
+                    foreach (var specialEpisode in specialEpisodes)
+                    {
+                        var currentEpisode = specialSeason.Episodes.Any() ? specialSeason.Episodes.Max(o => o.SequenceNumber) : -1;
+                        var newEpisodeNumber = currentEpisode + 1;
+                        var convertedSpecialEpisode = new EpisodeInfo
+                        {
+                            Id = specialEpisode.Id,
+                            Name = specialEpisode.Name,
+                            Number = newEpisodeNumber.ToString("00"),
+                            Special = true,
+                            Url = specialEpisode.Url,
+                            SeasonInfo = specialSeason,
+                            SequenceNumber = newEpisodeNumber,
+                            ThumbnailId = specialEpisode.ThumbnailId
+                        };
+                        
+                        specialSeason.Episodes.Add(convertedSpecialEpisode);
+                        seasonInfo.Episodes.Remove(specialEpisode);
+                    }
+                }
+            }
+
+            return specialSeason;
         }
 
         private async IAsyncEnumerable<EpisodeInfo> GetEpisodes(ElementHandle seriesHandle,
