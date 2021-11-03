@@ -33,5 +33,11 @@ namespace Crunchyroll.API.Models
 
         [JsonPropertyName("is_clip")]
         public bool IsClip { get; init; }
+        
+        [JsonPropertyName("is_dubbed")]
+        public bool IsDubbed { get; init; }
+        
+        [JsonPropertyName("is_subbed")]
+        public bool IsSubbed { get; init; }
     }
 }

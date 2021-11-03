@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -69,15 +70,11 @@ namespace Crunchyroll.API
                 .SetQueryParam("locale", "en-US");
         }
 
-        public async IAsyncEnumerable<ApiEpisode> GetAllEpisodes(string seriesId)
+        public IAsyncEnumerable<ApiEpisode> GetAllEpisodes(string seriesId)
         {
-            await foreach (var season in GetSeasons(seriesId))
-            {
-                await foreach (var episode in GetEpisodes(season.Id))
-                {
-                    yield return episode;
-                }
-            }
+            return GetSeasons(seriesId)
+                .Where(i => !i.IsDubbed && i.IsSubbed)
+                .SelectMany(season => GetEpisodes(season.Id).Where(i => !i.IsDubbed && i.IsSubbed));
         }
 
         public async IAsyncEnumerable<ApiEpisode> GetEpisodes(string seasonId)

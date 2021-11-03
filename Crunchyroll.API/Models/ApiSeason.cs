@@ -9,5 +9,11 @@ namespace Crunchyroll.API.Models
 
         [JsonPropertyName("title")]
         public string Title { get; init; }
+        
+        [JsonPropertyName("is_dubbed")]
+        public bool IsDubbed { get; init; }
+        
+        [JsonPropertyName("is_subbed")]
+        public bool IsSubbed { get; init; }
     }
 }
