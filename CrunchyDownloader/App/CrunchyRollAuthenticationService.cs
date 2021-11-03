@@ -36,8 +36,9 @@ namespace CrunchyDownloader.App
             var captcha = await loginPage.XPathAsync("//*[@id=\"recaptcha-anchor-label\"]");
             if (captcha.Any())
             {
-                Logger.LogWarning("Please solve the captcha and press any key to continue");
-                Console.ReadLine();
+                const string message = "Captcha was requested, and currently cannot be solved";
+                Logger.LogError(message);
+                throw new InvalidOperationException(message);
             }
 
             await using var loginButton = await loginPage.QuerySelectorAsync("#login_submit_button");
@@ -50,6 +51,8 @@ namespace CrunchyDownloader.App
             {
                 throw new InvalidLoginException(userName, password);
             }
+            
+            Logger.LogInformation("Logged in");
 
             var cookies = await loginPage.GetCookiesAsync();
             var cookieStringBuilder = new StringBuilder();
@@ -76,6 +79,8 @@ namespace CrunchyDownloader.App
                 cookieStringBuilder.Append(Environment.NewLine);
             }
 
+            Logger.LogDebug("Cookie file generated");
+            
             return cookieStringBuilder.ToString();
         }
     }

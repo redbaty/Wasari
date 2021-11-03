@@ -4,14 +4,16 @@ using CliFx.Attributes;
 using CrunchyDownloader.App;
 using CrunchyDownloader.Exceptions;
 using CrunchyDownloader.Models;
+using Microsoft.Extensions.Logging;
 
 namespace CrunchyDownloader.Commands
 {
     public abstract class CrunchyAuthenticatedCommand
     {
-        protected CrunchyAuthenticatedCommand(CrunchyRollAuthenticationService crunchyRollAuthenticationService)
+        protected CrunchyAuthenticatedCommand(CrunchyRollAuthenticationService crunchyRollAuthenticationService, ILogger logger)
         {
             CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
+            Logger = logger;
         }
 
         [CommandOption("username", 'u', Description = "Crunchyroll username.")]
@@ -19,6 +21,8 @@ namespace CrunchyDownloader.Commands
 
         [CommandOption("password", 'p', Description = "Crunchyroll password.")]
         public string Password { get; init; }
+        
+        private ILogger Logger { get; }
 
         protected CrunchyRollAuthenticationService CrunchyRollAuthenticationService { get; }
 
@@ -38,6 +42,9 @@ namespace CrunchyDownloader.Commands
             var cookies = await CrunchyRollAuthenticationService.GetCookies(Username, Password);
             var cookieFileName = Path.GetTempFileName();
             await File.WriteAllTextAsync(cookieFileName, cookies);
+            
+            Logger.LogInformation("Cookie file written to {@FilePath}", cookieFileName);
+            
             return new TemporaryCookieFile { Path = cookieFileName };
         }
     }

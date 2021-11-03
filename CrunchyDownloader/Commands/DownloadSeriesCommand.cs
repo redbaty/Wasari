@@ -23,7 +23,7 @@ namespace CrunchyDownloader.Commands
         public DownloadSeriesCommand(CrunchyRollService crunchyRollService,
             CrunchyRollAuthenticationService crunchyRollAuthenticationService, Browser browser,
             ILogger<DownloadSeriesCommand> logger, YoutubeDlQueueService youtubeDlQueueService, FfmpegQueueService ffmpegQueueService) : base(
-            crunchyRollAuthenticationService)
+            crunchyRollAuthenticationService, logger)
         {
             CrunchyRollService = crunchyRollService;
             Browser = browser;
