@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using CliFx;
@@ -6,6 +6,8 @@ using CrunchyDownloader.App;
 using CrunchyDownloader.Commands;
 using CrunchyDownloader.Models;
 using Microsoft.Extensions.DependencyInjection;
+using PuppeteerExtraSharp;
+using PuppeteerExtraSharp.Plugins.ExtraStealth;
 using PuppeteerSharp;
 using Serilog;
 using Serilog.Events;
@@ -37,10 +39,13 @@ namespace CrunchyDownloader
             Log.Logger.Information("Setting up chrome");
             var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();
-            await using var browser = await Puppeteer.LaunchAsync(
+            var extra = new PuppeteerExtra();
+            extra.Use(new StealthPlugin());   
+            
+            await using var browser = await extra.LaunchAsync(
                 new LaunchOptions
                 {
-                    Headless = false,
+                    Headless = true,
 #if RELEASE
                     Args = new[] {"--no-sandbox"}
 #endif
