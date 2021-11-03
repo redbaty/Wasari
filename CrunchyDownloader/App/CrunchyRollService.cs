@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -129,14 +129,20 @@ namespace CrunchyDownloader.App
                     ? await seasonTitleHandle.GetPropertyValue<string>("title")
                     : string.Empty;
                 await using var imageHandle = await episodeHandle.SingleOrDefaultXPathAsync("./img");
-                await using var srcHandle = await imageHandle.SingleOrDefaultXPathAsync("./@data-thumbnailurl") ?? await imageHandle.SingleOrDefaultXPathAsync("./@src");
+                await using var srcHandle = await imageHandle.SingleOrDefaultXPathAsync("./@data-thumbnailurl") ??
+                                            await imageHandle.SingleOrDefaultXPathAsync("./@src");
                 var srcValue = await srcHandle.GetPropertyValue<string>("value");
                 var name = await imageHandle.GetPropertyValue<string>("alt");
-                
+
                 var thumbnailUrl = Url.ParsePathSegments(srcValue).LastOrDefault();
                 var thumbnailId = thumbnailUrl?[..32];
                 var apiEpisode = episodesDictionary.GetValueOrDefault(thumbnailId);
-                
+
+                if (apiEpisode != null && string.IsNullOrEmpty(seasonsInfo.Id))
+                {
+                    seasonsInfo.Id = apiEpisode.SeasonId;
+                }
+
                 var url = await episodeHandle.GetPropertyValue<string>("href");
                 var episodeUrl = url[url.LastIndexOf("/", StringComparison.Ordinal)..];
                 var episode = episodeUrl.Split('-').Skip(1).First();
@@ -152,15 +158,19 @@ namespace CrunchyDownloader.App
                     ? parsedEpisodeNumber
                     : lastEpisode;
 
+                if (apiEpisode is { IsClip: true })
+                    continue;
+
                 yield return new EpisodeInfo
                 {
                     Name = name,
                     Url = url,
                     SequenceNumber = apiEpisode?.SequenceNumber ?? episodeNumber,
                     ThumbnailId = thumbnailId,
-                    Number = apiEpisode?.Episode ?? apiEpisode?.SequenceNumber.ToString("00") ?? episodeNumber.ToString("00"),
+                    Number = apiEpisode?.SequenceNumber.ToString("00") ?? episodeNumber.ToString("00"),
                     Id = apiEpisode?.Id,
-                    SeasonInfo = seasonsInfo
+                    SeasonInfo = seasonsInfo,
+                    Special = !apiEpisode?.EpisodeNumber.HasValue ?? false
                 };
 
                 lastEpisode++;
