@@ -15,6 +15,8 @@
         public decimal SequenceNumber { get; init; }
         
         public string Number { get; init; }
+        
+        public bool Special { get; init; }
 
         public string FilePrefix => $"S{SeasonInfo?.Season:00}E{Number}";
     }
