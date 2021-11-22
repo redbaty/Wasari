@@ -10,9 +10,12 @@ using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
+using Wasari.Abstractions;
+using Wasari.Abstractions.Extensions;
 using Wasari.App;
+using Wasari.Crunchyroll.Abstractions;
 using Wasari.Exceptions;
-using Wasari.Extensions;
+using Wasari.Ffmpeg;
 using Wasari.Models;
 
 namespace Wasari.Commands
@@ -20,16 +23,15 @@ namespace Wasari.Commands
     [Command]
     internal class DownloadSeriesCommand : CrunchyAuthenticatedCommand, ICommand
     {
-        public DownloadSeriesCommand(CrunchyRollService crunchyRollService,
+        public DownloadSeriesCommand(
             CrunchyRollAuthenticationService crunchyRollAuthenticationService, Browser browser,
-            ILogger<DownloadSeriesCommand> logger, YoutubeDlQueueService youtubeDlQueueService, FfmpegQueueService ffmpegQueueService) : base(
+            ILogger<DownloadSeriesCommand> logger, ISeriesProvider<CrunchyrollSeasonsInfo> crunchyrollSeasonProvider, ISeriesDownloader<CrunchyrollEpisodeInfo> crunchyrollDownloader) : base(
             crunchyRollAuthenticationService, logger)
         {
-            CrunchyRollService = crunchyRollService;
             Browser = browser;
             Logger = logger;
-            YoutubeDlQueueService = youtubeDlQueueService;
-            FfmpegQueueService = ffmpegQueueService;
+            CrunchyrollSeasonProvider = crunchyrollSeasonProvider;
+            CrunchyrollDownloader = crunchyrollDownloader;
         }
 
         [CommandParameter(0, Description = "Series URL.")]
@@ -79,17 +81,15 @@ namespace Wasari.Commands
         [CommandOption("skip-episodes")]
         public bool SkipExistingEpisodes { get; init; } = true;
 
-        private CrunchyRollService CrunchyRollService { get; }
-
         private ILogger<DownloadSeriesCommand> Logger { get; }
         
-        private YoutubeDlQueueService YoutubeDlQueueService { get; }
+        private ISeriesProvider<CrunchyrollSeasonsInfo> CrunchyrollSeasonProvider { get; }
         
-        private FfmpegQueueService FfmpegQueueService { get; }
+        private ISeriesDownloader<CrunchyrollEpisodeInfo> CrunchyrollDownloader { get; }
 
         private Browser Browser { get; }
 
-        private void FilterExistingEpisodes(string outputDirectory, List<EpisodeInfo> episodes)
+        private void FilterExistingEpisodes(string outputDirectory, List<IEpisodeInfo> episodes)
         {
             const string regex = @"S(?<season>\d+)E(?<episode>\d+) -";
 
@@ -131,12 +131,12 @@ namespace Wasari.Commands
 
             using var cookieFile = await CreateCookiesFile();
 
-            var seriesInfo = await CrunchyRollService.GetSeriesInfo(SeriesUrl);
+            var seriesInfo = await CrunchyrollSeasonProvider.GetSeries(SeriesUrl);
 
             var episodes = seriesInfo.Seasons
                 .SelectMany(i => i.Episodes)
                 .OrderBy(i => i.SeasonInfo.Season)
-                .ThenBy(i => i.SequenceNumber)
+                .ThenBy(i => i.Number)
                 .ToList();
             
             await Browser.DisposeAsync();
@@ -154,44 +154,24 @@ namespace Wasari.Commands
                     i.SequenceNumber >= episodeRange[0]
                     && i.SequenceNumber <= episodeRange[1])
                 .ToList();
-
-            var downloadParameters = await CreateDownloadParameters(cookieFile, seriesInfo);
-            if (SkipExistingEpisodes) FilterExistingEpisodes(downloadParameters.OutputDirectory, episodes);
-
-            if (episodes.Any())
-            {
-                var ytDlTask = YoutubeDlQueueService.Start(episodes, downloadParameters, ParallelDownloadPoolSize);
-                var ffmpegTask = FfmpegQueueService.Start(downloadParameters, EpisodeBatchSize);
-                
-                await foreach (var youtubeDlResult in YoutubeDlQueueService.Reader.ReadAllAsync())
-                {
-                    if (downloadParameters.Subtitles || downloadParameters.UseHevc)
-                    {
-                        await FfmpegQueueService.Enqueue(youtubeDlResult);
-                    }
-                    else
-                    {
-                        var finalEpisodeFile = youtubeDlResult.FinalEpisodeFile(downloadParameters);
-                        File.Move(youtubeDlResult.TemporaryEpisodeFile.Path, finalEpisodeFile);
-
-                        Logger.LogProgressUpdate(new ProgressUpdate
-                        {
-                            Type = ProgressUpdateTypes.Completed,
-                            EpisodeId = youtubeDlResult.Episode.FilePrefix,
-                            Title = $"[DONE] {Path.GetFileName(finalEpisodeFile)}"
-                        });
-                    }
-                }
-                
-                FfmpegQueueService.Ended();
-                await ytDlTask;
-                await ffmpegTask;
-            }
-            else
+            
+            //if (SkipExistingEpisodes) FilterExistingEpisodes(downloadParameters.OutputDirectory, episodes);
+            
+            if (!episodes.Any())
             {
                 Logger.LogWarning("No episodes found");
             }
-
+            else
+            {
+                var downloadParameters = await CreateDownloadParameters(cookieFile, seriesInfo);
+                var downloadedFiles = await CrunchyrollDownloader.DownloadEpisodes(episodes, downloadParameters).ToArrayAsync();
+                
+                foreach (var downloadedFile in downloadedFiles)
+                {
+                    Logger.LogDebug("File downloaded to path: {@FilePath} {@Type}", downloadedFile.Path, downloadedFile.Type);
+                }
+            }
+            
             if (cookieFile != null)
             {
                 Logger.LogDebug("Cleaning cookie file {@CookieFile}", cookieFile);
@@ -201,7 +181,7 @@ namespace Wasari.Commands
             Logger.LogInformation("Completed");
         }
 
-        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file, SeriesInfo seriesInfo)
+        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file, ISeriesInfo seriesInfo)
         {
             var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
 
@@ -227,7 +207,9 @@ namespace Wasari.Commands
                 ConversionPreset = ConversionPreset,
                 DeleteTemporaryFiles = CleanTemporaryFiles,
                 UseHevc = ConvertToHevc,
-                TemporaryDirectory = TemporaryDirectory
+                TemporaryDirectory = TemporaryDirectory,
+                ParallelDownloads = ParallelDownloadPoolSize,
+                ParallelMerging = EpisodeBatchSize
             };
         }
 

@@ -4,9 +4,6 @@ using System.Threading.Tasks;
 using CliFx;
 using Crunchyroll.API;
 using Microsoft.Extensions.DependencyInjection;
-using PuppeteerExtraSharp;
-using PuppeteerExtraSharp.Plugins.ExtraStealth;
-using PuppeteerSharp;
 using Serilog;
 using Serilog.Events;
 using Wasari.App;
@@ -37,34 +34,12 @@ namespace Wasari
             if(!konsoleAvailable)
                 Log.Logger.Warning("There isn't enough space available for Konsole, falling back to regular Console sink");
 
-            Log.Logger.Information("Setting up chrome");
-            var browserFetcher = new BrowserFetcher();
-            await browserFetcher.DownloadAsync();
-            var extra = new PuppeteerExtra();
-            extra.Use(new StealthPlugin());   
-            
-            await using var browser = await extra.LaunchAsync(
-                new LaunchOptions
-                {
-                    Headless = true,
-#if RELEASE
-                    Args = new[] {"--no-sandbox"}
-#endif
-                });
-            Log.Logger.Information("Chrome set up");
-
             var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(browser);
             serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
-            serviceCollection.AddTransient<YoutubeDlService>();
-            serviceCollection.AddTransient<FfmpegService>();
-            serviceCollection.AddTransient<CrunchyRollService>();
             serviceCollection.AddTransient<DownloadSeriesCommand>();
-            serviceCollection.AddSingleton<YoutubeDlQueueService>();
-            serviceCollection.AddSingleton<FfmpegQueueService>();
             serviceCollection.AddLogging(c => c.AddSerilog());
             serviceCollection.Configure<ProgressBarOptions>(o => { o.Enabled = true; });
-            serviceCollection.AddCrunchyrollApiService();
+            await serviceCollection.AddCrunchyrollServices();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return await new CliApplicationBuilder()
