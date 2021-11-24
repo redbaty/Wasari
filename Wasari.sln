@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari", "Wasari\Wasari.csproj", "{15D1992A-18F2-4E36-A496-34A02C7CB366}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Crunchyroll", "Wasari.Crunchyroll\Wasari.Crunchyroll.csproj", "{B1A7D98E-2518-4907-B39C-85DB6A25D37E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Abstractions", "Wasari.Abstractions\Wasari.Abstractions.csproj", "{77C167C7-3C70-40B6-8F74-645F82A67FBE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Crunchyroll", "Crunchyroll", "{CAC0D5E1-6F1C-49D7-8BB9-164B45E53C61}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Crunchyroll.Abstractions", "Wasari.Crunchyroll.Abstractions\Wasari.Crunchyroll.Abstractions.csproj", "{E59D6201-0039-4E24-AD01-34C3FCEE277F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Puppeteer", "Wasari.Puppeteer\Wasari.Puppeteer.csproj", "{F6CB1256-8325-4516-BC8C-8103C253B20E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Ffmpeg", "Wasari.Ffmpeg\Wasari.Ffmpeg.csproj", "{B28032EE-3EBF-4FCA-B105-43CAB5353D56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Crunchyroll.API", "Wasari.Crunchyroll.API\Wasari.Crunchyroll.API.csproj", "{4AE9B7C5-B348-41C6-9F1B-FD5AAF4BB153}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{15D1992A-18F2-4E36-A496-34A02C7CB366}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15D1992A-18F2-4E36-A496-34A02C7CB366}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15D1992A-18F2-4E36-A496-34A02C7CB366}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15D1992A-18F2-4E36-A496-34A02C7CB366}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1A7D98E-2518-4907-B39C-85DB6A25D37E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1A7D98E-2518-4907-B39C-85DB6A25D37E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1A7D98E-2518-4907-B39C-85DB6A25D37E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1A7D98E-2518-4907-B39C-85DB6A25D37E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77C167C7-3C70-40B6-8F74-645F82A67FBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77C167C7-3C70-40B6-8F74-645F82A67FBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77C167C7-3C70-40B6-8F74-645F82A67FBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77C167C7-3C70-40B6-8F74-645F82A67FBE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E59D6201-0039-4E24-AD01-34C3FCEE277F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E59D6201-0039-4E24-AD01-34C3FCEE277F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E59D6201-0039-4E24-AD01-34C3FCEE277F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E59D6201-0039-4E24-AD01-34C3FCEE277F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6CB1256-8325-4516-BC8C-8103C253B20E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6CB1256-8325-4516-BC8C-8103C253B20E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6CB1256-8325-4516-BC8C-8103C253B20E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6CB1256-8325-4516-BC8C-8103C253B20E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B28032EE-3EBF-4FCA-B105-43CAB5353D56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B28032EE-3EBF-4FCA-B105-43CAB5353D56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B28032EE-3EBF-4FCA-B105-43CAB5353D56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B28032EE-3EBF-4FCA-B105-43CAB5353D56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4AE9B7C5-B348-41C6-9F1B-FD5AAF4BB153}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AE9B7C5-B348-41C6-9F1B-FD5AAF4BB153}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AE9B7C5-B348-41C6-9F1B-FD5AAF4BB153}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AE9B7C5-B348-41C6-9F1B-FD5AAF4BB153}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B1A7D98E-2518-4907-B39C-85DB6A25D37E} = {CAC0D5E1-6F1C-49D7-8BB9-164B45E53C61}
+		{E59D6201-0039-4E24-AD01-34C3FCEE277F} = {CAC0D5E1-6F1C-49D7-8BB9-164B45E53C61}
+		{4AE9B7C5-B348-41C6-9F1B-FD5AAF4BB153} = {CAC0D5E1-6F1C-49D7-8BB9-164B45E53C61}
+	EndGlobalSection
+EndGlobal

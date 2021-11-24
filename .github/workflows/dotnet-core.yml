@@ -18,9 +18,9 @@ jobs:
       with:
         dotnet-version: 5.0.100
     - name: Build Windows X64
-      run: dotnet publish --configuration Release --self-contained -r win-x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} -o build-win-x64 ./CrunchyDownloader/CrunchyDownloader.csproj
+      run: dotnet publish --configuration Release --self-contained -r win-x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} -o build-win-x64 ./Wasari/Wasari.csproj
     - name: Build Linux X64
-      run: dotnet publish --configuration Release --self-contained -r linux-x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} -o build-linux-x64 ./CrunchyDownloader/CrunchyDownloader.csproj
+      run: dotnet publish --configuration Release --self-contained -r linux-x64 -p:PublishSingleFile=true -p:Version=1.0.${{ github.run_number }} -o build-linux-x64 ./Wasari/Wasari.csproj
     - name: Zip Windows Build
       run: |
         zip -r win-x64.zip build-win-x64

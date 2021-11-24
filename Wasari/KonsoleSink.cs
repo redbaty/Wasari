@@ -4,6 +4,8 @@ using System.Linq;
 using Konsole;
 using Serilog.Core;
 using Serilog.Events;
+using Wasari.Abstractions;
+using Wasari.Abstractions.Extensions;
 using Wasari.App;
 
 namespace Wasari
