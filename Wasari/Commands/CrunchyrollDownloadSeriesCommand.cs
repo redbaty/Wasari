@@ -20,40 +20,33 @@ using Wasari.Models;
 
 namespace Wasari.Commands
 {
-    [Command]
-    internal class DownloadSeriesCommand : CrunchyAuthenticatedCommand, ICommand
+    [Command("crunchy")]
+    internal class CrunchyrollDownloadSeriesCommand : CommonDownloadCommand, ICommand
     {
-        public DownloadSeriesCommand(
+        public CrunchyrollDownloadSeriesCommand(
             CrunchyRollAuthenticationService crunchyRollAuthenticationService, Browser browser,
-            ILogger<DownloadSeriesCommand> logger, ISeriesProvider<CrunchyrollSeasonsInfo> crunchyrollSeasonProvider, ISeriesDownloader<CrunchyrollEpisodeInfo> crunchyrollDownloader) : base(
-            crunchyRollAuthenticationService, logger)
+            ILogger<CrunchyrollDownloadSeriesCommand> logger,
+            ISeriesProvider<CrunchyrollSeasonsInfo> crunchyrollSeasonProvider,
+            ISeriesDownloader<CrunchyrollEpisodeInfo> crunchyrollDownloader)
         {
+            CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
             Browser = browser;
             Logger = logger;
             CrunchyrollSeasonProvider = crunchyrollSeasonProvider;
             CrunchyrollDownloader = crunchyrollDownloader;
         }
+        
+        private CrunchyRollAuthenticationService CrunchyRollAuthenticationService { get; }
 
         [CommandParameter(0, Description = "Series URL.")]
         public string SeriesUrl { get; init; }
 
-        [CommandOption("create-subdir", 'c')]
-        public bool CreateSubdirectory { get; init; } = true;
+        [CommandOption("username", 'u', Description = "Crunchyroll username.")]
+        public string Username { get; init; }
 
-        [CommandOption("output-directory", 'o')]
-        public string OutputDirectory { get; init; } = Directory.GetCurrentDirectory();
-
-        [CommandOption("sub")]
-        public bool Subtitles { get; init; } = true;
-
-        [CommandOption("sub-language", 'l')]
-        public string SubtitleLanguage { get; init; }
-
-        [CommandOption("batch", 'b')]
-        public int EpisodeBatchSize { get; init; } = 3;
+        [CommandOption("password", 'p', Description = "Crunchyroll password.")]
+        public string Password { get; init; }
         
-        public int ParallelDownloadPoolSize { get; init; } = 3;
-
         [CommandOption("episodes", 'e')]
         public string EpisodeRange { get; init; }
 
@@ -81,15 +74,94 @@ namespace Wasari.Commands
         [CommandOption("skip-episodes")]
         public bool SkipExistingEpisodes { get; init; } = true;
 
-        private ILogger<DownloadSeriesCommand> Logger { get; }
-        
+        private ILogger<CrunchyrollDownloadSeriesCommand> Logger { get; }
+
         private ISeriesProvider<CrunchyrollSeasonsInfo> CrunchyrollSeasonProvider { get; }
-        
+
         private ISeriesDownloader<CrunchyrollEpisodeInfo> CrunchyrollDownloader { get; }
 
         private Browser Browser { get; }
 
-        private void FilterExistingEpisodes(string outputDirectory, List<IEpisodeInfo> episodes)
+        public async ValueTask ExecuteAsync(IConsole console)
+        {
+            var isValidSeriesUrl = IsValidSeriesUrl();
+
+            if (!isValidSeriesUrl)
+                throw new CommandException("The URL provided doesnt seem to be a crunchyroll SERIES page URL.");
+
+            using var cookieFile = await CreateCookiesFile();
+
+            var seriesInfo = await CrunchyrollSeasonProvider.GetSeries(SeriesUrl);
+
+            var episodes = seriesInfo.Seasons
+                .SelectMany(i => i.Episodes)
+                .OrderBy(i => i.SeasonInfo.Season)
+                .ThenBy(i => i.Number)
+                .ToList();
+
+            await Browser.DisposeAsync();
+
+            var seasonsRange = ParseRange(SeasonsRange, episodes.Select(i => i.SeasonInfo.Season).Max());
+            Logger.LogInformation("Seasons range is {@Range}", seasonsRange);
+            episodes = episodes.Where(i =>
+                    i.SeasonInfo.Season >= seasonsRange[0]
+                    && i.SeasonInfo.Season <= seasonsRange[1])
+                .ToList();
+
+            var episodeRange = ParseRange(EpisodeRange, (int)episodes.Select(i => i.SequenceNumber).Max());
+            Logger.LogInformation("Episodes range is {@Range}", episodeRange);
+            episodes = episodes.Where(i =>
+                    i.SequenceNumber >= episodeRange[0]
+                    && i.SequenceNumber <= episodeRange[1])
+                .ToList();
+
+            var downloadParameters = await CreateDownloadParameters(cookieFile, seriesInfo);
+            if (SkipExistingEpisodes) FilterExistingEpisodes(downloadParameters.OutputDirectory, episodes);
+
+            if (!episodes.Any())
+            {
+                Logger.LogWarning("No episodes found");
+            }
+            else
+            {
+                
+                var downloadedFiles = await CrunchyrollDownloader.DownloadEpisodes(episodes, downloadParameters)
+                    .ToArrayAsync();
+
+                foreach (var downloadedFile in downloadedFiles)
+                    Logger.LogDebug("File downloaded to path: {@FilePath} {@Type}", downloadedFile.Path,
+                        downloadedFile.Type);
+            }
+
+            if (cookieFile != null)
+            {
+                Logger.LogDebug("Cleaning cookie file {@CookieFile}", cookieFile);
+                cookieFile?.Dispose();
+            }
+
+            Logger.LogInformation("Completed");
+        }
+
+        private async Task<TemporaryCookieFile> CreateCookiesFile()
+        {
+            if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password)) return null;
+
+            if (string.IsNullOrEmpty(Username))
+                throw new CrunchyrollAuthenticationException("Missing username", Username, Password);
+
+            if (string.IsNullOrEmpty(Password))
+                throw new CrunchyrollAuthenticationException("Missing password", Username, Password);
+
+            var cookies = await CrunchyRollAuthenticationService.GetCookies(Username, Password);
+            var cookieFileName = Path.GetTempFileName();
+            await File.WriteAllTextAsync(cookieFileName, cookies);
+
+            Logger.LogInformation("Cookie file written to {@FilePath}", cookieFileName);
+
+            return new TemporaryCookieFile { Path = cookieFileName };
+        }
+
+        private void FilterExistingEpisodes(string outputDirectory, List<CrunchyrollEpisodeInfo> episodes)
         {
             const string regex = @"S(?<season>\d+)E(?<episode>\d+) -";
 
@@ -112,7 +184,8 @@ namespace Wasari.Commands
         {
             if (Uri.TryCreate(SeriesUrl, UriKind.Absolute, out var parsedUri))
             {
-                var crunchyHost = parsedUri.Host.EndsWith("crunchyroll.com", StringComparison.InvariantCultureIgnoreCase);
+                var crunchyHost =
+                    parsedUri.Host.EndsWith("crunchyroll.com", StringComparison.InvariantCultureIgnoreCase);
                 var rightSegmentsCount = parsedUri.Segments.Length >= 2;
                 return crunchyHost && rightSegmentsCount;
             }
@@ -120,75 +193,15 @@ namespace Wasari.Commands
             return true;
         }
 
-        public async ValueTask ExecuteAsync(IConsole console)
-        {
-            var isValidSeriesUrl = IsValidSeriesUrl();
-
-            if (!isValidSeriesUrl)
-            {
-                throw new CommandException("The URL provided doesnt seem to be a crunchyroll SERIES page URL.", 1);
-            }
-
-            using var cookieFile = await CreateCookiesFile();
-
-            var seriesInfo = await CrunchyrollSeasonProvider.GetSeries(SeriesUrl);
-
-            var episodes = seriesInfo.Seasons
-                .SelectMany(i => i.Episodes)
-                .OrderBy(i => i.SeasonInfo.Season)
-                .ThenBy(i => i.Number)
-                .ToList();
-            
-            await Browser.DisposeAsync();
-
-            var seasonsRange = ParseRange(SeasonsRange, episodes.Select(i => i.SeasonInfo.Season).Max());
-            Logger.LogInformation("Seasons range is {@Range}", seasonsRange);
-            episodes = episodes.Where(i =>
-                    i.SeasonInfo.Season >= seasonsRange[0]
-                    && i.SeasonInfo.Season <= seasonsRange[1])
-                .ToList();
-
-            var episodeRange = ParseRange(EpisodeRange, (int)episodes.Select(i => i.SequenceNumber).Max());
-            Logger.LogInformation("Episodes range is {@Range}", episodeRange);
-            episodes = episodes.Where(i =>
-                    i.SequenceNumber >= episodeRange[0]
-                    && i.SequenceNumber <= episodeRange[1])
-                .ToList();
-            
-            //if (SkipExistingEpisodes) FilterExistingEpisodes(downloadParameters.OutputDirectory, episodes);
-            
-            if (!episodes.Any())
-            {
-                Logger.LogWarning("No episodes found");
-            }
-            else
-            {
-                var downloadParameters = await CreateDownloadParameters(cookieFile, seriesInfo);
-                var downloadedFiles = await CrunchyrollDownloader.DownloadEpisodes(episodes, downloadParameters).ToArrayAsync();
-                
-                foreach (var downloadedFile in downloadedFiles)
-                {
-                    Logger.LogDebug("File downloaded to path: {@FilePath} {@Type}", downloadedFile.Path, downloadedFile.Type);
-                }
-            }
-            
-            if (cookieFile != null)
-            {
-                Logger.LogDebug("Cleaning cookie file {@CookieFile}", cookieFile);
-                cookieFile?.Dispose();
-            }
-
-            Logger.LogInformation("Completed");
-        }
-
-        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file, ISeriesInfo seriesInfo)
+        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file,
+            ISeriesInfo seriesInfo)
         {
             var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
 
             var safeSeriesName = seriesInfo.Name.AsSafePath();
-            
+
             var outputDirectory = CreateSubdirectory
                 ? Path.Combine(OutputDirectory, safeSeriesName)
                 : OutputDirectory;
@@ -238,10 +251,7 @@ namespace Wasari.Commands
                     return new[] { int.Parse(episodesNumbers[0]), max };
             }
 
-            if (int.TryParse(range, out var episode))
-            {
-                return new[] { episode, episode };
-            }
+            if (int.TryParse(range, out var episode)) return new[] { episode, episode };
 
             throw new InvalidOperationException($"Invalid episode range. {range}");
         }

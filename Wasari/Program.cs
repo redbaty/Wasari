@@ -2,12 +2,12 @@
 using System.IO;
 using System.Threading.Tasks;
 using CliFx;
-using Crunchyroll.API;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
 using Wasari.App;
 using Wasari.Commands;
+using Wasari.Crunchyroll;
 using Wasari.Models;
 
 namespace Wasari
@@ -36,14 +36,14 @@ namespace Wasari
 
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
-            serviceCollection.AddTransient<DownloadSeriesCommand>();
+            serviceCollection.AddTransient<CrunchyrollDownloadSeriesCommand>();
             serviceCollection.AddLogging(c => c.AddSerilog());
             serviceCollection.Configure<ProgressBarOptions>(o => { o.Enabled = true; });
             await serviceCollection.AddCrunchyrollServices();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return await new CliApplicationBuilder()
-                .AddCommand<DownloadSeriesCommand>()
+                .AddCommand<CrunchyrollDownloadSeriesCommand>()
                 .UseTypeActivator(serviceProvider.GetService)
                 .Build()
                 .RunAsync();
