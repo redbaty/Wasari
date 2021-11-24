@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll.API
 {
     internal class CrunchyrollApiAuthenticationService
     {

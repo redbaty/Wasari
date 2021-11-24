@@ -6,13 +6,13 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
-using Crunchyroll.API.Extensions;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
 using Wasari.Crunchyroll.Abstractions;
+using Wasari.Crunchyroll.Extensions;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll
 {
     internal class YoutubeDlService
     {

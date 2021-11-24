@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll
 {
     public sealed class CookieFileNotFoundException : FileNotFoundException
     {

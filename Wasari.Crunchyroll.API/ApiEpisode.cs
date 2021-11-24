@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
-using Crunchyroll.API.Converters;
+using Wasari.Crunchyroll.API.Converters;
 
-namespace Crunchyroll.API.Models
+namespace Wasari.Crunchyroll.API
 {
     public class ApiEpisode
     {

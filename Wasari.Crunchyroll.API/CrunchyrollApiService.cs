@@ -4,13 +4,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Crunchyroll.API.Models;
 using Flurl;
 using JsonExtensions.Http;
 using JsonExtensions.Reading;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll.API
 {
     public class CrunchyrollApiService
     {
@@ -62,7 +61,7 @@ namespace Crunchyroll.API
         private async Task<Url> BuildUrlFromSignature(string endpoint)
         {
             var signature = await GetApiSignature();
-            return $"cms/v2/"
+            return "cms/v2/"
                 .AppendPathSegments(signature.Bucket, endpoint)
                 .SetQueryParam("Policy", signature.Policy)
                 .SetQueryParam("Signature", signature.Signature)

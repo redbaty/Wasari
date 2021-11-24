@@ -1,14 +1,14 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PuppeteerExtraSharp;
 using PuppeteerExtraSharp.Plugins.ExtraStealth;
 using PuppeteerSharp;
 using Wasari.Abstractions;
 using Wasari.Crunchyroll.Abstractions;
+using Wasari.Crunchyroll.API;
 using Wasari.Ffmpeg;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll
 {
     public static class AppExtensions
     {
@@ -35,16 +35,7 @@ namespace Crunchyroll.API
             serviceCollection.AddFfmpegServices();
             serviceCollection.AddSingleton<YoutubeDlQueueService>();
             serviceCollection.AddSingleton<FfmpegQueueService>();
-            serviceCollection.AddHttpClient<CrunchyrollApiAuthenticationService>(c =>
-            {
-                c.BaseAddress = new Uri("https://beta-api.crunchyroll.com/");
-                c.DefaultRequestHeaders.Add("Authorization",
-                    "Basic a3ZvcGlzdXZ6Yy0teG96Y21kMXk6R21JSTExenVPVnRnTjdlSWZrSlpibzVuLTRHTlZ0cU8=");
-            });
-            serviceCollection.AddHttpClient<CrunchyrollApiService>(c =>
-            {
-                c.BaseAddress = new Uri("https://beta-api.crunchyroll.com/");
-            });
+            serviceCollection.AddCrunchyrollApiServices();
         }
     }
 }

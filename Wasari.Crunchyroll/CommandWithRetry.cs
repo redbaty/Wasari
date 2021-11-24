@@ -5,7 +5,7 @@ using CliWrap;
 using CliWrap.EventStream;
 using Microsoft.Extensions.Logging;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll
 {
     internal class CommandWithRetry
     {

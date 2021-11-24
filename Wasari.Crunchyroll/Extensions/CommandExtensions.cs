@@ -3,7 +3,7 @@ using CliWrap;
 using CliWrap.EventStream;
 using Microsoft.Extensions.Logging;
 
-namespace Crunchyroll.API.Extensions
+namespace Wasari.Crunchyroll.Extensions
 {
     internal static class CommandExtensions
     {

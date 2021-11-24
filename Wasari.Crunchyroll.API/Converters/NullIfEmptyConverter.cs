@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Crunchyroll.API.Converters
+namespace Wasari.Crunchyroll.API.Converters
 {
     internal class NullIfEmptyConverter : JsonConverter<string>
     {

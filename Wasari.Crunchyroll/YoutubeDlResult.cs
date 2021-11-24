@@ -5,7 +5,7 @@ using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
 using Wasari.Crunchyroll.Abstractions;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll
 {
     internal class YoutubeDlResult
     {

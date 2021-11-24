@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Crunchyroll.API.Models
+namespace Wasari.Crunchyroll.API
 {
     public class ApiSeason
     {
@@ -15,5 +15,8 @@ namespace Crunchyroll.API.Models
         
         [JsonPropertyName("is_subbed")]
         public bool IsSubbed { get; init; }
+        
+        [JsonPropertyName("season_number")]
+        public int Number { get; init; }
     }
 }

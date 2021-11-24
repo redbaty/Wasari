@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Wasari.Abstractions;
 using Wasari.Ffmpeg;
 
-namespace Crunchyroll.API.Extensions
+namespace Wasari.Crunchyroll.Extensions
 {
     internal static class FfmpegServiceExtensions
     {

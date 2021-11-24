@@ -1,4 +1,4 @@
-﻿namespace Crunchyroll.API.Models
+﻿namespace Wasari.Crunchyroll.API
 {
     internal class ApiSignature
     {

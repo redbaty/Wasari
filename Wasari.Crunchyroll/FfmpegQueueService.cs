@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Crunchyroll.API.Extensions;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
+using Wasari.Crunchyroll.Extensions;
 using Wasari.Ffmpeg;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll
 {
     internal class FfmpegQueueService
     {

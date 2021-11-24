@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Wasari.Abstractions;
 using Wasari.Crunchyroll.Abstractions;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll
 {
     internal class YoutubeDlQueueService
     {

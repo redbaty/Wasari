@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Crunchyroll.API
+namespace Wasari.Crunchyroll
 {
     public sealed class CommandFailedException : Exception
     {
