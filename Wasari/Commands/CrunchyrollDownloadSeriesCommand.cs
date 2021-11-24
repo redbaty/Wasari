@@ -100,6 +100,12 @@ namespace Wasari.Commands
                 .ToList();
 
             await Browser.DisposeAsync();
+            
+            if (!episodes.Any())
+            {
+                Logger.LogWarning("No episodes found");
+                return;
+            }
 
             var seasonsRange = ParseRange(SeasonsRange, episodes.Select(i => i.SeasonInfo.Season).Max());
             Logger.LogInformation("Seasons range is {@Range}", seasonsRange);
