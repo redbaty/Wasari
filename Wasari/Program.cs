@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CliFx;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,10 +20,12 @@ namespace Wasari
             Console.CursorVisible = false;
             var loggerConfiguration = new LoggerConfiguration();
 
-            var konsoleAvailable = KonsoleSink.AvailableHeight > 10;
+            var konsoleAvailable = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && KonsoleSink.AvailableHeight > 10;
             loggerConfiguration = konsoleAvailable
                 ? loggerConfiguration.WriteTo.Sink<KonsoleSink>()
-                : loggerConfiguration.WriteTo.Console();
+                : loggerConfiguration.WriteTo.Console()
+                    .Filter
+                    .ByIncludingOnly(i => i.Level != LogEventLevel.Information || !i.MessageTemplate.Text.StartsWith("[Progress Update]"));
 
             Log.Logger = loggerConfiguration
                 .WriteTo.File(
@@ -30,9 +33,9 @@ namespace Wasari
                         "Wasari", "logs", "log.txt"), rollingInterval: RollingInterval.Day,
                     restrictedToMinimumLevel: LogEventLevel.Verbose)
                 .CreateLogger();
-            
-            if(!konsoleAvailable)
-                Log.Logger.Warning("There isn't enough space available for Konsole, falling back to regular Console sink");
+
+            if (!konsoleAvailable)
+                Log.Logger.Warning("Konsole isn't available, falling back to regular Console sink");
 
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
