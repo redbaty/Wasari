@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -67,7 +68,8 @@ namespace Wasari.Crunchyroll
                     {
                         if (standardOutputCommandEvent.Text.StartsWith("[info] Writing video subtitles to:"))
                         {
-                            var path = Regex.Match(standardOutputCommandEvent.Text, @"[A-Z]\:\\.*").Value;
+                            var path = standardOutputCommandEvent.Text[35..].Trim();
+
                             files.Add(new DownloadedFile
                             {
                                 Type = FileType.Subtitle,
@@ -76,7 +78,7 @@ namespace Wasari.Crunchyroll
                         }
                         else if (standardOutputCommandEvent.Text.StartsWith("[download] Destination:"))
                         {
-                            var path = Regex.Match(standardOutputCommandEvent.Text, @"[A-Z]\:\\.*").Value;
+                            var path = standardOutputCommandEvent.Text[24..].Trim();
                             var extension = Path.GetExtension(path);
 
                             files.Add(new DownloadedFile
@@ -114,6 +116,12 @@ namespace Wasari.Crunchyroll
             files = files.GroupBy(i => new { i.Path, i.Type })
                 .Select(i => i.First())
                 .ToList();
+
+            var filesNotFound = files.Where(i => File.Exists(i.Path)).Select(i => new FileNotFoundException(i.Path)).ToArray();
+            if (filesNotFound.Any())
+            {
+                throw new AggregateException($"Invalid download(s) destination parsed from yt-dlp.", filesNotFound.Cast<Exception>());
+            }
 
             return new YoutubeDlResult
             {
