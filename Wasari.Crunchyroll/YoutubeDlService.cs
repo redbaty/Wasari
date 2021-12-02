@@ -117,7 +117,7 @@ namespace Wasari.Crunchyroll
                 .Select(i => i.First())
                 .ToList();
 
-            var filesNotFound = files.Where(i => File.Exists(i.Path)).Select(i => new FileNotFoundException(i.Path)).ToArray();
+            var filesNotFound = files.Where(i => !File.Exists(i.Path)).Select(i => new FileNotFoundException(i.Path)).ToArray();
             if (filesNotFound.Any())
             {
                 throw new AggregateException($"Invalid download(s) destination parsed from yt-dlp.", filesNotFound.Cast<Exception>());
