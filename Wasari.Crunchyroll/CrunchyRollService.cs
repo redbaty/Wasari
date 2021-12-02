@@ -100,7 +100,7 @@ namespace Wasari.Crunchyroll
             return new CrunchyrollSeriesInfo
             {
                 Name = name,
-                Seasons = seasons,
+                Seasons = seasons.OrderBy(i => i.Season).ToArray(),
                 Id = id
             };
         }

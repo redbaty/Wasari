@@ -40,6 +40,7 @@ namespace Wasari
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
             serviceCollection.AddTransient<CrunchyrollDownloadSeriesCommand>();
+            serviceCollection.AddTransient<CrunchyrollListSeriesCommand>();
             serviceCollection.AddLogging(c => c.AddSerilog());
             serviceCollection.Configure<ProgressBarOptions>(o => { o.Enabled = true; });
             await serviceCollection.AddCrunchyrollServices();
@@ -47,6 +48,7 @@ namespace Wasari
 
             return await new CliApplicationBuilder()
                 .AddCommand<CrunchyrollDownloadSeriesCommand>()
+                .AddCommand<CrunchyrollListSeriesCommand>()
                 .UseTypeActivator(serviceProvider.GetService)
                 .Build()
                 .RunAsync();
