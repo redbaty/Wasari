@@ -33,7 +33,7 @@ namespace Wasari.Crunchyroll
             IReadOnlyDictionary<string, ApiEpisode> episodesDictionary, string seriesId)
         {
             var seasons = await CrunchyrollApiService.GetSeasons(seriesId).ToDictionaryAsync(i => i.Id);
-            var episodes = await GetEpisodes(seriesPage, episodesDictionary).ToArrayAsync();
+            var episodes = await GetEpisodes(seriesPage, episodesDictionary).OrderBy(i => i.Number).ToArrayAsync();
 
             foreach (var episodesGroupedBySeason in episodes.GroupBy(i => i.SeasonId))
             {
@@ -118,7 +118,7 @@ namespace Wasari.Crunchyroll
             {
                 if (seasonInfo.Episodes.Any(o => o.Special))
                 {
-                    var specialEpisodes = seasonInfo.Episodes.Where(i => i.Special).ToArray();
+                    var specialEpisodes = seasonInfo.Episodes.Where(i => i.Special).OrderBy(i => i.Number).ToArray();
 
                     foreach (var specialEpisode in specialEpisodes)
                     {
