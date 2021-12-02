@@ -17,9 +17,10 @@ namespace Wasari.Commands
         [CommandOption("sub-language", 'l')]
         public string SubtitleLanguage { get; init; }
 
-        [CommandOption("batch", 'b')]
-        public int EpisodeBatchSize { get; init; } = 3;
+        [CommandOption("encoding-pool", 'b')]
+        public int EncodingPoolSize { get; init; } = 3;
 
-        public int ParallelDownloadPoolSize { get; init; } = 3;
+        [CommandOption("download-pool", 'd')]
+        public int DownloadPoolSize { get; init; } = 3;
     }
 }

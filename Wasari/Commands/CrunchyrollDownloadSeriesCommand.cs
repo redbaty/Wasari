@@ -227,8 +227,8 @@ namespace Wasari.Commands
                 DeleteTemporaryFiles = CleanTemporaryFiles,
                 UseHevc = ConvertToHevc,
                 TemporaryDirectory = TemporaryDirectory,
-                ParallelDownloads = ParallelDownloadPoolSize,
-                ParallelMerging = EpisodeBatchSize
+                ParallelDownloads = DownloadPoolSize,
+                ParallelMerging = EncodingPoolSize
             };
         }
 
