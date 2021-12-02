@@ -28,11 +28,11 @@ internal class CrunchyrollListSeriesCommand : ICommand
         
         foreach (var crunchyrollSeasonsInfo in seriesInfo.Seasons)
         {
-            await console.Output.WriteLineAsync($"* {crunchyrollSeasonsInfo.Title}");
+            await console.Output.WriteLineAsync($"* [{crunchyrollSeasonsInfo.Season:00}] {crunchyrollSeasonsInfo.Title}");
 
             foreach (var crunchyrollEpisodeInfo in crunchyrollSeasonsInfo.Episodes)
             {
-                await console.Output.WriteLineAsync($"\t [{crunchyrollEpisodeInfo.Number}]{crunchyrollEpisodeInfo.Name}");
+                await console.Output.WriteLineAsync($"\t [{crunchyrollEpisodeInfo.Number}] {crunchyrollEpisodeInfo.Name}");
             }
         }
     }
