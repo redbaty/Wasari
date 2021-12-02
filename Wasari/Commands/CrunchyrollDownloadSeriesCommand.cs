@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -84,6 +85,7 @@ namespace Wasari.Commands
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
+            var stopwatch = Stopwatch.StartNew();
             var isValidSeriesUrl = IsValidSeriesUrl();
 
             if (!isValidSeriesUrl)
@@ -145,7 +147,8 @@ namespace Wasari.Commands
                 cookieFile?.Dispose();
             }
 
-            Logger.LogInformation("Completed");
+            stopwatch.Stop();
+            Logger.LogInformation("Completed. Time Elapsed {@TimeElapsed}", stopwatch.Elapsed);
         }
 
         private async Task<TemporaryCookieFile> CreateCookiesFile()
