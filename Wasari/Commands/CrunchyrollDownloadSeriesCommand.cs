@@ -10,6 +10,7 @@ using CliFx.Attributes;
 using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
@@ -18,6 +19,7 @@ using Wasari.Crunchyroll.Abstractions;
 using Wasari.Exceptions;
 using Wasari.Ffmpeg;
 using Wasari.Models;
+using WasariEnvironment;
 
 namespace Wasari.Commands
 {
@@ -28,15 +30,17 @@ namespace Wasari.Commands
             CrunchyRollAuthenticationService crunchyRollAuthenticationService, Browser browser,
             ILogger<CrunchyrollDownloadSeriesCommand> logger,
             ISeriesProvider<CrunchyrollSeasonsInfo> crunchyrollSeasonProvider,
-            ISeriesDownloader<CrunchyrollEpisodeInfo> crunchyrollDownloader)
+            ISeriesDownloader<CrunchyrollEpisodeInfo> crunchyrollDownloader,
+            EnvironmentService environmentService)
         {
             CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
             Browser = browser;
             Logger = logger;
             CrunchyrollSeasonProvider = crunchyrollSeasonProvider;
             CrunchyrollDownloader = crunchyrollDownloader;
+            EnvironmentService = environmentService;
         }
-        
+
         private CrunchyRollAuthenticationService CrunchyRollAuthenticationService { get; }
 
         [CommandParameter(0, Description = "Series URL.")]
@@ -47,7 +51,7 @@ namespace Wasari.Commands
 
         [CommandOption("password", 'p', Description = "Crunchyroll password.")]
         public string Password { get; init; }
-        
+
         [CommandOption("episodes", 'e')]
         public string EpisodeRange { get; init; }
 
@@ -81,10 +85,14 @@ namespace Wasari.Commands
 
         private ISeriesDownloader<CrunchyrollEpisodeInfo> CrunchyrollDownloader { get; }
 
+        private EnvironmentService EnvironmentService { get; }
+
         private Browser Browser { get; }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
+            EnvironmentService.ThrowIfFeatureNotAvailable(EnvironmentFeature.Ffmpeg, EnvironmentFeature.YtDlp);
+
             var stopwatch = Stopwatch.StartNew();
             var isValidSeriesUrl = IsValidSeriesUrl();
 
@@ -102,7 +110,7 @@ namespace Wasari.Commands
                 .ToList();
 
             await Browser.DisposeAsync();
-            
+
             if (!episodes.Any())
             {
                 Logger.LogWarning("No episodes found");
@@ -132,7 +140,6 @@ namespace Wasari.Commands
             }
             else
             {
-                
                 var downloadedFiles = await CrunchyrollDownloader.DownloadEpisodes(episodes, downloadParameters)
                     .ToArrayAsync();
 
@@ -205,7 +212,7 @@ namespace Wasari.Commands
         private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file,
             ISeriesInfo seriesInfo)
         {
-            var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable();
+            var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable() && EnvironmentService.IsFeatureAvailable(EnvironmentFeature.NvidiaGpu);
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
 
