@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -51,7 +51,8 @@ namespace Wasari
             serviceCollection.Configure<ProgressBarOptions>(o => o.Enabled = true);
             await serviceCollection.AddEnvironmentServices();
             await serviceCollection.AddCrunchyrollServices();
-            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            await using var serviceProvider = serviceCollection.BuildServiceProvider();
 
             return await new CliApplicationBuilder()
                 .AddCommand<CrunchyrollDownloadSeriesCommand>()
