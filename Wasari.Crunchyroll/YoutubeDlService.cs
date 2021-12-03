@@ -38,8 +38,7 @@ namespace Wasari.Crunchyroll
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
                 $"{episodeInfo.FilePrefix} - {fileSafeName}_temp.mkv");
 
-            Logger.LogInformation("Starting download of episode {@Episode} of {@Season}...", episodeInfo.Name,
-                $"Season {episodeInfo.SeasonInfo?.Season}");
+            Logger.LogInformation("Download of episode {@Episode} started", episodeInfo.FilePrefix);
 
             var arguments = new[]
             {
@@ -88,7 +87,7 @@ namespace Wasari.Crunchyroll
                             });
                         }
                         else if (standardOutputCommandEvent.Text.StartsWith("[download]") &&
-                                 standardOutputCommandEvent.Text.Contains("%"))
+                                 standardOutputCommandEvent.Text.Contains('%'))
                         {
                             if (standardOutputCommandEvent.Text.GetValueFromRegex<double>(@"(\d+\.\d+)%",
                                     out var parsedPercentage) &&
@@ -122,6 +121,8 @@ namespace Wasari.Crunchyroll
             {
                 throw new AggregateException($"Invalid download(s) destination parsed from yt-dlp.", filesNotFound.Cast<Exception>());
             }
+            
+            Logger.LogInformation("Download of episode {@Episode} ended", $"{episodeInfo.FilePrefix}");
 
             return new YoutubeDlResult
             {

@@ -137,6 +137,7 @@ namespace Wasari.Ffmpeg
             };
 
             Logger.LogProgressUpdate(update);
+            Logger.LogInformation("Encoding of episode {@Episode} started", episodeId);
 
             var mediaAnalysis = await FFProbe.AnalyseAsync(videoFile);
 
@@ -188,8 +189,7 @@ namespace Wasari.Ffmpeg
 
             stopwatch.Stop();
 
-            Logger.LogInformation("Merging {@OriginalVideoFile} with {@Subtitles} to {@NewVideoFile} took {@Elapsed}",
-                videoFile, subtitlesFiles, newVideoFile, stopwatch.Elapsed);
+            Logger.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId, newVideoFile, stopwatch.Elapsed);
         }
     }
 }
