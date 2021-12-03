@@ -35,5 +35,5 @@ jobs:
         prerelease: false
         title: 'Build #${{ github.run_number }}'
         files: |
-          "build-win-x64/Wasari.exe"
-          "build-win-x64/Wasari"
+          build-win-x64/Wasari.exe
+          build-linux-x64/Wasari
