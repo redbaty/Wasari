@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -17,13 +17,14 @@ namespace Wasari
 {
     internal static class Program
     {
-        private static async Task<int> Main()
+        private static async Task<int> Main(string[] args)
         {
             Console.CursorVisible = false;
             var loggerConfiguration = new LoggerConfiguration();
 
             var konsoleAvailable =
-                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && KonsoleSink.AvailableHeight > 10;
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && KonsoleSink.AvailableHeight > 10 && args.All(i => i != "-nk");
+
             loggerConfiguration = konsoleAvailable
                 ? loggerConfiguration.WriteTo.Sink<KonsoleSink>()
                 : loggerConfiguration.WriteTo.Console()
@@ -57,7 +58,7 @@ namespace Wasari
                 .AddCommand<CrunchyrollListSeriesCommand>()
                 .UseTypeActivator(serviceProvider.GetService)
                 .Build()
-                .RunAsync();
+                .RunAsync(args.Where(i => i != "-nk").ToArray());
         }
     }
 }
