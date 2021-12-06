@@ -35,13 +35,13 @@ public static class EnvironmentFeatureFinder
 
     public static async IAsyncEnumerable<EnvironmentFeature> GetEnvironmentFeatures()
     {
-        if (await IsProgramAvailable("yt-dlp", "--version"))
+        if (await IsProgramAvailable("yt-dlp", "--version").DefaultsToFalse())
             yield return EnvironmentFeature.YtDlp;
 
-        if (await IsProgramAvailable("ffmpeg", "-version"))
+        if (await IsProgramAvailable("ffmpeg", "-version").DefaultsToFalse())
             yield return EnvironmentFeature.Ffmpeg;
 
-        if (await IsProgramAvailable("nvidia-smi", null))
+        if (await IsProgramAvailable("nvidia-smi", null).DefaultsToFalse())
             yield return EnvironmentFeature.NvidiaGpu;
     }
 }
