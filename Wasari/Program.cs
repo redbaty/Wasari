@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CliFx;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
 using Wasari.App;
@@ -53,6 +54,11 @@ namespace Wasari
             await serviceCollection.AddCrunchyrollServices();
 
             await using var serviceProvider = serviceCollection.BuildServiceProvider();
+            var environmentOptions = serviceProvider.GetService<IOptions<EnvironmentOptions>>();
+            if (environmentOptions?.Value?.Features is { } features)
+            {
+                Log.Logger.Information("Available environment features: {@Features}", features);
+            }
 
             return await new CliApplicationBuilder()
                 .AddCommand<CrunchyrollDownloadSeriesCommand>()
