@@ -12,20 +12,28 @@ namespace Wasari
 {
     internal class KonsoleSink : ILogEventSink
     {
-        private IConsole Console { get; }
+        private IConsole Console { get; set; }
 
-        private IConsole ProgressBox { get; }
+        private IConsole ProgressBox { get; set; }
 
         private Dictionary<string, ProgressBar> ProgressBars { get; } = new();
 
         private HashSet<ProgressBar> FinishedProgressBars { get; } = new();
 
-        private int OriginalBoxHeight { get; }
+        private int OriginalBoxHeight { get; set; }
 
         public static int AvailableHeight => System.Console.WindowHeight - System.Console.CursorTop;
 
         public KonsoleSink()
         {
+            Console = Window.Open();
+        }
+
+        private void Setup()
+        {
+            if (ProgressBox != null)
+                return;
+            
             var width = System.Console.WindowWidth;
             var height = AvailableHeight / 2 - 1;
             var console = Window.Open();
@@ -33,7 +41,7 @@ namespace Wasari
             Console = console.OpenBox("Logs", width, height, new BoxStyle
             {
                 ThickNess = LineThickNess.Single,
-                Title = new Colors(ConsoleColor.White, ConsoleColor.Red)
+                Title = new Colors(ConsoleColor.White, ConsoleColor.Blue)
             });
 
             ProgressBox = console.OpenBox("Downloads", width, height, new BoxStyle
@@ -74,6 +82,8 @@ namespace Wasari
 
             if (!string.IsNullOrEmpty(episodeId))
             {
+                Setup();
+                
                 if (!ProgressBars.ContainsKey(episodeId))
                 {
                     if (ProgressBars.Count >= OriginalBoxHeight && FinishedProgressBars.Any())
