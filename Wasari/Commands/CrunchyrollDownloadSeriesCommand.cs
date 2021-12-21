@@ -100,11 +100,21 @@ namespace Wasari.Commands
         {
             EnvironmentService.ThrowIfFeatureNotAvailable(EnvironmentFeature.Ffmpeg, EnvironmentFeature.YtDlp);
 
-            if (!string.IsNullOrEmpty(Username))
-                await CrunchyrollApiServiceFactory.CreateAuthenticatedService(Username, Password);
-            else
+            if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password))
+            {
                 await CrunchyrollApiServiceFactory.CreateUnauthenticatedService();
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(Username))
+                    throw new CrunchyrollAuthenticationException("Missing username", Username, Password);
 
+                if (string.IsNullOrEmpty(Password))
+                    throw new CrunchyrollAuthenticationException("Missing password", Username, Password);
+
+                await CrunchyrollApiServiceFactory.CreateAuthenticatedService(Username, Password);
+            }
+            
             var stopwatch = Stopwatch.StartNew();
             var isValidSeriesUrl = IsValidSeriesUrl();
             var isBeta = SeriesUrl.Contains("beta.");
@@ -255,6 +265,7 @@ namespace Wasari.Commands
                 SubtitleLanguage = SubtitleLanguage,
                 Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
                 OutputDirectory = outputDirectory,
+                CreateSeasonFolder = CreateSeasonFolder,
                 UseNvidiaAcceleration = isNvidiaAvailable,
                 UseHardwareAcceleration = HardwareAcceleration,
                 ConversionPreset = ConversionPreset,
