@@ -124,7 +124,6 @@ namespace Wasari.Commands
                 .SelectMany(i => i.Episodes)
                 .OrderBy(i => i.SeasonInfo.Season)
                 .ThenBy(i => i.Number)
-                .Where(i => i.SeasonInfo is CrunchyrollSeasonsInfo { Id: "GYVNC2VPW" })
                 .ToList();
             
             await BrowserFactory.DisposeAsync();
