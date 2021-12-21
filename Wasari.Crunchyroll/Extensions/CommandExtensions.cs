@@ -16,12 +16,18 @@ namespace Wasari.Crunchyroll.Extensions
         {
             var episodeBySeason = apiEpisodes.ToLookup(i => i.SeasonId);
 
-            foreach (var season in apiSeasons)
+            var lastNumber = -1;
+            foreach (var season in apiSeasons.OrderBy(i => i.Number))
             {
+                if (lastNumber < 0)
+                {
+                    lastNumber = season.Number;
+                }
+
                 var seasonInfo = new CrunchyrollSeasonsInfo
                 {
                     Id = season.Id,
-                    Season = season.Number,
+                    Season = episodeBySeason[season.Id].All(i => !i.EpisodeNumber.HasValue) ? 0 : lastNumber,
                     Title = season.Title,
                     Episodes = new List<CrunchyrollEpisodeInfo>()
                 };
@@ -41,6 +47,9 @@ namespace Wasari.Crunchyroll.Extensions
                         Premium = apiEpisode.IsPremium
                     });
                 }
+
+                if (seasonInfo.Season > 0)
+                    lastNumber++;
                 
                 yield return seasonInfo;
             }
