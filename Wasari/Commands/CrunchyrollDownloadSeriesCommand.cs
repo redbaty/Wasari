@@ -10,12 +10,13 @@ using CliFx.Attributes;
 using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
 using Wasari.App;
+using Wasari.Crunchyroll;
 using Wasari.Crunchyroll.Abstractions;
+using Wasari.Crunchyroll.API;
 using Wasari.Exceptions;
 using Wasari.Ffmpeg;
 using Wasari.Models;
@@ -27,18 +28,20 @@ namespace Wasari.Commands
     internal class CrunchyrollDownloadSeriesCommand : CommonDownloadCommand, ICommand
     {
         public CrunchyrollDownloadSeriesCommand(
-            CrunchyRollAuthenticationService crunchyRollAuthenticationService, Browser browser,
+            CrunchyRollAuthenticationService crunchyRollAuthenticationService,
             ILogger<CrunchyrollDownloadSeriesCommand> logger,
             ISeriesProvider<CrunchyrollSeasonsInfo> crunchyrollSeasonProvider,
             ISeriesDownloader<CrunchyrollEpisodeInfo> crunchyrollDownloader,
-            EnvironmentService environmentService)
+            EnvironmentService environmentService, BetaCrunchyrollService betaCrunchyrollService, BrowserFactory browserFactory, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
         {
             CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
-            Browser = browser;
             Logger = logger;
             CrunchyrollSeasonProvider = crunchyrollSeasonProvider;
             CrunchyrollDownloader = crunchyrollDownloader;
             EnvironmentService = environmentService;
+            BetaCrunchyrollService = betaCrunchyrollService;
+            BrowserFactory = browserFactory;
+            CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
         }
 
         private CrunchyRollAuthenticationService CrunchyRollAuthenticationService { get; }
@@ -87,29 +90,44 @@ namespace Wasari.Commands
 
         private EnvironmentService EnvironmentService { get; }
 
-        private Browser Browser { get; }
+        private BetaCrunchyrollService BetaCrunchyrollService { get; }
+
+        private BrowserFactory BrowserFactory { get; }
+        
+        private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
             EnvironmentService.ThrowIfFeatureNotAvailable(EnvironmentFeature.Ffmpeg, EnvironmentFeature.YtDlp);
 
+            if (!string.IsNullOrEmpty(Username))
+                await CrunchyrollApiServiceFactory.CreateAuthenticatedService(Username, Password);
+            else
+                await CrunchyrollApiServiceFactory.CreateUnauthenticatedService();
+
             var stopwatch = Stopwatch.StartNew();
             var isValidSeriesUrl = IsValidSeriesUrl();
+            var isBeta = SeriesUrl.Contains("beta.");
+
+            if (isBeta)
+            {
+                Logger.LogInformation("BETA Series detected");
+            }
 
             if (!isValidSeriesUrl)
                 throw new CommandException("The URL provided doesnt seem to be a crunchyroll SERIES page URL.");
 
-            using var cookieFile = await CreateCookiesFile();
-
-            var seriesInfo = await CrunchyrollSeasonProvider.GetSeries(SeriesUrl);
+            using var cookieFile = isBeta ? null : await CreateCookiesFile();
+            var seriesInfo = isBeta ? await BetaCrunchyrollService.GetSeries(SeriesUrl) : await CrunchyrollSeasonProvider.GetSeries(SeriesUrl);
 
             var episodes = seriesInfo.Seasons
                 .SelectMany(i => i.Episodes)
                 .OrderBy(i => i.SeasonInfo.Season)
                 .ThenBy(i => i.Number)
+                .Where(i => i.SeasonInfo is CrunchyrollSeasonsInfo { Id: "GYVNC2VPW" })
                 .ToList();
-
-            await Browser.DisposeAsync();
+            
+            await BrowserFactory.DisposeAsync();
 
             if (!episodes.Any())
             {
@@ -130,6 +148,9 @@ namespace Wasari.Commands
                     i.SequenceNumber >= episodeRange[0]
                     && i.SequenceNumber <= episodeRange[1])
                 .ToList();
+            
+            if (episodes.Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated)
+                throw new CommandException("Premium only episodes encountered, but no credentials were provided.");
 
             var downloadParameters = await CreateDownloadParameters(cookieFile, seriesInfo);
             if (SkipExistingEpisodes) FilterExistingEpisodes(downloadParameters.OutputDirectory, episodes);

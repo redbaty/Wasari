@@ -4,27 +4,30 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
+using Wasari.Crunchyroll;
 using Wasari.Exceptions;
 
 namespace Wasari.App
 {
     public class CrunchyRollAuthenticationService
     {
-        public CrunchyRollAuthenticationService(Browser browser, ILogger<CrunchyRollAuthenticationService> logger)
+        public CrunchyRollAuthenticationService(ILogger<CrunchyRollAuthenticationService> logger, BrowserFactory browserFactory)
         {
-            Browser = browser;
             Logger = logger;
+            BrowserFactory = browserFactory;
         }
-
-        private Browser Browser { get; }
+        
+        private BrowserFactory BrowserFactory { get; }
 
         private ILogger<CrunchyRollAuthenticationService> Logger { get; }
 
         public async Task<string> GetCookies(string userName, string password)
         {
+            var browser = await BrowserFactory.GetBrowserAsync();
+            
             Logger.LogDebug("Logging in...");
 
-            await using var loginPage = await Browser.NewPageAsync();
+            await using var loginPage = await browser.NewPageAsync();
             await loginPage.GoToAsync("https://www.crunchyroll.com/login");
 
             await using var emailInput = await loginPage.QuerySelectorAsync("#login_form_name");

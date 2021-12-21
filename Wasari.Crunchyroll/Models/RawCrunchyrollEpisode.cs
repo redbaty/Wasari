@@ -17,5 +17,7 @@
         public string Url { get; init; }
 
         public bool Special { get; init; }
+        
+        public bool Premium { get; init; }
     }
 }

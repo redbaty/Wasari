@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Wasari.Crunchyroll.API
@@ -13,11 +14,8 @@ namespace Wasari.Crunchyroll.API
                 c.DefaultRequestHeaders.Add("Authorization",
                     "Basic a3ZvcGlzdXZ6Yy0teG96Y21kMXk6R21JSTExenVPVnRnTjdlSWZrSlpibzVuLTRHTlZ0cU8=");
             });
-            
-            serviceCollection.AddHttpClient<CrunchyrollApiService>(c =>
-            {
-                c.BaseAddress = new Uri("https://beta-api.crunchyroll.com/");
-            });
+
+            serviceCollection.AddSingleton<CrunchyrollApiServiceFactory>();
         }
     }
 }

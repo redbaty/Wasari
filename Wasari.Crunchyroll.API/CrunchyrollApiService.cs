@@ -1,40 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Flurl;
 using JsonExtensions.Http;
 using JsonExtensions.Reading;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Wasari.Crunchyroll.API
 {
     public class CrunchyrollApiService
     {
-        public CrunchyrollApiService(IServiceProvider serviceProvider, HttpClient httpClient)
+        internal CrunchyrollApiService(HttpClient httpClient)
         {
-            AuthenticationService = serviceProvider.GetService<CrunchyrollApiAuthenticationService>();
             HttpClient = httpClient;
         }
-
-        private CrunchyrollApiAuthenticationService AuthenticationService { get; }
 
         private HttpClient HttpClient { get; }
 
         private ApiSignature ApiSignature { get; set; }
-
-        private async Task EnsureAuthorizationHeader()
-        {
-            if (HttpClient.DefaultRequestHeaders.Contains("Authorization"))
-            {
-                return;
-            }
-
-            var accessToken = await AuthenticationService.GetAccessToken();
-            HttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
-        }
 
         private async Task<ApiSignature> GetApiSignature()
         {
@@ -44,7 +30,6 @@ namespace Wasari.Crunchyroll.API
 
         private async Task<ApiSignature> CreateApiSignature()
         {
-            await EnsureAuthorizationHeader();
             await using var responseStream = await HttpClient.GetStreamAsync("index/v2");
             using var jsonDocument = await JsonDocument.ParseAsync(responseStream);
             var root = jsonDocument.RootElement;
@@ -99,6 +84,27 @@ namespace Wasari.Crunchyroll.API
             {
                 yield return jsonElement.Deserialize<ApiSeason>();
             }
+        }
+
+        public async Task<ApiSeries> GetSeriesInformation(string seriesId)
+        {
+            if (string.IsNullOrEmpty(seriesId))
+                return null;
+            
+            var url = await BuildUrlFromSignature($"series/{seriesId}");
+            return await HttpClient.GetFromJsonAsync<ApiSeries>(url);
+        }
+
+        public async Task<ApiEpisodeStreams> GetStreams(string streamUrl)
+        {
+            if (string.IsNullOrEmpty(streamUrl))
+                return null;
+
+            var match = Regex.Match(streamUrl, @"videos\/(?<STREAM_ID>\w+)\/streams");
+            var id = match.Groups["STREAM_ID"].Value;
+            var url = await BuildUrlFromSignature($"videos/{id}/streams");
+            
+            return await HttpClient.GetFromJsonAsync<ApiEpisodeStreams>(url);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliWrap;
@@ -11,28 +12,87 @@ using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
 using Wasari.Crunchyroll.Abstractions;
+using Wasari.Crunchyroll.API;
 using Wasari.Crunchyroll.Extensions;
 
 namespace Wasari.Crunchyroll
 {
+    internal class BetaEpisodeResult
+    {
+        public string Url { get; set; }
+        
+        public DownloadedFile[] Files { get; set; }
+    }
+    
     internal class YoutubeDlService
     {
-        public YoutubeDlService(ILogger<YoutubeDlService> logger)
+        public YoutubeDlService(ILogger<YoutubeDlService> logger, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
         {
             Logger = logger;
+            CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
         }
 
         private ILogger<YoutubeDlService> Logger { get; }
+        
+        private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
+        
+        private static async IAsyncEnumerable<DownloadedFile> DownloadSubs(string episodeId,
+            IEnumerable<ApiEpisodeStreamSubtitle> subtitles)
+        {
+            using var httpClient = new HttpClient();
+
+            foreach (var subtitle in subtitles)
+            {
+                using var respostaHttp = await httpClient.GetAsync(subtitle.Url);
+                await using var remoteStream = await respostaHttp.Content.ReadAsStreamAsync();
+                var temporaryFile = Path.Combine(Path.GetTempPath(), $"{episodeId}.{subtitle.Locale}.{subtitle.Format}");
+                await using var fs = File.Create(temporaryFile);
+                await remoteStream.CopyToAsync(fs);
+
+                yield return new DownloadedFile
+                {
+                    Type = FileType.Subtitle,
+                    Path = temporaryFile
+                };
+            }
+        }
+
+        private async Task<BetaEpisodeResult> DownloadBetaEpisode(CrunchyrollEpisodeInfo episodeInfo)
+        {
+            var crunchyrollApiService = CrunchyrollApiServiceFactory.GetService();
+            var streams = await crunchyrollApiService.GetStreams(episodeInfo.Url);
+            var preferedLink = streams.Streams
+                .SingleOrDefault(i => i.Type == "adaptive_hls" && string.IsNullOrEmpty(i.Locale));
+            
+            if (preferedLink == null)
+                throw new InvalidOperationException("Could not determine stream link");
+            
+            return new BetaEpisodeResult
+            {
+                Files = await DownloadSubs(episodeInfo.Id, streams.Subtitles).ToArrayAsync(),
+                Url = preferedLink.Url
+            };
+        }
 
         [SuppressMessage("ReSharper", "AccessToModifiedClosure")]
         public async Task<YoutubeDlResult> DownloadEpisode(CrunchyrollEpisodeInfo episodeInfo,
             DownloadParameters downloadParameters)
         {
+            var url = episodeInfo.Url;
+            var files = new List<DownloadedFile>();
+            
             if (downloadParameters.CookieFilePath != null && !File.Exists(downloadParameters.CookieFilePath))
             {
                 throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
             }
 
+            if (downloadParameters.CookieFilePath == null && episodeInfo.Url.EndsWith("/streams"))
+            {
+                var downloadBetaEpisode = await DownloadBetaEpisode(episodeInfo);
+                url = downloadBetaEpisode.Url;
+                files.AddRange(downloadBetaEpisode.Files);
+            }
+            
             var fileSafeName = episodeInfo.Name.AsSafePath();
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
@@ -51,11 +111,9 @@ namespace Wasari.Crunchyroll
                     ? null
                     : $"--cookies \"{downloadParameters.CookieFilePath}\"",
                 downloadParameters.Subtitles ? "--all-subs" : null,
-                $"\"{episodeInfo.Url}\"",
+                $"\"{url}\"",
                 $"-o \"{temporaryEpisodeFile}\""
             }.Where(i => !string.IsNullOrEmpty(i));
-
-            var files = new List<DownloadedFile>();
 
             var command = Cli.Wrap("yt-dlp")
                 .WithArguments(arguments, false)

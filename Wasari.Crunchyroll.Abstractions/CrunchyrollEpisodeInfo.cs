@@ -19,6 +19,8 @@ namespace Wasari.Crunchyroll.Abstractions
         public string Number { get; init; }
         
         public bool Special { get; init; }
+        
+        public bool Premium { get; init; }
 
         public string FilePrefix => $"S{SeasonInfo?.Season:00}E{Number}";
     }

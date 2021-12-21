@@ -54,8 +54,9 @@ namespace Wasari
                 serviceCollection.AddTransient<CrunchyrollListSeriesCommand>();
                 serviceCollection.AddLogging(c => c.AddSerilog());
                 serviceCollection.Configure<ProgressBarOptions>(o => o.Enabled = true);
+                serviceCollection.AddMemoryCache();
                 await serviceCollection.AddEnvironmentServices();
-                await serviceCollection.AddCrunchyrollServices();
+                serviceCollection.AddCrunchyrollServices();
 
                 await using var serviceProvider = serviceCollection.BuildServiceProvider();
                 var environmentOptions = serviceProvider.GetService<IOptions<EnvironmentOptions>>();

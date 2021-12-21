@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Linq;
+using System.Text.Json.Serialization;
 using Wasari.Crunchyroll.API.Converters;
 
 namespace Wasari.Crunchyroll.API
@@ -30,6 +31,12 @@ namespace Wasari.Crunchyroll.API
         [JsonPropertyName("images")]
         [JsonConverter(typeof(ThumbnailsConverter))]
         public string[] ThumbnailIds { get; init; }
+        
+        [JsonPropertyName("__links__")]
+        [JsonConverter(typeof(LinksConverter))]
+        public string[] Links { get; init; }
+
+        public string StreamLink => Links.LastOrDefault(i => i.EndsWith("/streams"));
 
         [JsonPropertyName("is_clip")]
         public bool IsClip { get; init; }
@@ -39,5 +46,8 @@ namespace Wasari.Crunchyroll.API
         
         [JsonPropertyName("is_subbed")]
         public bool IsSubbed { get; init; }
+        
+        [JsonPropertyName("is_premium_only")]
+        public bool IsPremium { get; init; }
     }
 }
