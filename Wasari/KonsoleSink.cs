@@ -24,6 +24,8 @@ namespace Wasari
 
         public static int AvailableHeight => System.Console.WindowHeight - System.Console.CursorTop;
 
+        private object SetupLock { get; } = new();
+
         public KonsoleSink()
         {
             Console = Window.Open();
@@ -31,26 +33,29 @@ namespace Wasari
 
         private void Setup()
         {
-            if (ProgressBox != null)
-                return;
-            
-            var width = System.Console.WindowWidth;
-            var height = AvailableHeight / 2 - 1;
-            var console = Window.Open();
-
-            Console = console.OpenBox("Logs", width, height, new BoxStyle
+            lock (SetupLock)
             {
-                ThickNess = LineThickNess.Single,
-                Title = new Colors(ConsoleColor.White, ConsoleColor.Blue)
-            });
+                if (ProgressBox != null)
+                    return;
 
-            ProgressBox = console.OpenBox("Downloads", width, height, new BoxStyle
-            {
-                ThickNess = LineThickNess.Single,
-                Title = new Colors(ConsoleColor.White, ConsoleColor.Black)
-            });
+                var width = System.Console.WindowWidth;
+                var height = AvailableHeight / 2 - 1;
+                var console = Window.Open();
 
-            OriginalBoxHeight = ProgressBox.WindowHeight - 1;
+                Console = console.OpenBox("Logs", width, height, new BoxStyle
+                {
+                    ThickNess = LineThickNess.Single,
+                    Title = new Colors(ConsoleColor.White, ConsoleColor.Blue)
+                });
+
+                ProgressBox = console.OpenBox("Downloads", width, height, new BoxStyle
+                {
+                    ThickNess = LineThickNess.Single,
+                    Title = new Colors(ConsoleColor.White, ConsoleColor.Black)
+                });
+
+                OriginalBoxHeight = ProgressBox.WindowHeight - 1;
+            }
         }
 
         private static ConsoleColor GetColor(LogEventLevel level) =>
