@@ -122,7 +122,7 @@ namespace Wasari.Ffmpeg
 
             var metadataMappings = metadata.Aggregate((x, y) => $"{x} {y}");
 
-            return $"{aggregate} -map 0 {mappings} {metadataMappings}";
+            return $"{aggregate} -map 0:v -map 0:a {mappings} {metadataMappings}";
         }
         
         public async Task Encode(string episodeId, string videoFile, IEnumerable<string> subtitlesFiles,
