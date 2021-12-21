@@ -25,5 +25,7 @@
         public int ParallelDownloads { get; init; }
         
         public int ParallelMerging { get; init; }
+        
+        public bool CreateSeasonFolder { get; set; }
     }
 }

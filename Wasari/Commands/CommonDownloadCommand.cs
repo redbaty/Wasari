@@ -7,6 +7,9 @@ namespace Wasari.Commands
     {
         [CommandOption("create-subdir", 'c')]
         public bool CreateSubdirectory { get; init; } = true;
+        
+        [CommandOption("season-folder")]
+        public bool CreateSeasonFolder { get; init; } = true;
 
         [CommandOption("output-directory", 'o')]
         public string OutputDirectory { get; init; } = Directory.GetCurrentDirectory();
