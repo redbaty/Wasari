@@ -85,6 +85,7 @@ namespace Wasari.Crunchyroll
 
             if (seriesPage.Url.Contains("beta."))
             {
+                Logger.LogWarning("BETA Series redirection detected");
                 var betaService = ServiceProvider.GetService<BetaCrunchyrollService>();
                 return await betaService!.GetSeries(seriesPage.Url);
             }
