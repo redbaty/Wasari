@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Flurl;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using Wasari.Abstractions;
@@ -15,11 +16,12 @@ namespace Wasari.Crunchyroll
 {
     public class CrunchyrollService : ISeriesProvider<CrunchyrollSeasonsInfo>
     {
-        public CrunchyrollService(ILogger<CrunchyrollService> logger, BrowserFactory browserFactory, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
+        public CrunchyrollService(ILogger<CrunchyrollService> logger, BrowserFactory browserFactory, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, IServiceProvider serviceProvider)
         {
             Logger = logger;
             BrowserFactory = browserFactory;
             CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
+            ServiceProvider = serviceProvider;
         }
 
         private ILogger<CrunchyrollService> Logger { get; }
@@ -27,6 +29,8 @@ namespace Wasari.Crunchyroll
         private BrowserFactory BrowserFactory { get; }
         
         private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
+        
+        private IServiceProvider ServiceProvider { get; }
 
         private async IAsyncEnumerable<CrunchyrollSeasonsInfo> GetSeasonsInfo(Page seriesPage,
             IReadOnlyDictionary<string, ApiEpisode> episodesDictionary, string seriesId)
@@ -78,6 +82,12 @@ namespace Wasari.Crunchyroll
             await using var seriesPage = await browser.NewPageAsync();
             Logger.LogDebug("Navigating to {@Url}", seriesUrl);
             await seriesPage.GoToAsync(seriesUrl);
+
+            if (seriesPage.Url.Contains("beta."))
+            {
+                var betaService = ServiceProvider.GetService<BetaCrunchyrollService>();
+                return await betaService!.GetSeries(seriesPage.Url);
+            }
 
             Logger.LogInformation("Parsing series page {@Url}", seriesUrl);
             await using var titleHandle =
