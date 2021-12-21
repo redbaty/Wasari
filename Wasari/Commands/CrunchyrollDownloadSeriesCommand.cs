@@ -208,11 +208,15 @@ namespace Wasari.Commands
                 if (!episodeMatch.Success
                     || !int.TryParse(episodeMatch.Groups["episode"].Value, out var episode)
                     || !int.TryParse(episodeMatch.Groups["season"].Value, out var season)) continue;
+                
+                var removed = episodes.RemoveAll(i => i.SeasonInfo.Season == season && i.SequenceNumber == episode);
 
-                Logger.LogWarning(
-                    "Skipping episode {@EpisodeNumber} from season {@SeasonNumber} due to existing file {@FilePath}",
-                    episode, season, episodeFile);
-                episodes.RemoveAll(i => i.SeasonInfo.Season == season && i.SequenceNumber == episode);
+                if (removed > 0)
+                {
+                    Logger.LogWarning(
+                        "Skipping episode {@EpisodeNumber} from season {@SeasonNumber} due to existing file {@FilePath}",
+                        episode, season, episodeFile);
+                }
             }
         }
 
