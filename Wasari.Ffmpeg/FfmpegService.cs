@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
@@ -21,6 +22,8 @@ namespace Wasari.Ffmpeg
         }
 
         private ILogger<FfmpegService> Logger { get; }
+
+        private static object CheckShaderLock { get; } = new();
 
         private static async IAsyncEnumerable<string> GetAvailableHardwareAccelerationMethods()
         {
@@ -82,7 +85,7 @@ namespace Wasari.Ffmpeg
 
             if (downloadParameters.UseAnime4k)
                 yield return
-                    "-filter_complex \"hwupload=derive_device=vulkan,libplacebo=w=3840:h=2160:custom_shader_path=shaders/main.glsl,hwdownload,format=nv12\"";
+                    "-filter_complex \"hwupload=derive_device=vulkan,libplacebo=w=3840:h=2160:custom_shader_path=main.glsl,hwdownload,format=nv12\"";
 
             if (!string.IsNullOrEmpty(subtitleArguments))
                 yield return subtitleArguments;
@@ -145,6 +148,22 @@ namespace Wasari.Ffmpeg
 
             Logger.LogProgressUpdate(update);
             Logger.LogInformation("Encoding of episode {@Episode} started", episodeId);
+
+            if (downloadParameters.UseAnime4k)
+            {
+                lock (CheckShaderLock)
+                {
+                    if (!File.Exists("main.glsl"))
+                    {
+                        Logger.LogInformation("Creating main shader");
+                        using var manifestResourceStream =
+                            Assembly.GetAssembly(typeof(FfmpegService))!.GetManifestResourceStream(
+                                "Wasari.Ffmpeg.shaders.main.glsl");
+                        using var fs = File.Create("main.glsl");
+                        manifestResourceStream!.CopyTo(fs);
+                    }
+                }
+            }
 
             var mediaAnalysis = await FFProbe.AnalyseAsync(videoFile);
 

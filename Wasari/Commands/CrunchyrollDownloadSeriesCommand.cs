@@ -266,12 +266,6 @@ namespace Wasari.Commands
                     Logger.LogWarning("Anime 4K was requested but no FFmpeg with libplacebo is available");
                     anime4K = false;
                 }
-
-                if (!File.Exists("shaders/main.glsl"))
-                {
-                    Logger.LogWarning("Anime 4K was requested but no shader was available");
-                    anime4K = false;
-                }
             }
 
             var safeSeriesName = seriesInfo.Name.AsSafePath();
