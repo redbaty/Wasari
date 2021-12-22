@@ -90,6 +90,9 @@ namespace Wasari.Commands
         [CommandOption("headless", Description = "Chromium headless mode")]
         public bool Headless { get; init; } = true;
 
+        [CommandOption("format", 'f', Description = "Format passed to yt-dlp")]
+        public string Format { get; init; } = "best";
+
         private ILogger<CrunchyrollDownloadSeriesCommand> Logger { get; }
 
         private ISeriesProvider<CrunchyrollSeasonsInfo> CrunchyrollSeasonProvider { get; }
@@ -306,7 +309,8 @@ namespace Wasari.Commands
                 TemporaryDirectory = TemporaryDirectory,
                 ParallelDownloads = DownloadPoolSize,
                 ParallelMerging = EncodingPoolSize,
-                UseAnime4k = anime4K
+                UseAnime4K = anime4K,
+                Format = Format
             };
         }
 
