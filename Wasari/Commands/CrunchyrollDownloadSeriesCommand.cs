@@ -10,7 +10,6 @@ using CliFx.Attributes;
 using CliFx.Exceptions;
 using CliFx.Infrastructure;
 using Microsoft.Extensions.Logging;
-using PuppeteerSharp;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
 using Wasari.App;

@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;

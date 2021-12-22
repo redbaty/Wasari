@@ -14,7 +14,7 @@ internal class LinksConverter : JsonConverter<string[]>
         var links = new List<string>();
 
         if (jsonNode != null)
-            foreach (var (key, value) in jsonNode.AsObject())
+            foreach (var (_, value) in jsonNode.AsObject())
             {
                 var jsonObject = value.AsObject();
                 if (jsonObject.ContainsKey("href"))

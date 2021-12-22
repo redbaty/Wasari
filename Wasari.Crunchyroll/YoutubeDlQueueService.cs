@@ -6,14 +6,6 @@ using Wasari.Crunchyroll.Abstractions;
 
 namespace Wasari.Crunchyroll
 {
-    internal class BetaCrunchyrollDownloadQueueService
-    {
-        public async Task Start(IEnumerable<CrunchyrollEpisodeInfo> episodes, DownloadParameters downloadParameters,
-            int? poolSize)
-        {
-        }
-    }
-    
     internal class YoutubeDlQueueService
     {
         public YoutubeDlQueueService(YoutubeDlService youtubeDlService)
