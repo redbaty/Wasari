@@ -29,7 +29,7 @@ namespace Wasari.Crunchyroll
         
         public string FinalEpisodeFile(DownloadParameters downloadParameters)
         {
-            var finalEpisodeFileName = $"{Episode.FilePrefix} - {Episode.Name.AsSafePath()}.{FinalEpisodeFileExtension(downloadParameters)}";
+            var finalEpisodeFileName = $"{Episode.FilePrefix} - {Episode.Name.AsSafePath()}{FinalEpisodeFileExtension(downloadParameters)}";
             
             return downloadParameters.CreateSeasonFolder
                 ? Path.Combine(
