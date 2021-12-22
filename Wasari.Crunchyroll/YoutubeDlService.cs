@@ -95,7 +95,7 @@ namespace Wasari.Crunchyroll
             var fileSafeName = episodeInfo.Name.AsSafePath();
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
-                $"{episodeInfo.FilePrefix} - {fileSafeName}_temp.mkv");
+                $"{episodeInfo.FilePrefix} - {fileSafeName}_temp.mp4");
 
             Logger.LogInformation("Download of episode {@Episode} started", episodeInfo.FilePrefix);
 

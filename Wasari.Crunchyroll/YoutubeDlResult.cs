@@ -17,11 +17,28 @@ namespace Wasari.Crunchyroll
 
         public DownloadedFile TemporaryEpisodeFile => Files?.Single(i => i.Type == FileType.VideoFile);
 
-        public string FinalEpisodeFile(DownloadParameters downloadParameters) => downloadParameters.CreateSeasonFolder ? Path.Combine(
-            downloadParameters.OutputDirectory,
-            $"Season {Episode.SeasonInfo.Season}",
-            $"{Episode.FilePrefix} - {Episode.Name.AsSafePath()}.mkv") : Path.Combine(
-            downloadParameters.OutputDirectory,
-            $"{Episode.FilePrefix} - {Episode.Name.AsSafePath()}.mkv");
+        private string FinalEpisodeFileExtension(DownloadParameters downloadParameters)
+        {
+            if (downloadParameters.UseHevc)
+            {
+                return ".mkv";
+            }
+
+            return ".mp4";
+        }
+        
+        public string FinalEpisodeFile(DownloadParameters downloadParameters)
+        {
+            var finalEpisodeFileName = $"{Episode.FilePrefix} - {Episode.Name.AsSafePath()}.{FinalEpisodeFileExtension(downloadParameters)}";
+            
+            return downloadParameters.CreateSeasonFolder
+                ? Path.Combine(
+                    downloadParameters.OutputDirectory,
+                    $"Season {Episode.SeasonInfo.Season}",
+                    finalEpisodeFileName)
+                : Path.Combine(
+                    downloadParameters.OutputDirectory,
+                    finalEpisodeFileName);
+        }
     }
 }
