@@ -14,6 +14,8 @@ public class BrowserFactory
     }
 
     private IMemoryCache Cache { get; }
+
+    public static bool Headless { get; set; } = true;
         
     public async Task<Browser> GetBrowserAsync()
     {
@@ -30,7 +32,7 @@ public class BrowserFactory
         browser = await extra.LaunchAsync(
             new LaunchOptions
             {
-                Headless = true,
+                Headless = Headless,
 #if RELEASE
                      Args = new[] {"--no-sandbox"}
 #endif

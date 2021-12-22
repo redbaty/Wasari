@@ -83,6 +83,8 @@ namespace Wasari.Commands
         
         [CommandOption("anime-4k")]
         public bool UseAnime4k { get; init; } = false;
+        [CommandOption("headless", Description = "Chromium headless mode")]
+        public bool Headless { get; init; } = true;
 
         private ILogger<CrunchyrollDownloadSeriesCommand> Logger { get; }
 
@@ -95,11 +97,12 @@ namespace Wasari.Commands
         private BetaCrunchyrollService BetaCrunchyrollService { get; }
 
         private BrowserFactory BrowserFactory { get; }
-        
+
         private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
+            BrowserFactory.Headless = Headless;
             EnvironmentService.ThrowIfFeatureNotAvailable(EnvironmentFeature.Ffmpeg, EnvironmentFeature.YtDlp);
 
             if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password))
