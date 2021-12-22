@@ -19,7 +19,7 @@ namespace Wasari.Crunchyroll
 
         private string FinalEpisodeFileExtension(DownloadParameters downloadParameters)
         {
-            if (downloadParameters.UseHevc)
+            if (downloadParameters.UseHevc || downloadParameters.Subtitles)
             {
                 return ".mkv";
             }
