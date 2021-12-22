@@ -216,14 +216,14 @@ namespace Wasari.Commands
         {
             const string regex = @"S(?<season>\d+)E(?<episode>\d+) -";
 
-            foreach (var episodeFile in Directory.GetFiles(outputDirectory, "*.mkv", SearchOption.AllDirectories))
+            foreach (var episodeFile in Directory.GetFiles(outputDirectory, "*.*", SearchOption.AllDirectories))
             {
                 var episodeMatch = Regex.Match(episodeFile, regex);
 
                 if (!episodeMatch.Success
                     || !int.TryParse(episodeMatch.Groups["episode"].Value, out var episode)
                     || !int.TryParse(episodeMatch.Groups["season"].Value, out var season)) continue;
-                
+
                 var removed = episodes.RemoveAll(i => i.SeasonInfo.Season == season && i.SequenceNumber == episode);
 
                 if (removed > 0)
