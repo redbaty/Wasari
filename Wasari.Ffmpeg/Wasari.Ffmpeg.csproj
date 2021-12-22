@@ -15,4 +15,14 @@
       <ProjectReference Include="..\Wasari.Abstractions\Wasari.Abstractions.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="shaders" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="shaders\main.glsl">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

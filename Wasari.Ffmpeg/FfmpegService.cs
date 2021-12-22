@@ -74,8 +74,15 @@ namespace Wasari.Ffmpeg
             if (downloadParameters.UseHardwareAcceleration)
                 yield return $"-hwaccel {(downloadParameters.UseNvidiaAcceleration ? "cuda" : "auto")}";
 
+            if (downloadParameters.UseAnime4k)
+                yield return "-init_hw_device cuda=cuda:0 -filter_hw_device cuda";
+
             yield return $"-i \"{videoFile}\"";
             var subtitleArguments = CreateSubtitleArguments(subtitlesFiles);
+
+            if (downloadParameters.UseAnime4k)
+                yield return
+                    "-filter_complex \"hwupload=derive_device=vulkan,libplacebo=w=3840:h=2160:custom_shader_path=shaders/main.glsl,hwdownload,format=nv12\"";
 
             if (!string.IsNullOrEmpty(subtitleArguments))
                 yield return subtitleArguments;

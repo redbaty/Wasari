@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using CliWrap;
+using CliWrap.Buffered;
 
 namespace WasariEnvironment;
 
@@ -33,13 +34,29 @@ public static class EnvironmentFeatureFinder
         });
     }
 
+    private static async Task<bool> IsLibPlaceboAvailable()
+    {
+        var command = Cli
+            .Wrap("ffmpeg")
+            .WithArguments("-version")
+            .WithValidation(CommandResultValidation.ZeroExitCode);
+        var bufferedCommandResult = await command.ExecuteBufferedAsync();
+
+        return bufferedCommandResult.StandardOutput.Contains("--enable-libplacebo");
+    }
+
     public static async IAsyncEnumerable<EnvironmentFeature> GetEnvironmentFeatures()
     {
         if (await IsProgramAvailable("yt-dlp", "--version").DefaultsToFalse())
             yield return EnvironmentFeature.YtDlp;
 
         if (await IsProgramAvailable("ffmpeg", "-version").DefaultsToFalse())
+        {
             yield return EnvironmentFeature.Ffmpeg;
+            
+            if (await IsLibPlaceboAvailable())
+                yield return EnvironmentFeature.FfmpegLibPlacebo;
+        }
 
         if (await IsProgramAvailable("nvidia-smi", null).DefaultsToFalse())
             yield return EnvironmentFeature.NvidiaGpu;

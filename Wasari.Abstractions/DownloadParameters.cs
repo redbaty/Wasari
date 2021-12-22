@@ -9,6 +9,8 @@
         public string CookieFilePath { get; init; }
 
         public bool UseHevc { get; init; } = true;
+        
+        public bool UseAnime4k { get; init; } = true;
 
         public string ConversionPreset { get; init; }
 

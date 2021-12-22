@@ -80,6 +80,9 @@ namespace Wasari.Commands
 
         [CommandOption("skip-episodes")]
         public bool SkipExistingEpisodes { get; init; } = true;
+        
+        [CommandOption("anime-4k")]
+        public bool UseAnime4k { get; init; } = false;
 
         private ILogger<CrunchyrollDownloadSeriesCommand> Logger { get; }
 
@@ -210,7 +213,7 @@ namespace Wasari.Commands
         {
             const string regex = @"S(?<season>\d+)E(?<episode>\d+) -";
 
-            foreach (var episodeFile in Directory.GetFiles(outputDirectory, "*.mkv"))
+            foreach (var episodeFile in Directory.GetFiles(outputDirectory, "*.mkv", SearchOption.AllDirectories))
             {
                 var episodeMatch = Regex.Match(episodeFile, regex);
 
@@ -249,6 +252,28 @@ namespace Wasari.Commands
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
 
+            var anime4K = UseAnime4k;
+            if (anime4K)
+            {
+                if (!isNvidiaAvailable)
+                {
+                    Logger.LogWarning("Anime 4K was requested but no NVIDIA card is available");
+                    anime4K = false;
+                }
+
+                if (!EnvironmentService.IsFeatureAvailable(EnvironmentFeature.FfmpegLibPlacebo))
+                {
+                    Logger.LogWarning("Anime 4K was requested but no FFmpeg with libplacebo is available");
+                    anime4K = false;
+                }
+
+                if (!File.Exists("shaders/main.glsl"))
+                {
+                    Logger.LogWarning("Anime 4K was requested but no shader was available");
+                    anime4K = false;
+                }
+            }
+
             var safeSeriesName = seriesInfo.Name.AsSafePath();
 
             var outputDirectory = CreateSubdirectory
@@ -272,7 +297,8 @@ namespace Wasari.Commands
                 UseHevc = ConvertToHevc,
                 TemporaryDirectory = TemporaryDirectory,
                 ParallelDownloads = DownloadPoolSize,
-                ParallelMerging = EncodingPoolSize
+                ParallelMerging = EncodingPoolSize,
+                UseAnime4k = anime4K
             };
         }
 
