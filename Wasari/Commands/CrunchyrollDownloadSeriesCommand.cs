@@ -241,8 +241,11 @@ namespace Wasari.Commands
             {
                 var crunchyHost =
                     parsedUri.Host.EndsWith("crunchyroll.com", StringComparison.InvariantCultureIgnoreCase);
-                var rightSegmentsCount = parsedUri.Segments.Length >= 2;
-                return crunchyHost && rightSegmentsCount;
+                
+                if (parsedUri.Host == "beta.crunchyroll.com")
+                    return SeriesUrl?.Contains("/series/") ?? false;
+
+                return crunchyHost && (!SeriesUrl?.Contains("/episode-") ?? false);
             }
 
             return true;
