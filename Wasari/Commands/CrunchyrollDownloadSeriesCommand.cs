@@ -54,35 +54,36 @@ namespace Wasari.Commands
         [CommandOption("password", 'p', Description = "Crunchyroll password.")]
         public string Password { get; init; }
 
-        [CommandOption("episodes", 'e')]
+        [CommandOption("episodes", 'e', Description = "Episodes range (eg. 1-5 would be episode 1 to 5)")]
         public string EpisodeRange { get; init; }
 
-        [CommandOption("seasons", 's')]
+        [CommandOption("seasons", 's', Description = "Seasons range (eg. 1-3 would be seasons 1 to 5)")]
         public string SeasonsRange { get; init; }
 
-        [CommandOption("preset")]
+        [CommandOption("preset", Description = "Conversion preset passed down to FFmpeg while encoding")]
         public string ConversionPreset { get; init; }
 
-        [CommandOption("clean")]
+        [CommandOption("clean", Description = "Clean temporary files (Subtitles and Raw video file)")]
         public bool CleanTemporaryFiles { get; init; } = true;
 
-        [CommandOption("hevc")]
+        [CommandOption("hevc", Description = "Encode final video file in H265/HEVC")]
         public bool ConvertToHevc { get; init; } = true;
 
-        [CommandOption("haccel", 'a')]
+        [CommandOption("haccel", 'a', Description = "Use hardware acceleration for FFmpeg encoding")]
         public bool HardwareAcceleration { get; init; } = true;
 
-        [CommandOption("gpuaccel")]
+        [CommandOption("gpuaccel", Description = "Use GPU acceleration for FFmpeg encoding")]
         public bool GpuAcceleration { get; init; } = true;
 
-        [CommandOption("temp-dir", 't')]
+        [CommandOption("temp-dir", 't', Description = "The directory for temporary files")]
         public string TemporaryDirectory { get; init; } = Path.Combine(Path.GetTempPath(), "Wasari");
 
-        [CommandOption("skip-episodes")]
+        [CommandOption("skip-existing-episodes", Description = "Skip download from existing episodes")]
         public bool SkipExistingEpisodes { get; init; } = true;
-        
-        [CommandOption("anime-4k")]
-        public bool UseAnime4k { get; init; } = false;
+
+        [CommandOption("anime-4k", Description = "Uses Anime4K to upscale final video file to 4K")]
+        public bool UseAnime4K { get; init; } = false;
+
         [CommandOption("headless", Description = "Chromium headless mode")]
         public bool Headless { get; init; } = true;
 
