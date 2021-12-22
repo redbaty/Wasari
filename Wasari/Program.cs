@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
+using System.Reflection;
 using System.Threading.Tasks;
 using CliFx;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +12,7 @@ using Wasari.App;
 using Wasari.Commands;
 using Wasari.Crunchyroll;
 using Wasari.Models;
+using Wasari.Sinks;
 using WasariEnvironment;
 
 namespace Wasari
@@ -22,16 +23,14 @@ namespace Wasari
         {
             var loggerConfiguration = new LoggerConfiguration();
 
-            var konsoleAvailable =
-                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && KonsoleSink.AvailableHeight > 10 &&
-                args.All(i => i != "-nk");
+            var useProgressBar = args.All(i => i != "-np");
 
-            if (konsoleAvailable) Console.CursorVisible = false;
+            if (useProgressBar) Console.CursorVisible = false;
 
             try
             {
-                loggerConfiguration = konsoleAvailable
-                    ? loggerConfiguration.WriteTo.Sink<KonsoleSink>()
+                loggerConfiguration = useProgressBar
+                    ? loggerConfiguration.WriteTo.Sink<ProgressSink>()
                     : loggerConfiguration.WriteTo.Console()
                         .Filter
                         .ByIncludingOnly(i =>
@@ -45,8 +44,8 @@ namespace Wasari
                         restrictedToMinimumLevel: LogEventLevel.Verbose)
                     .CreateLogger();
 
-                if (!konsoleAvailable)
-                    Log.Logger.Warning("Konsole isn't available, falling back to regular Console sink");
+                if (!useProgressBar)
+                    Log.Logger.Warning("Progress bars disabled");
 
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
@@ -65,16 +64,21 @@ namespace Wasari
                     Log.Logger.Information("Available environment features: {@Features}", features);
                 }
 
+                if (Assembly.GetEntryAssembly()?.GetName()?.Version is { } version)
+                {
+                    Log.Logger.Information("Current version is: {@Version}", version.ToString());
+                }
+
                 return await new CliApplicationBuilder()
                     .AddCommand<CrunchyrollDownloadSeriesCommand>()
                     .AddCommand<CrunchyrollListSeriesCommand>()
                     .UseTypeActivator(serviceProvider.GetService)
                     .Build()
-                    .RunAsync(args.Where(i => i != "-nk").ToArray());
+                    .RunAsync(args.Where(i => i != "-np").ToArray());
             }
             finally
             {
-                if (konsoleAvailable) Console.CursorVisible = true;
+                if (useProgressBar) Console.CursorVisible = true;
             }
         }
     }
