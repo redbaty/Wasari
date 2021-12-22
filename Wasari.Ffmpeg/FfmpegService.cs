@@ -77,13 +77,13 @@ namespace Wasari.Ffmpeg
             if (downloadParameters.UseHardwareAcceleration)
                 yield return $"-hwaccel {(downloadParameters.UseNvidiaAcceleration ? "cuda" : "auto")}";
 
-            if (downloadParameters.UseAnime4k)
+            if (downloadParameters.UseAnime4K)
                 yield return "-init_hw_device cuda=cuda:0 -filter_hw_device cuda";
 
             yield return $"-i \"{videoFile}\"";
             var subtitleArguments = CreateSubtitleArguments(subtitlesFiles);
 
-            if (downloadParameters.UseAnime4k)
+            if (downloadParameters.UseAnime4K)
                 yield return
                     "-filter_complex \"hwupload=derive_device=vulkan,libplacebo=w=3840:h=2160:custom_shader_path=main.glsl,hwdownload,format=nv12\"";
 
@@ -99,7 +99,13 @@ namespace Wasari.Ffmpeg
             }
             else
             {
-                yield return "-c:v copy";
+                if (downloadParameters.UseAnime4K)
+                {
+                    if (downloadParameters.UseNvidiaAcceleration) yield return "-c:v h264_nvenc";
+                    else yield return "-c:v lix264";
+                }
+                else
+                    yield return "-c:v copy";
             }
 
             if (!string.IsNullOrEmpty(downloadParameters.ConversionPreset))
@@ -134,7 +140,7 @@ namespace Wasari.Ffmpeg
 
             return $"{aggregate} -map 0:v -map 0:a {mappings} {metadataMappings}";
         }
-        
+
         public async Task Encode(string episodeId, string videoFile, IEnumerable<string> subtitlesFiles,
             string newVideoFile, DownloadParameters downloadParameters)
         {
@@ -149,7 +155,7 @@ namespace Wasari.Ffmpeg
             Logger.LogProgressUpdate(update);
             Logger.LogInformation("Encoding of episode {@Episode} started", episodeId);
 
-            if (downloadParameters.UseAnime4k)
+            if (downloadParameters.UseAnime4K)
             {
                 lock (CheckShaderLock)
                 {
@@ -215,7 +221,8 @@ namespace Wasari.Ffmpeg
 
             stopwatch.Stop();
 
-            Logger.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId, newVideoFile, stopwatch.Elapsed);
+            Logger.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId,
+                newVideoFile, stopwatch.Elapsed);
         }
     }
 }
