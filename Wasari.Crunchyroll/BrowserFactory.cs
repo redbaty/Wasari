@@ -30,7 +30,7 @@ public class BrowserFactory
         browser = await extra.LaunchAsync(
             new LaunchOptions
             {
-                Headless = false,
+                Headless = true,
 #if RELEASE
                      Args = new[] {"--no-sandbox"}
 #endif
