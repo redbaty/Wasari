@@ -31,7 +31,10 @@ namespace Wasari.Commands
             ILogger<CrunchyrollDownloadSeriesCommand> logger,
             ISeriesProvider<CrunchyrollSeasonsInfo> crunchyrollSeasonProvider,
             ISeriesDownloader<CrunchyrollEpisodeInfo> crunchyrollDownloader,
-            EnvironmentService environmentService, BetaCrunchyrollService betaCrunchyrollService, BrowserFactory browserFactory, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
+            EnvironmentService environmentService,
+            BetaCrunchyrollService betaCrunchyrollService,
+            BrowserFactory browserFactory,
+            CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
         {
             CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
             Logger = logger;
@@ -120,7 +123,7 @@ namespace Wasari.Commands
 
                 await CrunchyrollApiServiceFactory.CreateAuthenticatedService(Username, Password);
             }
-            
+
             var stopwatch = Stopwatch.StartNew();
             var isValidSeriesUrl = IsValidSeriesUrl();
             var isBeta = SeriesUrl.Contains("beta.");
@@ -134,14 +137,16 @@ namespace Wasari.Commands
                 throw new CommandException("The URL provided doesnt seem to be a crunchyroll SERIES page URL.");
 
             using var cookieFile = isBeta ? null : await CreateCookiesFile();
-            var seriesInfo = isBeta ? await BetaCrunchyrollService.GetSeries(SeriesUrl) : await CrunchyrollSeasonProvider.GetSeries(SeriesUrl);
+            var seriesInfo = isBeta
+                ? await BetaCrunchyrollService.GetSeries(SeriesUrl)
+                : await CrunchyrollSeasonProvider.GetSeries(SeriesUrl);
 
             var episodes = seriesInfo.Seasons
                 .SelectMany(i => i.Episodes)
                 .OrderBy(i => i.SeasonInfo.Season)
                 .ThenBy(i => i.Number)
                 .ToList();
-            
+
             await BrowserFactory.DisposeAsync();
 
             if (!episodes.Any())
@@ -163,7 +168,7 @@ namespace Wasari.Commands
                     i.SequenceNumber >= episodeRange[0]
                     && i.SequenceNumber <= episodeRange[1])
                 .ToList();
-            
+
             if (episodes.Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated)
                 throw new CommandException("Premium only episodes encountered, but no credentials were provided.");
 
@@ -255,11 +260,13 @@ namespace Wasari.Commands
         private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file,
             ISeriesInfo seriesInfo)
         {
-            var isNvidiaAvailable = GpuAcceleration && await FfmpegService.IsNvidiaAvailable() && EnvironmentService.IsFeatureAvailable(EnvironmentFeature.NvidiaGpu);
+            var isNvidiaAvailable = GpuAcceleration 
+                                    && await FfmpegService.IsNvidiaAvailable() 
+                                    && EnvironmentService.IsFeatureAvailable(EnvironmentFeature.NvidiaGpu);
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
 
-            var anime4K = UseAnime4k;
+            var anime4K = UseAnime4K;
             if (anime4K)
             {
                 if (!isNvidiaAvailable)
