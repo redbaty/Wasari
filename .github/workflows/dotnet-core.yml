@@ -30,3 +30,4 @@ jobs:
         files: |
           build-win-x64/Wasari.exe
           build-linux-x64/Wasari
+          build-linux-x64/shaders/main.glsl
