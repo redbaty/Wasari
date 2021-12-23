@@ -11,17 +11,21 @@ using FFMpegCore;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
+using WasariEnvironment;
 
 namespace Wasari.Ffmpeg
 {
     public class FfmpegService
     {
-        public FfmpegService(ILogger<FfmpegService> logger)
+        public FfmpegService(ILogger<FfmpegService> logger, EnvironmentService environmentService)
         {
             Logger = logger;
+            EnvironmentService = environmentService;
         }
 
         private ILogger<FfmpegService> Logger { get; }
+
+        private EnvironmentService EnvironmentService { get; }
 
         private static object CheckShaderLock { get; } = new();
 
@@ -71,7 +75,7 @@ namespace Wasari.Ffmpeg
             && await GetAvailableEncoders()
                 .AnyAsync(i => i.Contains("hevc_nvenc", StringComparison.InvariantCultureIgnoreCase));
 
-        private static IEnumerable<string> CreateArguments(string videoFile, IEnumerable<string> subtitlesFiles,
+        private IEnumerable<string> CreateArguments(string videoFile, IEnumerable<string> subtitlesFiles,
             string newVideoFile, DownloadParameters downloadParameters)
         {
             if (downloadParameters.UseHardwareAcceleration)
@@ -93,7 +97,20 @@ namespace Wasari.Ffmpeg
             if (downloadParameters.UseHevc)
             {
                 if (downloadParameters.UseNvidiaAcceleration)
-                    yield return "-c:v hevc_nvenc -rc vbr -cq 24 -qmin 24 -qmax 24 -profile:v main10 -pix_fmt p010le";
+                {
+                    yield return "-c:v hevc_nvenc";
+                    
+                    var useExtraSei =
+                        EnvironmentService.GetModuleVersion(EnvironmentFeatureType.Ffmpeg, "libavcodec") is
+                        {
+                            Major: >= 59
+                        };
+
+                    if (useExtraSei)
+                        yield return "-extra_sei 0";
+
+                    yield return "-rc vbr -cq 24 -qmin 24 -qmax 24 -profile:v main10 -pix_fmt p010le";
+                }
                 else
                     yield return "-pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10";
             }
