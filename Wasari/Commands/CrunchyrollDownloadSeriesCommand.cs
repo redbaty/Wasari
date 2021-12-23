@@ -112,7 +112,16 @@ namespace Wasari.Commands
             BrowserFactory.Headless = Headless;
             EnvironmentService.ThrowIfFeatureNotAvailable(EnvironmentFeatureType.Ffmpeg, EnvironmentFeatureType.YtDlp);
 
-            if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password))
+            var stopwatch = Stopwatch.StartNew();
+            var isValidSeriesUrl = IsValidSeriesUrl();
+            var isBeta = SeriesUrl.Contains("beta.");
+
+            if (isBeta)
+            {
+                Logger.LogInformation("BETA Series detected");
+            }
+            
+            if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password) && isBeta)
             {
                 await CrunchyrollApiServiceFactory.CreateUnauthenticatedService();
             }
@@ -125,15 +134,6 @@ namespace Wasari.Commands
                     throw new CrunchyrollAuthenticationException("Missing password", Username, Password);
 
                 await CrunchyrollApiServiceFactory.CreateAuthenticatedService(Username, Password);
-            }
-
-            var stopwatch = Stopwatch.StartNew();
-            var isValidSeriesUrl = IsValidSeriesUrl();
-            var isBeta = SeriesUrl.Contains("beta.");
-
-            if (isBeta)
-            {
-                Logger.LogInformation("BETA Series detected");
             }
 
             if (!isValidSeriesUrl)
