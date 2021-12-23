@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Wasari.Abstractions\Wasari.Abstractions.csproj" />
+        <ProjectReference Include="..\Wasari.Environment\Wasari.Environment.csproj" />
     </ItemGroup>
 
     <ItemGroup>

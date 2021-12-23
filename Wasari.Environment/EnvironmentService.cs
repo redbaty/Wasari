@@ -11,29 +11,36 @@ public class EnvironmentService
 
     private IOptions<EnvironmentOptions> Options { get; }
 
-    private IEnumerable<EnvironmentFeature> ExistingFeatures(params EnvironmentFeature[] features)
+    private IEnumerable<EnvironmentFeatureType> ExistingFeatures(params EnvironmentFeatureType[] features)
     {
         if (Options.Value.Features == null)
             yield break;
 
         foreach (var environmentFeature in features)
         {
-            if (Options.Value.Features.Contains(environmentFeature))
+            if (Options.Value.Features.Select(i => i.Type).Contains(environmentFeature))
                 yield return environmentFeature;
         }
     }
 
-    public IEnumerable<EnvironmentFeature> GetMissingFeatures(params EnvironmentFeature[] features)
+    public IEnumerable<EnvironmentFeatureType> GetMissingFeatures(params EnvironmentFeatureType[] features)
     {
         var availableFeatures = ExistingFeatures(features).ToHashSet();
         return features.Where(requiredFeature => !availableFeatures.Contains(requiredFeature));
     }
 
-    public bool IsFeatureMissing(EnvironmentFeature feature) => GetMissingFeatures(feature).Any();
-    
-    public bool IsFeatureAvailable(EnvironmentFeature feature) => !GetMissingFeatures(feature).Any();
+    public Version? GetModuleVersion(EnvironmentFeatureType type, string module)
+    {
+        var environmentFeature = Options.Value.Features?.SingleOrDefault(i => i.Type == type);
+        var featureModule = environmentFeature?.Modules?.SingleOrDefault(i => i.Name == module);
+        return featureModule?.Version;
+    }
 
-    public void ThrowIfFeatureNotAvailable(params EnvironmentFeature[] features)
+    public bool IsFeatureMissing(EnvironmentFeatureType featureType) => GetMissingFeatures(featureType).Any();
+    
+    public bool IsFeatureAvailable(EnvironmentFeatureType featureType) => !GetMissingFeatures(featureType).Any();
+
+    public void ThrowIfFeatureNotAvailable(params EnvironmentFeatureType[] features)
     {
         var missingFeatures = GetMissingFeatures(features).ToArray();
 
