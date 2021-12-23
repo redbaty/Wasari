@@ -20,7 +20,17 @@ jobs:
       run: dotnet publish --configuration Release --self-contained -r win-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:Version=1.0.${{ github.run_number }} -o build-win-x64 ./Wasari/Wasari.csproj
     - name: Build Linux X64
       run: dotnet publish --configuration Release --self-contained -r linux-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:Version=1.0.${{ github.run_number }} -o build-linux-x64 ./Wasari/Wasari.csproj
-    - name: Create release
+    - name: Create versioned release
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "${{ github.run_number }}"
+        prerelease: false
+        title: 'Build #${{ github.run_number }}'
+        files: |
+          build-win-x64/Wasari.exe
+          build-linux-x64/Wasari      
+    - name: Create latest release
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
