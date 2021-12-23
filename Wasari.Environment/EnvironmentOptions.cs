@@ -2,5 +2,5 @@
 
 public class EnvironmentOptions
 {
-    public EnvironmentFeature[]? Features { get; internal set; }
+    public HashSet<EnvironmentFeature>? Features { get; internal set; }
 }

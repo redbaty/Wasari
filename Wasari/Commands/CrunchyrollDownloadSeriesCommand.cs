@@ -110,7 +110,7 @@ namespace Wasari.Commands
         public async ValueTask ExecuteAsync(IConsole console)
         {
             BrowserFactory.Headless = Headless;
-            EnvironmentService.ThrowIfFeatureNotAvailable(EnvironmentFeature.Ffmpeg, EnvironmentFeature.YtDlp);
+            EnvironmentService.ThrowIfFeatureNotAvailable(EnvironmentFeatureType.Ffmpeg, EnvironmentFeatureType.YtDlp);
 
             if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password))
             {
@@ -265,7 +265,7 @@ namespace Wasari.Commands
         {
             var isNvidiaAvailable = GpuAcceleration 
                                     && await FfmpegService.IsNvidiaAvailable() 
-                                    && EnvironmentService.IsFeatureAvailable(EnvironmentFeature.NvidiaGpu);
+                                    && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu);
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
 
@@ -278,7 +278,7 @@ namespace Wasari.Commands
                     anime4K = false;
                 }
 
-                if (!EnvironmentService.IsFeatureAvailable(EnvironmentFeature.FfmpegLibPlacebo))
+                if (!EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.FfmpegLibPlacebo))
                 {
                     Logger.LogWarning("Anime 4K was requested but no FFmpeg with libplacebo is available");
                     anime4K = false;

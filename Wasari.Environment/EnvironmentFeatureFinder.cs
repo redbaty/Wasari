@@ -1,11 +1,68 @@
 ﻿using System.ComponentModel;
+using System.Text.RegularExpressions;
 using CliWrap;
 using CliWrap.Buffered;
+using Wasari.Abstractions.Extensions;
 
 namespace WasariEnvironment;
 
 public static class EnvironmentFeatureFinder
 {
+    private static async Task<EnvironmentFeature?> GetProgramWithVersion(string executable, string arguments,
+        EnvironmentFeatureType type,
+        string? versionRegex = null,
+        Func<string, EnvironmentFeatureModule[]>? modulesParser = null)
+    {
+        var command = Cli
+            .Wrap(executable)
+            .WithValidation(CommandResultValidation.ZeroExitCode);
+
+        if (!string.IsNullOrEmpty(arguments))
+            command = command.WithArguments(arguments);
+
+        var executionResult = await command.ExecuteBufferedAsync()
+            .Task
+            .ContinueWith(t =>
+            {
+                if (!t.IsCompletedSuccessfully)
+                {
+                    if (t.Exception?.InnerException is Win32Exception win32Exception &&
+                        win32Exception.Message.EndsWith("The system cannot find the file specified."))
+                    {
+                        return null;
+                    }
+
+                    throw t.Exception ??
+                          throw new InvalidOperationException(
+                              "An unexpected erro occurred while scanning environment features");
+                }
+
+
+                return t.Result.ExitCode == 0 ? t.Result.StandardOutput : null;
+            });
+
+        if (string.IsNullOrEmpty(executionResult))
+            return null;
+
+        Version? mainVersion = null;
+        EnvironmentFeatureModule[]? modules = null;
+
+        if (!string.IsNullOrEmpty(versionRegex))
+        {
+            if (executionResult.GetValueFromRegex<string>(versionRegex, out var version) && Version.TryParse(version, out var localVersion))
+            {
+                mainVersion = localVersion;
+            }
+        }
+
+        if (modulesParser != null)
+        {
+            modules = modulesParser.Invoke(executionResult);
+        }
+        
+        return new EnvironmentFeature(type, mainVersion, modules);
+    }
+
     private static Task<bool> IsProgramAvailable(string exeName, string? arguments)
     {
         var command = Cli
@@ -15,23 +72,27 @@ public static class EnvironmentFeatureFinder
         if (!string.IsNullOrEmpty(arguments))
             command = command.WithArguments(arguments);
 
-        return command.ExecuteAsync().Task.ContinueWith(t =>
-        {
-            if (!t.IsCompletedSuccessfully)
+
+        return command.ExecuteBufferedAsync()
+            .Task
+            .ContinueWith(t =>
             {
-                if (t.Exception?.InnerException is Win32Exception win32Exception &&
-                    win32Exception.Message.EndsWith("The system cannot find the file specified."))
+                if (!t.IsCompletedSuccessfully)
                 {
-                    return false;
+                    if (t.Exception?.InnerException is Win32Exception win32Exception &&
+                        win32Exception.Message.EndsWith("The system cannot find the file specified."))
+                    {
+                        return false;
+                    }
+
+                    throw t.Exception ??
+                          throw new InvalidOperationException(
+                              "An unexpected erro occurred while scanning environment features");
                 }
 
-                throw t.Exception ??
-                      throw new InvalidOperationException(
-                          "An unexpected erro occurred while scanning environment features");
-            }
 
-            return t.Result.ExitCode == 0;
-        });
+                return t.Result.ExitCode == 0;
+            });
     }
 
     private static async Task<bool> IsLibPlaceboAvailable()
@@ -45,20 +106,36 @@ public static class EnvironmentFeatureFinder
         return bufferedCommandResult.StandardOutput.Contains("--enable-libplacebo");
     }
 
+    private static IEnumerable<EnvironmentFeatureModule> ParseFfmpegModules(string input)
+    {
+        foreach (Match match in Regex.Matches(input, @"(?<Name>\w+) +(?<Version1>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)\/(?<Version2>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)"))
+        {
+            if(!match.Success)
+                continue;
+
+            var name = match.Groups["Name"].Value;
+            var versions = new[] { Version.Parse(match.Groups["Version1"].Value), Version.Parse(match.Groups["Version2"].Value) };
+
+            yield return new EnvironmentFeatureModule(name, versions.Max());
+        }
+    }
+
     public static async IAsyncEnumerable<EnvironmentFeature> GetEnvironmentFeatures()
     {
-        if (await IsProgramAvailable("yt-dlp", "--version").DefaultsToFalse())
-            yield return EnvironmentFeature.YtDlp;
+        if (await GetProgramWithVersion("yt-dlp", "--version", EnvironmentFeatureType.YtDlp, "\\d+\\.\\d+\\.\\d+") is
+            { } ytDlpFeature)
+            yield return ytDlpFeature;
 
-        if (await IsProgramAvailable("ffmpeg", "-version").DefaultsToFalse())
+        if (await GetProgramWithVersion("ffmpeg", "-version", EnvironmentFeatureType.Ffmpeg, null, s => ParseFfmpegModules(s).ToArray()) is
+            { } ffmpegFeature)
         {
-            yield return EnvironmentFeature.Ffmpeg;
+            yield return ffmpegFeature;
             
             if (await IsLibPlaceboAvailable())
-                yield return EnvironmentFeature.FfmpegLibPlacebo;
+                yield return new EnvironmentFeature(EnvironmentFeatureType.FfmpegLibPlacebo, null, null);
         }
-
+        
         if (await IsProgramAvailable("nvidia-smi", null).DefaultsToFalse())
-            yield return EnvironmentFeature.NvidiaGpu;
+            yield return new EnvironmentFeature(EnvironmentFeatureType.NvidiaGpu, null, null);
     }
 }
