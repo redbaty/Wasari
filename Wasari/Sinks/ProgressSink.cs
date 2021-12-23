@@ -19,7 +19,7 @@ public class ProgressSink : ILogEventSink
 
     public void Emit(LogEvent logEvent)
     {
-        lock (ProgressBars)
+        lock (ProgressBarLock)
         {
             if (logEvent.Level == LogEventLevel.Information)
                 if (logEvent.MessageTemplate.Text.StartsWith("[Progress Update]"))
@@ -86,7 +86,7 @@ public class ProgressSink : ILogEventSink
 
     public ProgressBar AddProgressBar()
     {
-        lock (ProgressBars)
+        lock (ProgressBarLock)
         {
             var progressBar = new ProgressBar
             {
@@ -94,22 +94,9 @@ public class ProgressSink : ILogEventSink
                 CurrentValue = 0,
                 CurrentContainer = GetPosition()
             };
-
-            lock (ProgressBarLock)
-            {
-                ProgressBars.Add(progressBar);
-            }
-
+            
+            ProgressBars.Add(progressBar);
             return progressBar;
-        }
-    }
-
-    public void Refresh()
-    {
-        lock (ProgressBars)
-        {
-            ClearProgressBars();
-            DrawProgressBars();
         }
     }
 
