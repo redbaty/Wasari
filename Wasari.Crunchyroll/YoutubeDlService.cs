@@ -56,7 +56,7 @@ namespace Wasari.Crunchyroll
             }
         }
 
-        private async Task<BetaEpisodeResult> DownloadBetaEpisode(CrunchyrollEpisodeInfo episodeInfo)
+        private async Task<BetaEpisodeResult> GetUrlAndSubtitles(CrunchyrollEpisodeInfo episodeInfo)
         {
             var crunchyrollApiService = CrunchyrollApiServiceFactory.GetService();
             var streams = await crunchyrollApiService.GetStreams(episodeInfo.Url);
@@ -85,9 +85,9 @@ namespace Wasari.Crunchyroll
                 throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
             }
 
-            if (downloadParameters.CookieFilePath == null && episodeInfo.Url.EndsWith("/streams"))
+            if (episodeInfo.Url.EndsWith("/streams"))
             {
-                var downloadBetaEpisode = await DownloadBetaEpisode(episodeInfo);
+                var downloadBetaEpisode = await GetUrlAndSubtitles(episodeInfo);
                 url = downloadBetaEpisode.Url;
                 files.AddRange(downloadBetaEpisode.Files);
             }
