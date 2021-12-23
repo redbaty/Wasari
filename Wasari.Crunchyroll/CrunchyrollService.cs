@@ -103,7 +103,10 @@ namespace Wasari.Crunchyroll
 
             await seriesPage.WaitForXPathAsync("//*[@id=\"sidebar_elements\"]/li[1]/div");
             var id = await seriesPage.EvaluateExpressionAsync<string>(
-                "JSON.parse(document.getElementsByClassName(\"show-actions\")[0]?.attributes['data-contentmedia'].value).mediaId");
+                "document.getElementsByClassName(\"show-actions\")[0]?.attributes['data-contentmedia'].value.match(/\"mediaId\":\"(?<id>\\w+)\"/).groups.id");
+            
+            Logger.LogInformation("Media ID found {@Id}", id);
+            
             var episodesDictionary = await crunchyrollService.GetAllEpisodes(id)
                 .ToDictionaryAsync(i => i.ThumbnailIds.Single());
 
