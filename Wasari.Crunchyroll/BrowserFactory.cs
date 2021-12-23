@@ -47,7 +47,7 @@ public class BrowserFactory
         var browser = Cache.Get<Browser>("browser");
 
         if (browser != null)
-            return browser.DisposeAsync().AsTask();
+            return browser.CloseAsync();
 
         return Task.CompletedTask;
     }
