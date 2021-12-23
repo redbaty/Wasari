@@ -172,7 +172,7 @@ namespace Wasari.Commands
                     && i.SequenceNumber <= episodeRange[1])
                 .ToList();
 
-            if (episodes.Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated)
+            if (episodes.Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated && cookieFile == null)
                 throw new CommandException("Premium only episodes encountered, but no credentials were provided.");
 
             var downloadParameters = await CreateDownloadParameters(cookieFile, seriesInfo);
