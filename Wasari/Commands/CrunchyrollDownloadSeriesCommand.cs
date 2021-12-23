@@ -120,12 +120,8 @@ namespace Wasari.Commands
             {
                 Logger.LogInformation("BETA Series detected");
             }
-            
-            if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password) && isBeta)
-            {
-                await CrunchyrollApiServiceFactory.CreateUnauthenticatedService();
-            }
-            else
+
+            if ((!string.IsNullOrEmpty(Username) || !string.IsNullOrEmpty(Password)) && isBeta)
             {
                 if (string.IsNullOrEmpty(Username))
                     throw new CrunchyrollAuthenticationException("Missing username", Username, Password);
@@ -134,6 +130,10 @@ namespace Wasari.Commands
                     throw new CrunchyrollAuthenticationException("Missing password", Username, Password);
 
                 await CrunchyrollApiServiceFactory.CreateAuthenticatedService(Username, Password);
+            }
+            else
+            {
+                await CrunchyrollApiServiceFactory.CreateUnauthenticatedService();
             }
 
             if (!isValidSeriesUrl)
