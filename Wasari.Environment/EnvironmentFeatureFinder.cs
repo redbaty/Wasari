@@ -122,11 +122,11 @@ public static class EnvironmentFeatureFinder
 
     public static async IAsyncEnumerable<EnvironmentFeature> GetEnvironmentFeatures()
     {
-        if (await GetProgramWithVersion("yt-dlp", "--version", EnvironmentFeatureType.YtDlp, "\\d+\\.\\d+\\.\\d+") is
+        if (await GetProgramWithVersion("yt-dlp", "--version", EnvironmentFeatureType.YtDlp, "\\d+\\.\\d+\\.\\d+").DefaultIfFailed() is
             { } ytDlpFeature)
             yield return ytDlpFeature;
 
-        if (await GetProgramWithVersion("ffmpeg", "-version", EnvironmentFeatureType.Ffmpeg, null, s => ParseFfmpegModules(s).ToArray()) is
+        if (await GetProgramWithVersion("ffmpeg", "-version", EnvironmentFeatureType.Ffmpeg, null, s => ParseFfmpegModules(s).ToArray()).DefaultIfFailed() is
             { } ffmpegFeature)
         {
             yield return ffmpegFeature;
@@ -135,7 +135,7 @@ public static class EnvironmentFeatureFinder
                 yield return new EnvironmentFeature(EnvironmentFeatureType.FfmpegLibPlacebo, null, null);
         }
         
-        if (await IsProgramAvailable("nvidia-smi", null).DefaultsToFalse())
+        if (await IsProgramAvailable("nvidia-smi", null).DefaultIfFailed())
             yield return new EnvironmentFeature(EnvironmentFeatureType.NvidiaGpu, null, null);
     }
 }

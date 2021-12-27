@@ -2,8 +2,8 @@
 
 internal static class TaskExtensions
 {
-    public static Task<bool> DefaultsToFalse(this Task<bool> task)
+    public static Task<T?> DefaultIfFailed<T>(this Task<T> task)
     {
-        return task.ContinueWith(t => t.IsCompletedSuccessfully && t.Result);
+        return task.ContinueWith(t => t.IsCompletedSuccessfully ? t.Result : default);
     }
 }
