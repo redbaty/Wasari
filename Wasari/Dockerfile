@@ -1,21 +1,16 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:5.0 AS base
+﻿FROM ghcr.io/btbn/ffmpeg-builds/base-linux64:latest AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["CrunchyDownloader/CrunchyDownloader.csproj", "CrunchyDownloader/"]
-RUN dotnet restore "CrunchyDownloader/CrunchyDownloader.csproj"
 COPY . .
-WORKDIR "/src/CrunchyDownloader"
-RUN dotnet build "CrunchyDownloader.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "CrunchyDownloader.csproj" -c Release -o /app/publish
+RUN dotnet publish "./Wasari/Wasari.csproj" --configuration Release --self-contained -r linux-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-
 
 RUN apt-get update && apt-get -f install && apt-get -y install wget gnupg2 apt-utils curl
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
@@ -41,4 +36,4 @@ ENV PUPPETEER_EXECUTABLE_PATH "/usr/bin/google-chrome-unstable"
 
 RUN curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
 RUN chmod a+rx /usr/local/bin/youtube-dl
-ENTRYPOINT ["dotnet", "CrunchyDownloader.dll"]
+ENTRYPOINT ["./Wasari"]
