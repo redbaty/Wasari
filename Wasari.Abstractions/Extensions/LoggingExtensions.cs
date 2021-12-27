@@ -19,7 +19,7 @@ namespace Wasari.Abstractions.Extensions
                     if (propertyInfo != null && propertyInfo.CanWrite &&
                         structureValueProperty.Value is ScalarValue scalarValue)
                     {
-                        propertyInfo?.SetValue(item, scalarValue.Value);
+                        propertyInfo.SetValue(item, scalarValue.Value);
                     }
                 }
 
