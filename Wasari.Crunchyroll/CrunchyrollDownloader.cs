@@ -42,7 +42,12 @@ namespace Wasari.Crunchyroll
                 else
                 {
                     var finalEpisodeFile = youtubeDlResult.FinalEpisodeFile(downloadParameters);
-                    File.Move(youtubeDlResult.TemporaryEpisodeFile.Path, finalEpisodeFile);
+                    var finalEpisodeDirectory = Path.GetDirectoryName(finalEpisodeFile);
+
+                    if (finalEpisodeDirectory != null && !Directory.Exists(finalEpisodeDirectory))
+                        Directory.CreateDirectory(finalEpisodeDirectory);
+
+                    File.Move(youtubeDlResult.TemporaryEpisodeFile.Path, finalEpisodeFile, true);
 
                     Logger.LogProgressUpdate(new ProgressUpdate
                     {
