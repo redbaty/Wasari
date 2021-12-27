@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Wasari.Abstractions.Extensions;
 
 namespace Wasari.Sinks;
 
@@ -34,6 +35,6 @@ public class ProgressBar
 
         var output = pctComplete.ToString("P");
         sb.Append(output.PadRight(15) + Message);
-        return sb.ToString();
+        return sb.ToString().Truncate(Console.WindowWidth - 1);
     }
 }
