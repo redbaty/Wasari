@@ -4,11 +4,11 @@ namespace Wasari.Abstractions
 {
     public class ProgressUpdate
     {
-        public string EpisodeId { get; init; }
+        public string? EpisodeId { get; init; }
 
         public int Value { get; init; }
 
-        public string Title { get; init; }
+        public string? Title { get; init; }
 
         public ProgressUpdateTypes Type { get; init; }
 

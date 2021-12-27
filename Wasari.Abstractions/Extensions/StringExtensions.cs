@@ -16,13 +16,20 @@ namespace Wasari.Abstractions.Extensions
             return RemoveInvalidChars.Replace(fileOrDirectoryName, string.Empty);
         }
         
-        public static bool GetValueFromRegex<T>(this string input, string regex, out T @out)
+        public static string? Truncate(this string? value, int maxLength, string truncationSuffix = "…")
+        {
+            return value?.Length > maxLength
+                ? value[..maxLength] + truncationSuffix
+                : value;
+        }
+        
+        public static bool GetValueFromRegex<T>(this string input, string regex, out T? @out)
         {
             if (typeof(T).IsArray)
             {
                 var canParseFromRegex = GetValuesFromRegex(input, regex, out var value);
 
-                if (canParseFromRegex)
+                if (canParseFromRegex && value != null)
                 {
                     if (typeof(T) == typeof(string[]))
                     {
@@ -35,7 +42,7 @@ namespace Wasari.Abstractions.Extensions
             {
                 var canParseFromRegex = GetValueFromRegex(input, regex, out var value);
 
-                if (canParseFromRegex)
+                if (canParseFromRegex && !string.IsNullOrEmpty(value))
                 {
                     if (typeof(T) == typeof(double))
                     {
@@ -65,7 +72,7 @@ namespace Wasari.Abstractions.Extensions
             return false;
         }
         
-        private static bool GetValuesFromRegex(this string input, string regex, out List<string> @out)
+        private static bool GetValuesFromRegex(this string input, string regex, out List<string>? @out)
         {
             @out = new List<string>();
             
@@ -84,7 +91,7 @@ namespace Wasari.Abstractions.Extensions
             return false;
         }
 
-        private static bool GetValueFromRegex(this string input, string regex, out string @out)
+        private static bool GetValueFromRegex(this string input, string regex, out string? @out)
         {
             if (!string.IsNullOrEmpty(input) && Regex.Match(input, regex) is { Success: true } match)
             {

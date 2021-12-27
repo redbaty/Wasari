@@ -2,7 +2,7 @@
 {
     public class DownloadedFile
     {
-        public string Path { get; init; }
+        public string? Path { get; init; }
 
         public FileType Type { get; init; }
     }

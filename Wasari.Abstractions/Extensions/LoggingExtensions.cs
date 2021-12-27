@@ -5,7 +5,7 @@ namespace Wasari.Abstractions.Extensions
 {
     public static class LoggingExtensions
     {
-        public static T ObjectFromLogEvent<T>(this LogEvent logEvent) where T : new()
+        public static T? ObjectFromLogEvent<T>(this LogEvent logEvent) where T : new()
         {
             if (logEvent.Properties.TryGetValue("ProgressUpdate", out var property) &&
                 property is StructureValue structureValue)
