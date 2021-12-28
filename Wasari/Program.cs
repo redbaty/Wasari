@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -55,7 +55,7 @@ namespace Wasari
                 var environmentOptions = serviceProvider.GetService<IOptions<EnvironmentOptions>>();
                 if (environmentOptions?.Value?.Features is { } features)
                 {
-                    Log.Logger.Information("Available environment features: {@Features}", features);
+                    Log.Logger.Information("Available environment features: {@Features}", features.Select(i => i.Type));
                 }
 
                 if (Assembly.GetEntryAssembly()?.GetName()?.Version is { } version)
