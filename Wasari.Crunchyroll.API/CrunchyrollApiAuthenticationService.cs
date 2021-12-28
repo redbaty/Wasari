@@ -34,6 +34,8 @@ namespace Wasari.Crunchyroll.API
         {
             using var formUrlEncodedContent = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("grant_type", "client_id") });
             using var authResponse = await HttpClient.PostAsync("auth/v1/token", formUrlEncodedContent);
+            authResponse.EnsureSuccessStatusCode();
+            
             await using var responseStream = await authResponse.Content.ReadAsStreamAsync();
             var jsonDocument = await JsonDocument.ParseAsync(responseStream);
             return jsonDocument.RootElement.GetProperty("access_token").GetString();
