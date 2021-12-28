@@ -18,8 +18,6 @@
 
         public bool UseNvidiaAcceleration { get; init; } = true;
 
-        public bool UseHardwareAcceleration { get; init; } = true;
-
         public bool DeleteTemporaryFiles { get; init; } = true;
 
         public string? TemporaryDirectory { get; init; }

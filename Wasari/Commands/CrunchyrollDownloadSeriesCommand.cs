@@ -72,9 +72,6 @@ namespace Wasari.Commands
         [CommandOption("hevc", Description = "Encode final video file in H265/HEVC")]
         public bool ConvertToHevc { get; init; } = true;
 
-        [CommandOption("haccel", 'a', Description = "Use hardware acceleration for FFmpeg encoding")]
-        public bool HardwareAcceleration { get; init; } = true;
-
         [CommandOption("gpuaccel", Description = "Use GPU acceleration for FFmpeg encoding")]
         public bool GpuAcceleration { get; init; } = true;
 

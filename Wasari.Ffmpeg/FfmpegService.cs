@@ -78,9 +78,6 @@ namespace Wasari.Ffmpeg
         private IEnumerable<string> CreateArguments(string videoFile, IEnumerable<string> subtitlesFiles,
             string newVideoFile, DownloadParameters downloadParameters)
         {
-            if (downloadParameters.UseHardwareAcceleration)
-                yield return $"-hwaccel {(downloadParameters.UseNvidiaAcceleration ? "cuda" : "auto")}";
-
             if (downloadParameters.UseAnime4K)
                 yield return "-init_hw_device cuda=cuda:0 -filter_hw_device cuda";
 
