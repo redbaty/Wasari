@@ -60,6 +60,8 @@ namespace Wasari.Crunchyroll
             var preferedLink = streams.Streams
                 .SingleOrDefault(i => i.Type == "adaptive_hls" && string.IsNullOrEmpty(i.Locale));
             
+            Logger.LogInformation("Stream URL found for Episode {@Episode}: {@Url}", episodeInfo.FilePrefix, preferedLink);
+            
             if (preferedLink == null)
                 throw new InvalidOperationException("Could not determine stream link");
             
