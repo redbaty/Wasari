@@ -1,4 +1,9 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
+﻿FROM nvidia/vulkan:1.2.170-470 AS base
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES all
+ENV DEBIAN_FRONTEND=noninteractive 
+ENV TZ=Etc/UTC
+
 COPY ffmpeg/ /usr/local/bin/
 WORKDIR /app
 
