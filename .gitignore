@@ -353,3 +353,5 @@ MigrationBackup/
 **/Properties/launchSettings.json
 
 .local-chromium/
+
+ffmpeg/
