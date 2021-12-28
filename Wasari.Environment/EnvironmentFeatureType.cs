@@ -2,7 +2,7 @@
 
 public readonly record struct EnvironmentFeatureModule(string Name, Version? Version);
 
-public readonly record struct EnvironmentFeature(EnvironmentFeatureType Type, Version? Version, EnvironmentFeatureModule[]? Modules);
+public readonly record struct EnvironmentFeature(EnvironmentFeatureType Type, Version? Version, EnvironmentFeatureModule[]? Modules, string Path);
 
 public enum EnvironmentFeatureType
 {

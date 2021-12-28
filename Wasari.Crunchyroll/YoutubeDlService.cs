@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -25,15 +25,18 @@ namespace Wasari.Crunchyroll
     
     internal class YoutubeDlService
     {
-        public YoutubeDlService(ILogger<YoutubeDlService> logger, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
+        public YoutubeDlService(ILogger<YoutubeDlService> logger, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, EnvironmentService environmentService)
         {
             Logger = logger;
             CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
+            YtDlp = environmentService.GetFeatureOrThrow(EnvironmentFeatureType.YtDlp);
         }
 
         private ILogger<YoutubeDlService> Logger { get; }
         
         private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
+        
+        private EnvironmentFeature YtDlp { get; }
         
         private static async IAsyncEnumerable<DownloadedFile> DownloadSubs(string episodeId,
             IEnumerable<ApiEpisodeStreamSubtitle> subtitles)
@@ -115,7 +118,7 @@ namespace Wasari.Crunchyroll
                 $"-o \"{temporaryEpisodeFile}\""
             }.Where(i => !string.IsNullOrEmpty(i));
 
-            var command = Cli.Wrap("yt-dlp")
+            var command = Cli.Wrap(YtDlp.Path)
                 .WithArguments(arguments, false)
                 .WithRetryCount(10)
                 .WithLogger(Logger)

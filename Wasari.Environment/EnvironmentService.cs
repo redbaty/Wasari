@@ -23,6 +23,12 @@ public class EnvironmentService
         }
     }
 
+    public EnvironmentFeature? GetFeature(EnvironmentFeatureType type) =>
+        Options.Value.Features?.SingleOrDefault(i => i.Type == type);
+    
+    public EnvironmentFeature GetFeatureOrThrow(EnvironmentFeatureType type) =>
+        GetFeature(type) ?? throw new MissingEnvironmentFeatureException(new []{type});
+
     public IEnumerable<EnvironmentFeatureType> GetMissingFeatures(params EnvironmentFeatureType[] features)
     {
         var availableFeatures = ExistingFeatures(features).ToHashSet();

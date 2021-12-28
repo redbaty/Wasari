@@ -21,22 +21,26 @@ namespace Wasari.Ffmpeg
         {
             Logger = logger;
             EnvironmentService = environmentService;
+            Ffmpeg = EnvironmentService.GetFeatureOrThrow(EnvironmentFeatureType.Ffmpeg);
         }
 
         private ILogger<FfmpegService> Logger { get; }
 
         private EnvironmentService EnvironmentService { get; }
+        
+        private EnvironmentFeature Ffmpeg { get; }
 
         private static object CheckShaderLock { get; } = new();
+        
 
-        private static async IAsyncEnumerable<string> GetAvailableHardwareAccelerationMethods()
+        private async IAsyncEnumerable<string> GetAvailableHardwareAccelerationMethods()
         {
             var arguments = new[]
             {
                 "-hide_banner -hwaccels"
             };
 
-            var command = Cli.Wrap("ffmpeg")
+            var command = Cli.Wrap(Ffmpeg.Path)
                 .WithValidation(CommandResultValidation.None)
                 .WithArguments(arguments, false);
 
@@ -49,14 +53,14 @@ namespace Wasari.Ffmpeg
             }
         }
 
-        private static async IAsyncEnumerable<string> GetAvailableEncoders()
+        private async IAsyncEnumerable<string> GetAvailableEncoders()
         {
             var arguments = new[]
             {
                 "-hide_banner -encoders"
             };
 
-            var command = Cli.Wrap("ffmpeg")
+            var command = Cli.Wrap(Ffmpeg.Path)
                 .WithValidation(CommandResultValidation.None)
                 .WithArguments(arguments, false);
 
@@ -69,7 +73,7 @@ namespace Wasari.Ffmpeg
             }
         }
 
-        public static async Task<bool> IsNvidiaAvailable() =>
+        public async Task<bool> IsNvidiaAvailable() =>
             await GetAvailableHardwareAccelerationMethods()
                 .AnyAsync(i => string.Equals(i, "cuda", StringComparison.InvariantCultureIgnoreCase))
             && await GetAvailableEncoders()
@@ -197,7 +201,7 @@ namespace Wasari.Ffmpeg
 
             Logger.LogProgressUpdate(update);
 
-            var command = Cli.Wrap("ffmpeg")
+            var command = Cli.Wrap(Ffmpeg.Path)
                 .WithArguments(CreateArguments(videoFile, subtitlesFiles, newVideoFile, downloadParameters)
                     .Where(i => !string.IsNullOrEmpty(i)), false);
 

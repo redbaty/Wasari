@@ -49,7 +49,8 @@ public static class EnvironmentFeatureFinder
 
         if (!string.IsNullOrEmpty(versionRegex))
         {
-            if (executionResult.GetValueFromRegex<string>(versionRegex, out var version) && Version.TryParse(version, out var localVersion))
+            if (executionResult.GetValueFromRegex<string>(versionRegex, out var version) &&
+                Version.TryParse(version, out var localVersion))
             {
                 mainVersion = localVersion;
             }
@@ -59,8 +60,8 @@ public static class EnvironmentFeatureFinder
         {
             modules = modulesParser.Invoke(executionResult);
         }
-        
-        return new EnvironmentFeature(type, mainVersion, modules);
+
+        return new EnvironmentFeature(type, mainVersion, modules, executable);
     }
 
     private static Task<bool> IsProgramAvailable(string exeName, string? arguments)
@@ -95,10 +96,10 @@ public static class EnvironmentFeatureFinder
             });
     }
 
-    private static async Task<bool> IsLibPlaceboAvailable()
+    private static async Task<bool> IsLibPlaceboAvailable(EnvironmentFeature ffmpeg)
     {
         var command = Cli
-            .Wrap("ffmpeg")
+            .Wrap(ffmpeg.Path)
             .WithArguments("-version")
             .WithValidation(CommandResultValidation.ZeroExitCode);
         var bufferedCommandResult = await command.ExecuteBufferedAsync();
@@ -108,13 +109,15 @@ public static class EnvironmentFeatureFinder
 
     private static IEnumerable<EnvironmentFeatureModule> ParseFfmpegModules(string input)
     {
-        foreach (Match match in Regex.Matches(input, @"(?<Name>\w+) +(?<Version1>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)\/(?<Version2>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)"))
+        foreach (Match match in Regex.Matches(input,
+                     @"(?<Name>\w+) +(?<Version1>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)\/(?<Version2>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)"))
         {
-            if(!match.Success)
+            if (!match.Success)
                 continue;
 
             var name = match.Groups["Name"].Value;
-            var versions = new[] { Version.Parse(match.Groups["Version1"].Value), Version.Parse(match.Groups["Version2"].Value) };
+            var versions = new[]
+                {Version.Parse(match.Groups["Version1"].Value), Version.Parse(match.Groups["Version2"].Value)};
 
             yield return new EnvironmentFeatureModule(name, versions.Max());
         }
@@ -122,20 +125,22 @@ public static class EnvironmentFeatureFinder
 
     public static async IAsyncEnumerable<EnvironmentFeature> GetEnvironmentFeatures()
     {
-        if (await GetProgramWithVersion("yt-dlp", "--version", EnvironmentFeatureType.YtDlp, "\\d+\\.\\d+\\.\\d+").DefaultIfFailed() is
+        if (await GetProgramWithVersion(Environment.GetEnvironmentVariable("YTDLP") ?? "yt-dlp", "--version",
+                EnvironmentFeatureType.YtDlp, "\\d+\\.\\d+\\.\\d+").DefaultIfFailed() is
             { } ytDlpFeature)
             yield return ytDlpFeature;
 
-        if (await GetProgramWithVersion("ffmpeg", "-version", EnvironmentFeatureType.Ffmpeg, null, s => ParseFfmpegModules(s).ToArray()).DefaultIfFailed() is
+        if (await GetProgramWithVersion(Environment.GetEnvironmentVariable("FFMPEG") ?? "ffmpeg", "-version",
+                EnvironmentFeatureType.Ffmpeg, null, s => ParseFfmpegModules(s).ToArray()).DefaultIfFailed() is
             { } ffmpegFeature)
         {
             yield return ffmpegFeature;
-            
-            if (await IsLibPlaceboAvailable())
-                yield return new EnvironmentFeature(EnvironmentFeatureType.FfmpegLibPlacebo, null, null);
+         
+            if (await IsLibPlaceboAvailable(ffmpegFeature))
+                yield return new EnvironmentFeature(EnvironmentFeatureType.FfmpegLibPlacebo, null, null, string.Empty);
         }
-        
+
         if (await IsProgramAvailable("nvidia-smi", null).DefaultIfFailed())
-            yield return new EnvironmentFeature(EnvironmentFeatureType.NvidiaGpu, null, null);
+            yield return new EnvironmentFeature(EnvironmentFeatureType.NvidiaGpu, null, null, string.Empty);
     }
 }
