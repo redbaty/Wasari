@@ -1,8 +1,7 @@
-using System;
 using System.Text;
 using Wasari.Abstractions.Extensions;
 
-namespace Wasari.Sinks;
+namespace Wasari.ProgressSink;
 
 public class ProgressBar
 {
@@ -15,7 +14,7 @@ public class ProgressBar
 
     public int Max { get; set; }
     
-    public string Message { get; set; }
+    public string? Message { get; set; }
     
     internal Position? CurrentContainer { get; set; }
 
@@ -35,6 +34,6 @@ public class ProgressBar
 
         var output = pctComplete.ToString("P");
         sb.Append(output.PadRight(15) + Message);
-        return sb.ToString().Truncate(Console.WindowWidth - 1);
+        return sb.ToString().Truncate(Console.WindowWidth - 1)!;
     }
 }

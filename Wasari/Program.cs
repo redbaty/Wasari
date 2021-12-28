@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -12,7 +12,7 @@ using Wasari.App;
 using Wasari.Commands;
 using Wasari.Crunchyroll;
 using Wasari.Models;
-using Wasari.Sinks;
+using Wasari.ProgressSink;
 using WasariEnvironment;
 
 namespace Wasari
@@ -29,13 +29,7 @@ namespace Wasari
 
             try
             {
-                loggerConfiguration = useProgressBar
-                    ? loggerConfiguration.WriteTo.Sink<ProgressSink>()
-                    : loggerConfiguration.WriteTo.Console()
-                        .Filter
-                        .ByIncludingOnly(i =>
-                            i.Level != LogEventLevel.Information ||
-                            !i.MessageTemplate.Text.StartsWith("[Progress Update]"));
+                loggerConfiguration = loggerConfiguration.WriteTo.ProgressConsole();
 
                 Log.Logger = loggerConfiguration
                     .WriteTo.File(

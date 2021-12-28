@@ -1,16 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Serilog.Core;
+﻿using Serilog.Core;
 using Serilog.Events;
+using Serilog.Sinks.SystemConsole;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
 
-namespace Wasari.Sinks;
+namespace Wasari.ProgressSink;
 
 public class ProgressSink : ILogEventSink
 {
+    internal ProgressSink(ConsoleSink consoleSink)
+    {
+        ConsoleSink = consoleSink;
+    }
+    
+    private ConsoleSink ConsoleSink { get; }
+    
     private object ProgressBarLock { get; } = new();
 
     private Dictionary<string, ProgressBar> ProgressBarsById { get; } = new();
@@ -32,49 +36,11 @@ public class ProgressSink : ILogEventSink
                 }
 
             ClearProgressBars();
-
-            var level = GetShortLevel(logEvent.Level);
-            var renderMessage = logEvent.RenderMessage();
-            Console.Write("[");
-            var oldColor = Console.ForegroundColor;
-            Console.ForegroundColor = GetColor(logEvent.Level);
-            Console.Write(level);
-            Console.ForegroundColor = oldColor;
-            Console.Write("] ");
-            Console.Write(renderMessage);
-            Console.Write(Environment.NewLine);
-            Console.Write('\r');
-
+            
+            ConsoleSink.Emit(logEvent);
+            
             DrawProgressBars();
         }
-    }
-
-    private static ConsoleColor GetColor(LogEventLevel level)
-    {
-        return level switch
-        {
-            LogEventLevel.Verbose => ConsoleColor.DarkGray,
-            LogEventLevel.Debug => ConsoleColor.DarkGray,
-            LogEventLevel.Information => ConsoleColor.Blue,
-            LogEventLevel.Warning => ConsoleColor.Yellow,
-            LogEventLevel.Error => ConsoleColor.Red,
-            LogEventLevel.Fatal => ConsoleColor.Red,
-            _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
-        };
-    }
-
-    private static string GetShortLevel(LogEventLevel level)
-    {
-        return level switch
-        {
-            LogEventLevel.Verbose => "VER",
-            LogEventLevel.Debug => "DBG",
-            LogEventLevel.Information => "INF",
-            LogEventLevel.Warning => "WRN",
-            LogEventLevel.Error => "ERR",
-            LogEventLevel.Fatal => "FAT",
-            _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
-        };
     }
 
     private static void ClearCurrentConsoleLine(int? size = null)
@@ -159,7 +125,7 @@ public class ProgressSink : ILogEventSink
         }
     }
 
-    private ProgressUpdate EmitProgressUpdate(LogEvent logEvent)
+    private ProgressUpdate? EmitProgressUpdate(LogEvent logEvent)
     {
         var episodeId = logEvent.Properties["Id"] is ScalarValue scalarValue ? scalarValue.Value.ToString() : null;
 
@@ -169,6 +135,9 @@ public class ProgressSink : ILogEventSink
 
             var progressBar = ProgressBarsById[episodeId];
             var progressUpdate = logEvent.ObjectFromLogEvent<ProgressUpdate>();
+
+            if (progressUpdate == null)
+                return null;
 
             if (progressUpdate.Type == ProgressUpdateTypes.Max) progressBar.Max = progressUpdate.Value;
 

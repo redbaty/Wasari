@@ -11,7 +11,6 @@
       <PackageReference Include="CliWrap" Version="3.3.3" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
       <PackageReference Include="Serilog.Extensions.Hosting" Version="4.2.0" />
-      <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
       <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
       <PackageReference Include="System.Linq.Async" Version="5.1.0" />
     </ItemGroup>
@@ -20,6 +19,7 @@
       <ProjectReference Include="..\Wasari.Crunchyroll\Wasari.Crunchyroll.csproj" />
       <ProjectReference Include="..\Wasari.Abstractions\Wasari.Abstractions.csproj" />
       <ProjectReference Include="..\Wasari.Environment\Wasari.Environment.csproj" />
+      <ProjectReference Include="..\Wasari.ProgressSink\Wasari.ProgressSink.csproj" />
     </ItemGroup>
 
 </Project>
