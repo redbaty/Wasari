@@ -9,6 +9,7 @@ using CliFx;
 using CliFx.Attributes;
 using CliFx.Exceptions;
 using CliFx.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
@@ -34,7 +35,7 @@ namespace Wasari.Commands
             EnvironmentService environmentService,
             BetaCrunchyrollService betaCrunchyrollService,
             BrowserFactory browserFactory,
-            CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
+            CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, IServiceProvider serviceProvider)
         {
             CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
             Logger = logger;
@@ -44,6 +45,7 @@ namespace Wasari.Commands
             BetaCrunchyrollService = betaCrunchyrollService;
             BrowserFactory = browserFactory;
             CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
+            ServiceProvider = serviceProvider;
         }
 
         private CrunchyRollAuthenticationService CrunchyRollAuthenticationService { get; }
@@ -97,6 +99,8 @@ namespace Wasari.Commands
         private ISeriesDownloader<CrunchyrollEpisodeInfo> CrunchyrollDownloader { get; }
 
         private EnvironmentService EnvironmentService { get; }
+        
+        private IServiceProvider ServiceProvider { get; }
 
         private BetaCrunchyrollService BetaCrunchyrollService { get; }
 
@@ -260,8 +264,8 @@ namespace Wasari.Commands
         private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file,
             ISeriesInfo seriesInfo)
         {
-            var isNvidiaAvailable = GpuAcceleration 
-                                    && await FfmpegService.IsNvidiaAvailable() 
+            var isNvidiaAvailable = GpuAcceleration
+                                    && await ServiceProvider.GetService<FfmpegService>()!.IsNvidiaAvailable()
                                     && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu);
 
             if (isNvidiaAvailable) Logger.LogInformation("NVIDIA hardware acceleration is available");
@@ -299,7 +303,6 @@ namespace Wasari.Commands
                 OutputDirectory = outputDirectory,
                 CreateSeasonFolder = CreateSeasonFolder,
                 UseNvidiaAcceleration = isNvidiaAvailable,
-                UseHardwareAcceleration = HardwareAcceleration,
                 ConversionPreset = ConversionPreset,
                 DeleteTemporaryFiles = CleanTemporaryFiles,
                 UseHevc = ConvertToHevc,
