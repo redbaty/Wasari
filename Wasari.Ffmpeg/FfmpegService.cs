@@ -79,14 +79,14 @@ namespace Wasari.Ffmpeg
             string newVideoFile, DownloadParameters downloadParameters)
         {
             if (downloadParameters.UseAnime4K)
-                yield return "-init_hw_device cuda=cuda:0 -filter_hw_device cuda";
+                yield return "-init_hw_device vulkan";
 
             yield return $"-i \"{videoFile}\"";
             var subtitleArguments = CreateSubtitleArguments(subtitlesFiles);
 
             if (downloadParameters.UseAnime4K)
                 yield return
-                    "-filter_complex \"hwupload=derive_device=vulkan,libplacebo=w=3840:h=2160:custom_shader_path=main.glsl,hwdownload,format=nv12\"";
+                    "-filter_complex \"hwupload,libplacebo=w=3840:h=2160:custom_shader_path=main.glsl,hwdownload,format=yuv420p\"";
 
             if (!string.IsNullOrEmpty(subtitleArguments))
                 yield return subtitleArguments;
