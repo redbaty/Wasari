@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -13,16 +13,10 @@ using Wasari.Abstractions.Extensions;
 using Wasari.Crunchyroll.Abstractions;
 using Wasari.Crunchyroll.API;
 using Wasari.Crunchyroll.Extensions;
+using WasariEnvironment;
 
 namespace Wasari.Crunchyroll
 {
-    internal class BetaEpisodeResult
-    {
-        public string Url { get; set; }
-        
-        public DownloadedFile[] Files { get; set; }
-    }
-    
     internal class YoutubeDlService
     {
         public YoutubeDlService(ILogger<YoutubeDlService> logger, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, EnvironmentService environmentService)
@@ -97,7 +91,7 @@ namespace Wasari.Crunchyroll
             
             var fileSafeName = episodeInfo.Name.AsSafePath();
 
-            var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory,
+            var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Directory.GetCurrentDirectory(),
                 $"{episodeInfo.FilePrefix} - {fileSafeName}_temp.mp4");
 
             Logger.LogInformation("Download of episode {@Episode} started", episodeInfo.FilePrefix);
