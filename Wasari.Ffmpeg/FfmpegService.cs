@@ -27,11 +27,11 @@ namespace Wasari.Ffmpeg
         private ILogger<FfmpegService> Logger { get; }
 
         private EnvironmentService EnvironmentService { get; }
-        
+
         private EnvironmentFeature Ffmpeg { get; }
 
         private static object CheckShaderLock { get; } = new();
-        
+
 
         private async IAsyncEnumerable<string> GetAvailableHardwareAccelerationMethods()
         {
@@ -100,7 +100,7 @@ namespace Wasari.Ffmpeg
                 if (downloadParameters.UseNvidiaAcceleration)
                 {
                     yield return "-c:v hevc_nvenc";
-                    
+
                     var useExtraSei =
                         EnvironmentService.GetModuleVersion(EnvironmentFeatureType.Ffmpeg, "libavcodec") is
                         {
@@ -159,7 +159,7 @@ namespace Wasari.Ffmpeg
             return $"{aggregate} -map 0:v -map 0:a {mappings} {metadataMappings}";
         }
 
-        public async Task Encode(string episodeId, string videoFile, IEnumerable<string> subtitlesFiles,
+        public async Task Encode(string episodeId, string videoFile, string[] subtitlesFiles,
             string newVideoFile, DownloadParameters downloadParameters)
         {
             var update = new ProgressUpdate
@@ -218,8 +218,9 @@ namespace Wasari.Ffmpeg
                     _ => null
                 };
 
-                if (text.GetValueFromRegex<double>(@"speed=(\d+.\d+)x", out var speed) &&
-                    text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time))
+                if (text != null 
+                    && text.GetValueFromRegex<double>(@"speed=(\d+.\d+)x", out var speed) 
+                    && text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time))
                 {
                     var timespan = TimeSpan.Parse(time);
 
