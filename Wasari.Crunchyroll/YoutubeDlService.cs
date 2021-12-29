@@ -33,7 +33,7 @@ namespace Wasari.Crunchyroll
         private EnvironmentFeature YtDlp { get; }
         
         private static async IAsyncEnumerable<DownloadedFile> DownloadSubs(string episodeId,
-            IEnumerable<ApiEpisodeStreamSubtitle> subtitles)
+            IEnumerable<ApiEpisodeStreamSubtitle> subtitles, DownloadParameters downloadParameters)
         {
             using var httpClient = new HttpClient();
 
@@ -41,7 +41,7 @@ namespace Wasari.Crunchyroll
             {
                 using var respostaHttp = await httpClient.GetAsync(subtitle.Url);
                 await using var remoteStream = await respostaHttp.Content.ReadAsStreamAsync();
-                var temporaryFile = Path.Combine(Path.GetTempPath(), $"{episodeId}.{subtitle.Locale}.{subtitle.Format}");
+                var temporaryFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Path.GetTempPath(), $"{episodeId}.{subtitle.Locale}.{subtitle.Format}");
                 await using var fs = File.Create(temporaryFile);
                 await remoteStream.CopyToAsync(fs);
 
@@ -53,7 +53,8 @@ namespace Wasari.Crunchyroll
             }
         }
 
-        private async Task<BetaEpisodeResult> GetUrlAndSubtitles(CrunchyrollEpisodeInfo episodeInfo)
+        private async Task<BetaEpisodeResult> GetUrlAndSubtitles(CrunchyrollEpisodeInfo episodeInfo,
+            DownloadParameters downloadParameters)
         {
             var crunchyrollApiService = CrunchyrollApiServiceFactory.GetService();
             var streams = await crunchyrollApiService.GetStreams(episodeInfo.Url);
@@ -67,7 +68,7 @@ namespace Wasari.Crunchyroll
             
             return new BetaEpisodeResult
             {
-                Files = await DownloadSubs(episodeInfo.Id, streams.Subtitles).ToArrayAsync(),
+                Files = await DownloadSubs(episodeInfo.Id, streams.Subtitles, downloadParameters).ToArrayAsync(),
                 Url = preferedLink.Url
             };
         }
@@ -86,7 +87,7 @@ namespace Wasari.Crunchyroll
 
             if (episodeInfo.Url.EndsWith("/streams"))
             {
-                var downloadBetaEpisode = await GetUrlAndSubtitles(episodeInfo);
+                var downloadBetaEpisode = await GetUrlAndSubtitles(episodeInfo, downloadParameters);
                 url = downloadBetaEpisode.Url;
                 files.AddRange(downloadBetaEpisode.Files);
             }
