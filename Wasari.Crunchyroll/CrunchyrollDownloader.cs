@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
@@ -46,6 +47,9 @@ namespace Wasari.Crunchyroll
 
                     if (finalEpisodeDirectory != null && !Directory.Exists(finalEpisodeDirectory))
                         Directory.CreateDirectory(finalEpisodeDirectory);
+
+                    if (string.IsNullOrEmpty(youtubeDlResult.TemporaryEpisodeFile.Path))
+                        throw new InvalidOperationException("Invalid temporary file path");
 
                     File.Move(youtubeDlResult.TemporaryEpisodeFile.Path, finalEpisodeFile, true);
 
