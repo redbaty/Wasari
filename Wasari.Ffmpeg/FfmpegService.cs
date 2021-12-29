@@ -237,6 +237,28 @@ namespace Wasari.Ffmpeg
                 Logger?.LogTrace("[FFMpeg] {@Text}", text);
             }
 
+            if (downloadParameters.DeleteTemporaryFiles)
+            {
+                var deletedFiles = 0;
+
+                if (File.Exists(videoFile))
+                {
+                    File.Delete(videoFile);
+                    deletedFiles++;
+                }
+
+                if (subtitlesFiles != null)
+                {
+                    foreach (var subtitleFile in subtitlesFiles.Where(File.Exists))
+                    {
+                        File.Delete(subtitleFile);
+                        deletedFiles++;
+                    }
+                }
+                
+                Logger.LogInformation("{@DeletedFiles} were cleaned. {@EpisodeId}", deletedFiles, episodeId);
+            }
+            
             stopwatch.Stop();
 
             Logger.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId,

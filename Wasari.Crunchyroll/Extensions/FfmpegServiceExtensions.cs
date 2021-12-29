@@ -10,7 +10,7 @@ namespace Wasari.Crunchyroll.Extensions
         public static Task Encode(this FfmpegService service, YoutubeDlResult youtubeDlResult, string newVideoFile, DownloadParameters downloadParameters)
         {
             return service.Encode(youtubeDlResult.Episode?.FilePrefix, youtubeDlResult.TemporaryEpisodeFile?.Path,
-                youtubeDlResult.Subtitles?.Select(i => i.Path), newVideoFile, downloadParameters);
+                youtubeDlResult.Subtitles?.Select(i => i.Path).ToArray(), newVideoFile, downloadParameters);
         }
     }
 }
