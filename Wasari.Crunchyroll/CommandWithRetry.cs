@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using CliWrap;
@@ -21,6 +22,8 @@ namespace Wasari.Crunchyroll
         
         internal Action<CommandEvent> OnCommandEvent { get; }
 
+        private string Name { get; }
+
         public CommandWithRetry(int retryCount, Command command, TimeSpan timeout, ILogger logger, Action<CommandEvent> onCommandEvent)
         {
             RetryCount = retryCount;
@@ -28,6 +31,7 @@ namespace Wasari.Crunchyroll
             Timeout = timeout;
             Logger = logger;
             OnCommandEvent = onCommandEvent;
+            Name = Path.GetFileNameWithoutExtension(command.TargetFilePath);
         }
 
         public async Task Execute()
@@ -42,8 +46,6 @@ namespace Wasari.Crunchyroll
                 
                 await foreach (var commandEvent in Command.WithValidation(CommandResultValidation.None).ListenAsync(Encoding.UTF8))
                 {
-                    OnCommandEvent?.Invoke(commandEvent);
-                    
                     if (commandEvent is ExitedCommandEvent exitedCommandEvent)
                     {
                         if (exitedCommandEvent.ExitCode == 0)
@@ -58,13 +60,15 @@ namespace Wasari.Crunchyroll
                     else if (commandEvent is StandardErrorCommandEvent standardErrorCommandEvent)
                     {
                         stdOutputBuilder.AppendLine(standardErrorCommandEvent.Text);
-                        Logger?.LogTrace("[StdErr] {@Text}", standardErrorCommandEvent.Text);
+                        Logger?.LogTrace("[{@Program}][STDERR] {@Text}", Name, standardErrorCommandEvent.Text);
                     }
                     else if (commandEvent is StandardOutputCommandEvent standardOutputCommandEvent)
                     {
                         stdErrBuilder.AppendLine(standardOutputCommandEvent.Text);
-                        Logger?.LogTrace("[StdOut] {@Text}", standardOutputCommandEvent.Text);
+                        Logger?.LogTrace("[{@Program}][STDOUT] {@Text}", Name, standardOutputCommandEvent.Text);
                     }
+                    
+                    OnCommandEvent?.Invoke(commandEvent);
                 }
             }
 
