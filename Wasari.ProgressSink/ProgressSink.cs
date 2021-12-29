@@ -12,9 +12,9 @@ public class ProgressSink : ILogEventSink
     {
         ConsoleSink = consoleSink;
     }
-    
+
     private ConsoleSink ConsoleSink { get; }
-    
+
     private object ProgressBarLock { get; } = new();
 
     private Dictionary<string, ProgressBar> ProgressBarsById { get; } = new();
@@ -25,7 +25,7 @@ public class ProgressSink : ILogEventSink
     {
         lock (ProgressBarLock)
         {
-            if (logEvent.Level == LogEventLevel.Information)
+            if (logEvent.Level == LogEventLevel.Information && Environment.UserInteractive)
                 if (logEvent.MessageTemplate.Text.StartsWith("[Progress Update]"))
                 {
                     var update = EmitProgressUpdate(logEvent);
@@ -36,9 +36,9 @@ public class ProgressSink : ILogEventSink
                 }
 
             ClearProgressBars();
-            
+
             ConsoleSink.Emit(logEvent);
-            
+
             DrawProgressBars();
         }
     }
@@ -60,7 +60,7 @@ public class ProgressSink : ILogEventSink
                 CurrentValue = 0,
                 CurrentContainer = GetPosition()
             };
-            
+
             ProgressBars.Add(progressBar);
             return progressBar;
         }
@@ -68,6 +68,9 @@ public class ProgressSink : ILogEventSink
 
     private void ClearProgressBars()
     {
+        if (!Environment.UserInteractive)
+            return;
+        
         if (ProgressBars.Any(i => i.CurrentContainer.HasValue))
         {
             foreach (var progressBar in ProgressBars.Where(i => i.CurrentContainer.HasValue))
@@ -86,6 +89,9 @@ public class ProgressSink : ILogEventSink
 
     private void DrawProgressBars(bool resetPosition = false)
     {
+        if (!Environment.UserInteractive)
+            return;
+
         if (resetPosition)
         {
             var min = ProgressBars.Min(i => i.CurrentContainer?.Y ?? 0);
