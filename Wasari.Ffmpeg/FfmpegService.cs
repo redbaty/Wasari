@@ -220,7 +220,8 @@ namespace Wasari.Ffmpeg
 
                 if (text != null 
                     && text.GetValueFromRegex<double>(@"speed=(\d+.\d+)x", out var speed) 
-                    && text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time))
+                    && text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time)
+                    && time != null)
                 {
                     var timespan = TimeSpan.Parse(time);
 
