@@ -25,6 +25,12 @@ namespace Wasari.Crunchyroll
 
         public async IAsyncEnumerable<DownloadedFile> DownloadEpisodes(IEnumerable<CrunchyrollEpisodeInfo> episodes, DownloadParameters downloadParameters)
         {
+            if (downloadParameters.TemporaryDirectory != null)
+            {
+                if (!Directory.Exists(downloadParameters.TemporaryDirectory))
+                    Directory.CreateDirectory(downloadParameters.TemporaryDirectory);
+            }
+            
             var ytDlTask = YoutubeDlQueueService.Start(episodes, downloadParameters, downloadParameters.ParallelDownloads);
             var ffmpegTask = FfmpegQueueService.Start(downloadParameters, downloadParameters.ParallelMerging);
                 
