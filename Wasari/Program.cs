@@ -23,23 +23,27 @@ namespace Wasari
         {
             var loggerConfiguration = new LoggerConfiguration();
 
-            var useProgressBar = args.All(i => i != "-np");
+            var useProgressBar = Environment.GetEnvironmentVariable("NO_PROGRESS_BAR") == null && Environment.UserInteractive && args.All(i => i != "-np");
 
             if (useProgressBar) Console.CursorVisible = false;
 
             try
             {
-                loggerConfiguration = loggerConfiguration.WriteTo.ProgressConsole();
+                loggerConfiguration = loggerConfiguration.WriteTo.ProgressConsole(enableProgressBars: useProgressBar);
 
+                var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Wasari", "logs", "log.txt");
+                
                 Log.Logger = loggerConfiguration
                     .WriteTo.File(
-                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                            "Wasari", "logs", "log.txt"), rollingInterval: RollingInterval.Day,
+                        logPath, rollingInterval: RollingInterval.Day,
                         restrictedToMinimumLevel: LogEventLevel.Verbose)
                     .CreateLogger();
 
                 if (!useProgressBar)
                     Log.Logger.Warning("Progress bars disabled");
+                
+                Log.Logger.Information("Logging to file at path {@Path}", logPath);
 
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
