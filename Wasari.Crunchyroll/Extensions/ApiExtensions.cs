@@ -12,8 +12,8 @@ internal static class ApiExtensions
     {
         var episodeBySeason = apiEpisodes.ToLookup(i => i.SeasonId);
 
-        var lastNumber = -1;
-        foreach (var season in apiSeasons.OrderBy(i => i.Number))
+        var lastNumber = 1;
+        foreach (var season in apiSeasons.Where(i => !i.IsDubbed).OrderBy(i => i.Number))
         {
             if (lastNumber < 0)
             {
@@ -23,7 +23,7 @@ internal static class ApiExtensions
             var seasonInfo = new CrunchyrollSeasonsInfo
             {
                 Id = season.Id,
-                Season = episodeBySeason[season.Id].All(i => !i.EpisodeNumber.HasValue) ? 0 : lastNumber,
+                Season = lastNumber,
                 Title = season.Title,
                 Episodes = new List<CrunchyrollEpisodeInfo>()
             };
