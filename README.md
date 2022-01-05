@@ -18,17 +18,17 @@
 Wasari hopes to make it easy to download anime shows from popular streaming services.
 
 ## Features
-* <img src="/assets/icons/cast-connected.svg"> Crunchyroll Support
-* <img src="/assets/icons/video-4k-box.svg"> Anime4K Support
-* <img src="/assets/icons/subtitles.svg"> Soft subs encoding
-* <img src="/assets/icons/download-box.svg"> Download queue
-* <img src="/assets/icons/expansion-card.svg"> HEVC Transcoding (With NVIDIA Hardware Acceleration support)
+* :tv: Crunchyroll Support
+* :star: Anime4K Support
+* :memo: Soft subs encoding
+* :arrow_down: Download queue
+* :bullettrain_side: HEVC Transcoding (With NVIDIA Hardware Acceleration support)
 
-### Prerequisite
+## :information_source: Usage
+
+### :warning: Prerequisite
 * FFmpeg ([Master build](https://github.com/BtbN/FFmpeg-Builds/releases) recommended, for full Anime4K support)
 * [YT-DLP](https://github.com/yt-dlp/yt-dlp)
-
-### Usage
 
 To run Wasari, all you need is a shell:
 
@@ -36,13 +36,13 @@ To run Wasari, all you need is a shell:
 
 You can check the full supported arguments list using the `--help` argument.
 
-## Credits
+## :+1: Credits
 
 * [FFmpeg](https://git.ffmpeg.org/ffmpeg.git) - For video decoding/transcoding
 * [YT-DLP](https://github.com/yt-dlp/yt-dlp) - For legacy crunchyroll downloading, and m3u8 streams from crunchyroll API
 * [CliFx](https://github.com/Tyrrrz/CliFx) - For arguments parsing
 
-## 🚧 Roadmap
+## :construction: Roadmap
 
 - [ ] Funimation support
 - [ ] Nyaa.si support
