@@ -21,7 +21,7 @@ namespace Wasari.Commands
         public string SubtitleLanguage { get; init; }
 
         [CommandOption("encoding-pool", 'b')]
-        public int EncodingPoolSize { get; init; } = 3;
+        public int EncodingPoolSize { get; init; } = 2;
 
         [CommandOption("download-pool", 'd')]
         public int DownloadPoolSize { get; init; } = 3;
