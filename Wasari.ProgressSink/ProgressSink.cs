@@ -25,7 +25,7 @@ public class ProgressSink : ILogEventSink
     {
         lock (ProgressBarLock)
         {
-            if (logEvent.Level == LogEventLevel.Information && Environment.UserInteractive)
+            if (logEvent.Level == LogEventLevel.Information)
                 if (logEvent.MessageTemplate.Text.StartsWith("[Progress Update]"))
                 {
                     var update = EmitProgressUpdate(logEvent);
@@ -68,9 +68,6 @@ public class ProgressSink : ILogEventSink
 
     private void ClearProgressBars()
     {
-        if (!Environment.UserInteractive)
-            return;
-        
         if (ProgressBars.Any(i => i.CurrentContainer.HasValue))
         {
             foreach (var progressBar in ProgressBars.Where(i => i.CurrentContainer.HasValue))
@@ -89,9 +86,6 @@ public class ProgressSink : ILogEventSink
 
     private void DrawProgressBars(bool resetPosition = false)
     {
-        if (!Environment.UserInteractive)
-            return;
-
         if (resetPosition)
         {
             var min = ProgressBars.Min(i => i.CurrentContainer?.Y ?? 0);

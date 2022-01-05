@@ -48,6 +48,7 @@ namespace Wasari.ProgressSink
         /// <param name="theme">The theme to apply to the styled output. If not specified,
         /// uses <see cref="SystemConsoleTheme.Literate"/>.</param>
         /// <param name="applyThemeToRedirectedOutput">Applies the selected or default theme even when output redirection is detected.</param>
+        /// <param name="enableProgressBars">Enables progressbar</param>
         /// <returns>Configuration object allowing method chaining.</returns>
         /// <exception cref="ArgumentNullException">When <paramref name="sinkConfiguration"/> is <code>null</code></exception>
         /// <exception cref="ArgumentNullException">When <paramref name="outputTemplate"/> is <code>null</code></exception>
@@ -60,10 +61,12 @@ namespace Wasari.ProgressSink
             LogEventLevel? standardErrorFromLevel = null,
             ConsoleTheme? theme = null, 
             bool applyThemeToRedirectedOutput = false,
-            object? syncRoot = null)
+            object? syncRoot = null,
+            bool? enableProgressBars = null)
         {
             if (sinkConfiguration is null) throw new ArgumentNullException(nameof(sinkConfiguration));
             if (outputTemplate is null) throw new ArgumentNullException(nameof(outputTemplate));
+            enableProgressBars ??= Environment.UserInteractive;
 
             var appliedTheme = !applyThemeToRedirectedOutput && (System.Console.IsOutputRedirected || System.Console.IsErrorRedirected) ?
                 ConsoleTheme.None :
@@ -72,7 +75,8 @@ namespace Wasari.ProgressSink
             syncRoot ??= DefaultSyncRoot;
 
             var formatter = new OutputTemplateRenderer(appliedTheme, outputTemplate, formatProvider);
-            return sinkConfiguration.Sink(new ProgressSink(new ConsoleSink(appliedTheme, formatter, standardErrorFromLevel, syncRoot)), restrictedToMinimumLevel, levelSwitch);
+            var consoleSink = new ConsoleSink(appliedTheme, formatter, standardErrorFromLevel, syncRoot);
+            return sinkConfiguration.Sink(enableProgressBars.Value ? new ProgressSink(consoleSink) : consoleSink, restrictedToMinimumLevel, levelSwitch);
         }
     }
 }
