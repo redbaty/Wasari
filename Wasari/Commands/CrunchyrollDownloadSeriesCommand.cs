@@ -91,6 +91,9 @@ namespace Wasari.Commands
 
         [CommandOption("format", 'f', Description = "Format passed to yt-dlp")]
         public string Format { get; init; } = "best";
+        
+        [CommandOption("mask", 'm', Description = "Final episode file mask. Available parameters are: 0: Season and episode prefix (S00E00). 1: Safe episode title")]
+        public string FileMask { get; init; } = "{0} - {1}";
 
         private ILogger<CrunchyrollDownloadSeriesCommand> Logger { get; }
 
@@ -310,7 +313,8 @@ namespace Wasari.Commands
                 ParallelDownloads = DownloadPoolSize,
                 ParallelMerging = EncodingPoolSize,
                 UseAnime4K = anime4K,
-                Format = Format
+                Format = Format,
+                FileMask = FileMask
             };
         }
 

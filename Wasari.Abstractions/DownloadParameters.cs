@@ -29,5 +29,7 @@
         public int ParallelMerging { get; init; }
         
         public bool CreateSeasonFolder { get; set; }
+
+        public string? FileMask { get; set; }
     }
 }

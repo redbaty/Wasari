@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Wasari.Abstractions;
@@ -29,15 +30,17 @@ namespace Wasari.Crunchyroll
         
         public string FinalEpisodeFile(DownloadParameters downloadParameters)
         {
-            var finalEpisodeFileName = $"{Episode.FilePrefix} - {Episode.Name.AsSafePath()}{FinalEpisodeFileExtension(downloadParameters)}";
+            var fileName = string.Format(downloadParameters.FileMask ?? "{0} - {1}", Episode.FilePrefix, Episode.Name.AsSafePath());
+            var finalEpisodeFileName = $"{fileName}{FinalEpisodeFileExtension(downloadParameters)}";
+            var outputDirectory = downloadParameters.OutputDirectory ?? Environment.CurrentDirectory;
             
             return downloadParameters.CreateSeasonFolder
                 ? Path.Combine(
-                    downloadParameters.OutputDirectory,
+                    outputDirectory,
                     $"Season {Episode.SeasonInfo.Season}",
                     finalEpisodeFileName)
                 : Path.Combine(
-                    downloadParameters.OutputDirectory,
+                    outputDirectory,
                     finalEpisodeFileName);
         }
     }
