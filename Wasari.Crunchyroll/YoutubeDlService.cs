@@ -149,7 +149,7 @@ namespace Wasari.Crunchyroll
                         {
                             if (standardOutputCommandEvent.Text.GetValueFromRegex<double>(@"(\d+\.\d+)%",
                                     out var parsedPercentage) &&
-                                standardOutputCommandEvent.Text.GetValueFromRegex<string>(@"at (\d+\.\d+MiB/s)",
+                                standardOutputCommandEvent.Text.GetValueFromRegex<string>(@"at (\d+\.\d+\w+/s)",
                                     out var speed))
                             {
                                 var currentFile = files.Last();
