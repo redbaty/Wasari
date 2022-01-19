@@ -110,7 +110,7 @@ namespace Wasari.Crunchyroll
                     ? null
                     : $"--cookies \"{downloadParameters.CookieFilePath}\"",
                 downloadParameters.Subtitles ? "--all-subs" : null,
-                $"-f \"${downloadParameters.Format}\"",
+                $"-f \"{downloadParameters.Format}\"",
                 $"\"{url}\"",
                 $"-o \"{temporaryEpisodeFile}\""
             }.Where(i => !string.IsNullOrEmpty(i));
