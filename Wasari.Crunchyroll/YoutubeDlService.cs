@@ -50,7 +50,7 @@ namespace Wasari.Crunchyroll
                 {
                     Type = FileType.Subtitle,
                     Path = temporaryFile,
-                    Language = subtitle.Locale.Replace("-", string.Empty)
+                    Language = subtitle.Locale.Replace("-", string.Empty).ToLower()
                 };
             }
         }
@@ -143,7 +143,7 @@ namespace Wasari.Crunchyroll
                             files.Add(extension == ".ass"
                                 ? new SubtitleFile
                                 {
-                                    Language = Regex.Match(path, "\\.(?<lang>(.*))\\.ass").Groups["lang"].Value.Replace("-", string.Empty),
+                                    Language = Regex.Match(path, "\\.(?<lang>(.*))\\.ass").Groups["lang"].Value.Replace("-", string.Empty).ToLower(),
                                     Path = path
                                 }
                                 : new DownloadedFile
@@ -188,17 +188,16 @@ namespace Wasari.Crunchyroll
                 throw new AggregateException("Invalid download(s) destination parsed from yt-dlp.", filesNotFound.Cast<Exception>());
             }
 
-            if (!string.IsNullOrEmpty(downloadParameters.SubtitleLanguage))
+            if (downloadParameters.SubtitleLanguage is { Length: > 0 })
             {
-                var subtitleFiles = files
+                var subtitlesCount = files
                     .OfType<SubtitleFile>()
-                    .Where(i => i.Type == FileType.Subtitle && string.Equals(i.Language, downloadParameters.SubtitleLanguage, StringComparison.InvariantCultureIgnoreCase))
-                    .ToArray();
+                    .Count(i => i.Type == FileType.Subtitle && downloadParameters.SubtitleLanguage.Contains(i.Language));
 
-                if (subtitleFiles.Length == 0)
+                if (subtitlesCount == 0)
                     throw new Exception("No subtitles found for selected language");
 
-                foreach (var file in files.Where(i => i is SubtitleFile subtitleFile && !string.Equals(subtitleFile.Language, downloadParameters.SubtitleLanguage, StringComparison.InvariantCultureIgnoreCase) && i.Path != null))
+                foreach (var file in files.Where(i => i is SubtitleFile subtitleFile && !downloadParameters.SubtitleLanguage.Contains(subtitleFile.Language) && i.Path != null).ToArray())
                 {
                     if (File.Exists(file.Path!))
                         File.Delete(file.Path!);

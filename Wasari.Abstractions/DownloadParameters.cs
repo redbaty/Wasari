@@ -4,7 +4,7 @@
     {
         public string? OutputDirectory { get; init; }
 
-        public string? SubtitleLanguage { get; init; }
+        public string[]? SubtitleLanguage { get; init; }
 
         public string? CookieFilePath { get; init; }
 

@@ -301,7 +301,7 @@ namespace Wasari.Commands
             return new DownloadParameters
             {
                 CookieFilePath = file?.Path,
-                SubtitleLanguage = SubtitleLanguage,
+                SubtitleLanguage = SubtitleLanguage?.Split(","),
                 Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
                 OutputDirectory = outputDirectory,
                 CreateSeasonFolder = CreateSeasonFolder,
