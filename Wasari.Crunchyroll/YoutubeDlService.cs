@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
@@ -27,11 +28,11 @@ namespace Wasari.Crunchyroll
         }
 
         private ILogger<YoutubeDlService> Logger { get; }
-        
+
         private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
-        
+
         private EnvironmentFeature YtDlp { get; }
-        
+
         private static async IAsyncEnumerable<DownloadedFile> DownloadSubs(string episodeId,
             IEnumerable<ApiEpisodeStreamSubtitle> subtitles, DownloadParameters downloadParameters)
         {
@@ -45,10 +46,11 @@ namespace Wasari.Crunchyroll
                 await using var fs = File.Create(temporaryFile);
                 await remoteStream.CopyToAsync(fs);
 
-                yield return new DownloadedFile
+                yield return new SubtitleFile
                 {
                     Type = FileType.Subtitle,
-                    Path = temporaryFile
+                    Path = temporaryFile,
+                    Language = subtitle.Locale.Replace("-", string.Empty)
                 };
             }
         }
@@ -60,12 +62,12 @@ namespace Wasari.Crunchyroll
             var streams = await crunchyrollApiService.GetStreams(episodeInfo.Url);
             var preferedLink = streams.Streams
                 .SingleOrDefault(i => i.Type == "adaptive_hls" && string.IsNullOrEmpty(i.Locale));
-            
+
             Logger.LogInformation("Stream URL found for Episode {@Episode}: {@Url}", episodeInfo.FilePrefix, preferedLink);
-            
+
             if (preferedLink == null)
                 throw new InvalidOperationException("Could not determine stream link");
-            
+
             return new BetaEpisodeResult
             {
                 Files = await DownloadSubs(episodeInfo.Id, streams.Subtitles, downloadParameters).ToArrayAsync(),
@@ -79,7 +81,7 @@ namespace Wasari.Crunchyroll
         {
             var url = episodeInfo.Url;
             var files = new List<DownloadedFile>();
-            
+
             if (downloadParameters.CookieFilePath != null && !File.Exists(downloadParameters.CookieFilePath))
             {
                 throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
@@ -91,7 +93,7 @@ namespace Wasari.Crunchyroll
                 url = downloadBetaEpisode.Url;
                 files.AddRange(downloadBetaEpisode.Files);
             }
-            
+
             var fileSafeName = episodeInfo.Name.AsSafePath();
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Directory.GetCurrentDirectory(),
@@ -138,11 +140,17 @@ namespace Wasari.Crunchyroll
                             var path = standardOutputCommandEvent.Text[24..].Trim();
                             var extension = Path.GetExtension(path);
 
-                            files.Add(new DownloadedFile
-                            {
-                                Type = extension == ".ass" ? FileType.Subtitle : FileType.VideoFile,
-                                Path = path
-                            });
+                            files.Add(extension == ".ass"
+                                ? new SubtitleFile
+                                {
+                                    Language = Regex.Match(path, "\\.(?<lang>(.*))\\.ass").Groups["lang"].Value.Replace("-", string.Empty),
+                                    Path = path
+                                }
+                                : new DownloadedFile
+                                {
+                                    Type = FileType.VideoFile,
+                                    Path = path
+                                });
                         }
                         else if (standardOutputCommandEvent.Text.StartsWith("[download]") &&
                                  standardOutputCommandEvent.Text.Contains('%'))
@@ -177,9 +185,28 @@ namespace Wasari.Crunchyroll
             var filesNotFound = files.Where(i => !File.Exists(i.Path)).Select(i => new FileNotFoundException(i.Path)).ToArray();
             if (filesNotFound.Any())
             {
-                throw new AggregateException($"Invalid download(s) destination parsed from yt-dlp.", filesNotFound.Cast<Exception>());
+                throw new AggregateException("Invalid download(s) destination parsed from yt-dlp.", filesNotFound.Cast<Exception>());
             }
-            
+
+            if (!string.IsNullOrEmpty(downloadParameters.SubtitleLanguage))
+            {
+                var subtitleFiles = files
+                    .OfType<SubtitleFile>()
+                    .Where(i => i.Type == FileType.Subtitle && string.Equals(i.Language, downloadParameters.SubtitleLanguage, StringComparison.InvariantCultureIgnoreCase))
+                    .ToArray();
+
+                if (subtitleFiles.Length == 0)
+                    throw new Exception("No subtitles found for selected language");
+
+                foreach (var file in files.Where(i => i is SubtitleFile subtitleFile && !string.Equals(subtitleFile.Language, downloadParameters.SubtitleLanguage, StringComparison.InvariantCultureIgnoreCase) && i.Path != null))
+                {
+                    if (File.Exists(file.Path!))
+                        File.Delete(file.Path!);
+                    
+                    files.Remove(file);
+                }
+            }
+
             Logger.LogInformation("Download of episode {@Episode} ended", $"{episodeInfo.FilePrefix}");
 
             return new YoutubeDlResult
