@@ -5,12 +5,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Flurl" Version="3.0.2" />
+        <PackageReference Include="Flurl" Version="3.0.4" />
         <PackageReference Include="JsonExtensions" Version="1.2.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
-        <PackageReference Include="System.Linq.Async" Version="5.1.0" />
-        <PackageReference Include="System.Text.Json" Version="6.0.1" />
+        <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+        <PackageReference Include="System.Text.Json" Version="6.0.2" />
     </ItemGroup>
     
 </Project>
