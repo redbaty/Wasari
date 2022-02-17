@@ -64,7 +64,7 @@ public static class EnvironmentFeatureFinder
         return new EnvironmentFeature(type, mainVersion, modules, executable);
     }
 
-    private static Task<bool> IsProgramAvailable(string exeName, string? arguments)
+    private static async Task<bool> IsProgramAvailable(string exeName, string? arguments)
     {
         var command = Cli
             .Wrap(exeName)
@@ -73,27 +73,8 @@ public static class EnvironmentFeatureFinder
         if (!string.IsNullOrEmpty(arguments))
             command = command.WithArguments(arguments);
 
-
-        return command.ExecuteBufferedAsync()
-            .Task
-            .ContinueWith(t =>
-            {
-                if (!t.IsCompletedSuccessfully)
-                {
-                    if (t.Exception?.InnerException is Win32Exception win32Exception &&
-                        win32Exception.Message.EndsWith("The system cannot find the file specified."))
-                    {
-                        return false;
-                    }
-
-                    throw t.Exception ??
-                          throw new InvalidOperationException(
-                              "An unexpected erro occurred while scanning environment features");
-                }
-
-
-                return t.Result.ExitCode == 0;
-            });
+        var resultado = await command.ExecuteAsync();
+        return resultado.ExitCode == 0;
     }
 
     private static async Task<bool> IsLibPlaceboAvailable(EnvironmentFeature ffmpeg)
