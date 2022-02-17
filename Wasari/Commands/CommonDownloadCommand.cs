@@ -24,6 +24,6 @@ namespace Wasari.Commands
         public int EncodingPoolSize { get; init; } = 2;
 
         [CommandOption("download-pool", 'd')]
-        public int DownloadPoolSize { get; init; } = 3;
+        public int DownloadPoolSize { get; init; } = 4;
     }
 }
