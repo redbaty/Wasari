@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -61,8 +61,7 @@ namespace Wasari.Crunchyroll.API
         public IAsyncEnumerable<ApiEpisode> GetAllEpisodes(string seriesId)
         {
             return GetSeasons(seriesId)
-                .Where(i => !i.IsDubbed && i.IsSubbed)
-                .SelectMany(season => GetEpisodes(season.Id).Where(i => !i.IsDubbed && i.IsSubbed));
+                .SelectMany(season => GetEpisodes(season.Id));
         }
 
         public async Task<ApiEpisode> GetEpisode(string episodeId)
