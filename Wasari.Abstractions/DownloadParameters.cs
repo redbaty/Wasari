@@ -43,5 +43,9 @@
         public int DownloadPoolSize { get; init; }
         
         public int EncodingPoolSize { get; init; }
+        
+        public string? EpisodeRange { get; init; }
+        
+        public string? SeasonRange { get; init; }
     }
 }
