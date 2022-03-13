@@ -34,9 +34,9 @@
 
         public string? FileMask { get; init; }
 
-        public bool Dubs { get; init; } = true;
+        public bool Dubs { get; init; }
 
-        public string[]? DubsLanguage { get; init; } = { "pt-BR" };
+        public string[]? DubsLanguage { get; init; }
         
         public bool SkipExistingEpisodes { get; init; }
         
