@@ -20,7 +20,7 @@ namespace Wasari.Crunchyroll
 
             serviceCollection.AddSingleton<BrowserFactory>();
             serviceCollection.AddTransient<ISeriesDownloader<CrunchyrollEpisodeInfo>, CrunchyrollDownloader>();
-            serviceCollection.AddTransient<ISeriesProvider, CrunchyrollService>();
+            serviceCollection.AddTransient<CrunchyrollService>();
             serviceCollection.AddTransient<BetaCrunchyrollService>();
             serviceCollection.AddTransient<YoutubeDlService>();
             serviceCollection.AddFfmpegServices();
