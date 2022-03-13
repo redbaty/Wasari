@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -23,7 +23,7 @@ namespace Wasari.Crunchyroll.API
         private HttpClient HttpClient { get; }
 
         private ApiSignature ApiSignature { get; set; }
-        
+
         private IMemoryCache MemoryCache { get; }
 
         private async Task<ApiSignature> GetApiSignature()
@@ -77,7 +77,7 @@ namespace Wasari.Crunchyroll.API
                     apiEpisode.ApiEpisodeStreams = episodeStream;
                 }
             }
-            
+
             return apiEpisode;
         }
 
@@ -99,7 +99,7 @@ namespace Wasari.Crunchyroll.API
                         var episodeStream = await GetStreams(apiEpisode.StreamLink);
                         apiEpisode.ApiEpisodeStreams = episodeStream;
                     }
-                    
+
                     yield return apiEpisode;
                 }
             }
@@ -117,9 +117,21 @@ namespace Wasari.Crunchyroll.API
             url = url.SetQueryParam("series_id", seriesId);
 
             var responseJson = await HttpClient.GetJsonAsync(url);
+            var lastNumber = 1;
+            
             foreach (var jsonElement in responseJson.GetProperty("items").EnumerateArray())
             {
-                yield return jsonElement.Deserialize<ApiSeason>();
+                var apiSeason = jsonElement.Deserialize<ApiSeason>();
+
+                if (apiSeason != null)
+                {
+                    apiSeason.Number = lastNumber;
+                    
+                    if (apiSeason.Number > 0 && !apiSeason.IsDubbed)
+                        lastNumber++;
+                }
+                
+                yield return apiSeason;
             }
         }
 
