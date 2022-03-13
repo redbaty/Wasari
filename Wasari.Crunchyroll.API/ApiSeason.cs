@@ -17,7 +17,7 @@ namespace Wasari.Crunchyroll.API
         public bool IsSubbed { get; init; }
         
         [JsonPropertyName("season_number")]
-        public int Number { get; init; }
+        public int Number { get; set; }
         
         [JsonPropertyName("series_id")]
         public string SeriesId { get; init; }
