@@ -9,5 +9,5 @@ public class FfmpegEpisodeToEncode
         
     public ICollection<EpisodeInfoVideoSource> Sources { get; init; }
         
-    public ICollection<DownloadedFile>? Subtitles { get; init; }
+    public ICollection<DownloadedFile> Subtitles { get; init; }
 }

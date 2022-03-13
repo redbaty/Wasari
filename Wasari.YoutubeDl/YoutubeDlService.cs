@@ -29,6 +29,12 @@ namespace Wasari.YoutubeDl
             DownloadParameters downloadParameters)
         {
             var episodeInfo = videoSource.Episode;
+
+            if (episodeInfo == null)
+            {
+                throw new ArgumentNullException(nameof(episodeInfo));
+            }
+            
             var url = videoSource.Url;
             var files = new List<DownloadedFile>();
 

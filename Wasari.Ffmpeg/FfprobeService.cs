@@ -3,19 +3,11 @@ using System.IO;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.Buffered;
-using Microsoft.Extensions.Logging;
 
 namespace Wasari.Ffmpeg;
 
 public class FfprobeService
 {
-    public FfprobeService(ILogger<FfprobeService> logger)
-    {
-        Logger = logger;
-    }
-
-    private ILogger<FfprobeService> Logger { get; }
-        
     public async Task<TimeSpan?> GetVideoDuration(string path)
     {
         if (!File.Exists(path))

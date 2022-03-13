@@ -24,9 +24,9 @@ public class YoutubeDlQueue
     private Channel<YoutubeDlResult> ResultsChannel { get; } =
         Channel.CreateUnbounded<YoutubeDlResult>();
         
-    public ChannelReader<YoutubeDlEpisodeResult> ByEpisodeReader => GroupedByEpisodeChannel.Reader;
+    public ChannelReader<YoutubeDlEpisodeResult>? ByEpisodeReader => GroupedByEpisodeChannel?.Reader;
 
-    private Channel<YoutubeDlEpisodeResult> GroupedByEpisodeChannel { get; }
+    private Channel<YoutubeDlEpisodeResult>? GroupedByEpisodeChannel { get; }
 
     private IEnumerable<IEpisodeInfo> Episodes { get; }
 
@@ -34,7 +34,7 @@ public class YoutubeDlQueue
 
     private DownloadParameters DownloadParameters { get; }
 
-    private Task GroupingTask { get; }
+    private Task? GroupingTask { get; }
 
     private async Task CreateGroupingTask()
     {
@@ -46,16 +46,22 @@ public class YoutubeDlQueue
 
         await foreach (var youtubeDlResult in ResultsChannel.Reader.ReadAllAsync())
         {
+            if(youtubeDlResult.Episode == null)
+                continue;
+            
             var resultsForEpisode = downloadedEpisodesDictionary[youtubeDlResult.Episode.FilePrefix];
             resultsForEpisode.DownloadedEpisodes.Add(youtubeDlResult);
 
             if (resultsForEpisode.DownloadedEpisodes.Count == resultsForEpisode.Total)
             {
-                await GroupedByEpisodeChannel.Writer.WriteAsync(new YoutubeDlEpisodeResult
+                if (GroupedByEpisodeChannel != null)
                 {
-                    Episode = youtubeDlResult.Episode,
-                    Results = resultsForEpisode.DownloadedEpisodes
-                });
+                    await GroupedByEpisodeChannel.Writer.WriteAsync(new YoutubeDlEpisodeResult
+                    {
+                        Episode = youtubeDlResult.Episode,
+                        Results = resultsForEpisode.DownloadedEpisodes
+                    });
+                }
 
                 downloadedEpisodesDictionary.Remove(youtubeDlResult.Episode.FilePrefix);
             }
@@ -66,7 +72,7 @@ public class YoutubeDlQueue
             throw new InvalidOperationException("Episodes to download left");
         }
             
-        GroupedByEpisodeChannel.Writer.Complete();
+        GroupedByEpisodeChannel?.Writer.Complete();
     }
 
     public async Task Start()

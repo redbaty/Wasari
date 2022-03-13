@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Flurl;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
@@ -15,17 +14,14 @@ namespace Wasari.Crunchyroll
 {
     public class CrunchyrollService : ISeriesProvider
     {
-        public CrunchyrollService(ILogger<CrunchyrollService> logger, BrowserFactory browserFactory, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
+        public CrunchyrollService(ILogger<CrunchyrollService> logger, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
         {
             Logger = logger;
-            BrowserFactory = browserFactory;
             CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
         }
 
         private ILogger<CrunchyrollService> Logger { get; }
 
-        private BrowserFactory BrowserFactory { get; }
-        
         private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
 
         private async IAsyncEnumerable<CrunchyrollSeasonsInfo> GetSeasonsInfo(Page seriesPage,

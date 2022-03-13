@@ -135,7 +135,7 @@ namespace Wasari.Crunchyroll.API
 
         public Task<ApiEpisodeStreams> GetStreams(string streamUrl)
         {
-            return MemoryCache.GetOrCreateAsync(streamUrl, async entry =>
+            return MemoryCache.GetOrCreateAsync(streamUrl, async _ =>
             {
                 if (string.IsNullOrEmpty(streamUrl))
                     return null;

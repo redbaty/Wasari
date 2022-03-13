@@ -30,7 +30,7 @@ public class DownloadSeriesService
     private YoutubeDlQueueFactoryService YoutubeDlQueueFactoryService { get; }
 
     private FfmpegService FfmpegService { get; }
-    
+
     private ILogger<DownloadSeriesService> Logger { get; }
 
     private static int[] ParseRange(string range, int max)
@@ -69,7 +69,7 @@ public class DownloadSeriesService
 
         if (ServiceProvider.GetService(seriesProviderType) is not ISeriesProvider seriesProvider)
             throw new InvalidOperationException($"Failed to create series provider. Type: {seriesProviderType.Name}");
-        
+
         var episodes = await seriesProvider.GetEpisodes(url.ToString())
             .Where(i => !i.SeasonInfo.Dubbed || downloadParameters.Dubs && (downloadParameters.DubsLanguage == null || downloadParameters.DubsLanguage.Any(o => i.DubbedLanguage != null && i.DubbedLanguage.Contains(o))))
             .OrderBy(i => i.SeasonInfo.Season)
@@ -81,11 +81,11 @@ public class DownloadSeriesService
         {
             var seasonsRange = ParseRange(downloadParameters.SeasonRange, episodes.Select(i => i.SeasonInfo.Season).Max());
             episodes = episodes.Where(i =>
-                     i.SeasonInfo.Season >= seasonsRange[0]
-                     && i.SeasonInfo.Season <= seasonsRange[1])
-                 .ToList();
+                    i.SeasonInfo.Season >= seasonsRange[0]
+                    && i.SeasonInfo.Season <= seasonsRange[1])
+                .ToList();
         }
-        
+
         if (!string.IsNullOrEmpty(downloadParameters.EpisodeRange))
         {
             var episodeRange = ParseRange(downloadParameters.EpisodeRange, (int)episodes.Select(i => i.SequenceNumber).Max());
@@ -95,26 +95,26 @@ public class DownloadSeriesService
                     && i.SequenceNumber <= episodeRange[1])
                 .ToList();
         }
-        
+
         if (episodes.OfType<CrunchyrollEpisodeInfo>().Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated && downloadParameters.CookieFilePath == null)
             throw new PremiumEpisodesException(episodes.OfType<CrunchyrollEpisodeInfo>().Where(i => i.Premium).Cast<IEpisodeInfo>().ToArray());
-        
+
         if (downloadParameters.SkipExistingEpisodes)
         {
             var series = episodes.Select(i => i.SeriesInfo).Distinct().Single();
             var outputDirectory = downloadParameters.FinalOutputDirectory(series.Name);
-            
+
             foreach (var file in Directory.GetFiles(outputDirectory, "*.*", SearchOption.AllDirectories))
             {
                 const string regex = @"S(?<season>\d+)E(?<episode>\d+) -";
-                
+
                 var episodeMatch = Regex.Match(file, regex);
 
                 if (!episodeMatch.Success
                     || !int.TryParse(episodeMatch.Groups["episode"].Value, out var episode)
                     || !int.TryParse(episodeMatch.Groups["season"].Value, out var season)) continue;
-                
-                
+
+
                 var removed = episodes.RemoveAll(i => i.SeasonInfo.Season == season && i.SequenceNumber == episode);
 
                 if (removed > 0)
@@ -125,52 +125,60 @@ public class DownloadSeriesService
                 }
             }
         }
-        
+
         var youtubeDlQueue = YoutubeDlQueueFactoryService.CreateQueue(episodes, downloadParameters, downloadParameters.DownloadPoolSize, true);
         var ytdlpTask = youtubeDlQueue.Start();
         var pool = new TaskPool<Task>(downloadParameters.EncodingPoolSize);
 
-        await foreach (var youtubeDlResult in youtubeDlQueue.ByEpisodeReader.ReadAllAsync())
-        {
-            var finalEpisodeFile = youtubeDlResult.Episode.FinalEpisodeFile(downloadParameters);
-
-            var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(finalEpisodeFile) ??
-                                                    throw new InvalidOperationException(
-                                                        "Invalid output directory"));
-
-            if (!outputDirectory.Exists)
-                outputDirectory.Create();
-
-            DownloadedFile[]? additionalSubs = null;
-
-            if (seriesProvider is BetaCrunchyrollService betaCrunchyrollService)
+        if (youtubeDlQueue.ByEpisodeReader != null)
+            await foreach (var youtubeDlResult in youtubeDlQueue.ByEpisodeReader.ReadAllAsync())
             {
-                var subEpisodeId = youtubeDlResult.Results
-                    .Where(i => !(i.Source?.Episode?.Dubbed ?? true))
-                    .Select(i => i.Source?.Episode.Id)
-                    .FirstOrDefault(o => o != null);
+                if (youtubeDlResult.Episode == null)
+                    throw new InvalidOperationException("YoutubeDl episode is null");
+                
+                var finalEpisodeFile = youtubeDlResult.Episode.FinalEpisodeFile(downloadParameters);
 
-                additionalSubs = await betaCrunchyrollService.DownloadSubs(subEpisodeId, downloadParameters).ToArrayAsync();
-            }
+                var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(finalEpisodeFile) ??
+                                                        throw new InvalidOperationException(
+                                                            "Invalid output directory"));
 
-            await pool.Add(() => FfmpegService.Encode(youtubeDlResult.ToFfmpeg(additionalSubs), finalEpisodeFile, downloadParameters).ContinueWith(t =>
-            {
-                Logger.LogProgressUpdate(new ProgressUpdate
+                if (!outputDirectory.Exists)
+                    outputDirectory.Create();
+
+                DownloadedFile[]? additionalSubs = null;
+
+                if (seriesProvider is BetaCrunchyrollService betaCrunchyrollService)
                 {
-                    Type = ProgressUpdateTypes.Completed,
-                    EpisodeId = youtubeDlResult.Episode?.Id,
-                    Title = $"[DONE] {Path.GetFileName(finalEpisodeFile)}"
-                });
+                    if (youtubeDlResult.Results != null)
+                    {
+                        var subEpisodeId = youtubeDlResult.Results
+                            .Where(i => !(i.Source?.Episode?.Dubbed ?? true))
+                            .Select(i => i.Source?.Episode?.Id)
+                            .FirstOrDefault(o => o != null);
 
-                if (!t.IsCompletedSuccessfully)
-                {
-                    Logger.LogError(t.Exception, "Failed while running encoding for episode {@Id}", youtubeDlResult.Episode?.FilePrefix);
-                    throw t.Exception;
+                        additionalSubs = await betaCrunchyrollService.DownloadSubs(subEpisodeId, downloadParameters).ToArrayAsync();
+                    }
                 }
-            }));
-        }
+
+                await pool.Add(() => FfmpegService.Encode(youtubeDlResult.ToFfmpeg(additionalSubs), finalEpisodeFile, downloadParameters).ContinueWith(t =>
+                {
+                    Logger.LogProgressUpdate(new ProgressUpdate
+                    {
+                        Type = ProgressUpdateTypes.Completed,
+                        EpisodeId = youtubeDlResult.Episode?.Id,
+                        Title = $"[DONE] {Path.GetFileName(finalEpisodeFile)}"
+                    });
+
+                    if (!t.IsCompletedSuccessfully)
+                    {
+                        Logger.LogError(t.Exception, "Failed while running encoding for episode {@Id}", youtubeDlResult.Episode?.FilePrefix);
+                        throw t.Exception;
+                    }
+                }));
+            }
 
         await ytdlpTask;
         await pool.WaitToReachEnqueuedCount();
+        await pool.WaitAndClose();
     }
 }

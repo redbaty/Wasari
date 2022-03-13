@@ -11,7 +11,7 @@ public static class DownloadParameterExtensions
 
         if (downloadParameters.CreateSeriesFolder && !string.IsNullOrEmpty(seriesName))
         {
-            outputDirectory = Path.Combine(outputDirectory!, seriesName);
+            outputDirectory = Path.Combine(outputDirectory, seriesName);
         }
 
         return outputDirectory;
