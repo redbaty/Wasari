@@ -19,6 +19,12 @@ namespace Wasari.Commands
 
         [CommandOption("sub-language", 'l')]
         public string SubtitleLanguage { get; init; }
+        
+        [CommandOption("dub")]
+        public bool Dubs { get; init; } = false;
+
+        [CommandOption("dub-languages")]
+        public string DubsLanguages { get; init; }
 
         [CommandOption("encoding-pool", 'b')]
         public int EncodingPoolSize { get; init; } = 1;

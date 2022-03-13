@@ -227,7 +227,9 @@ namespace Wasari.Commands
                 DownloadPoolSize = DownloadPoolSize,
                 EncodingPoolSize = EncodingPoolSize,
                 EpisodeRange = EpisodeRange,
-                SeasonRange = SeasonsRange
+                SeasonRange = SeasonsRange,
+                Dubs = !string.IsNullOrEmpty(DubsLanguages) || Dubs,
+                DubsLanguage = DubsLanguages?.Split(",")
             };
         }
 
