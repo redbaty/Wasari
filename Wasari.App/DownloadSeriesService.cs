@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
@@ -124,6 +124,11 @@ public class DownloadSeriesService
                         episode, season, file);
                 }
             }
+        }
+
+        if (!episodes.Any())
+        {
+            return;
         }
 
         var youtubeDlQueue = YoutubeDlQueueFactoryService.CreateQueue(episodes, downloadParameters, downloadParameters.DownloadPoolSize, true);
