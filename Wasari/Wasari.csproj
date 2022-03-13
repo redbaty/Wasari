@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Wasari.App\Wasari.App.csproj" />
       <ProjectReference Include="..\Wasari.Crunchyroll\Wasari.Crunchyroll.csproj" />
       <ProjectReference Include="..\Wasari.Abstractions\Wasari.Abstractions.csproj" />
       <ProjectReference Include="..\Wasari.Environment\Wasari.Environment.csproj" />

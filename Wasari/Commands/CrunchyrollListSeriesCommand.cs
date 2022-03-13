@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
 using Wasari.Abstractions;
 using Wasari.Crunchyroll;
-using Wasari.Crunchyroll.Abstractions;
 using Wasari.Crunchyroll.API;
 
 namespace Wasari.Commands;
@@ -16,7 +16,7 @@ internal class CrunchyrollListSeriesCommand : ICommand
     [CommandParameter(0, Description = "Series URL.")]
     public string SeriesUrl { get; init; }
         
-    public CrunchyrollListSeriesCommand(ISeriesProvider<CrunchyrollSeasonsInfo> crunchyrollSeasonProvider, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, BetaCrunchyrollService betaCrunchyrollService)
+    public CrunchyrollListSeriesCommand(ISeriesProvider crunchyrollSeasonProvider, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, BetaCrunchyrollService betaCrunchyrollService)
     {
         CrunchyrollSeasonProvider = crunchyrollSeasonProvider;
         CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
@@ -27,7 +27,7 @@ internal class CrunchyrollListSeriesCommand : ICommand
     
     private BetaCrunchyrollService BetaCrunchyrollService { get; }
 
-    private ISeriesProvider<CrunchyrollSeasonsInfo> CrunchyrollSeasonProvider { get; }
+    private ISeriesProvider CrunchyrollSeasonProvider { get; }
         
     public async ValueTask ExecuteAsync(IConsole console)
     {
@@ -35,15 +35,15 @@ internal class CrunchyrollListSeriesCommand : ICommand
     
         await CrunchyrollApiServiceFactory.CreateUnauthenticatedService();
 
-        var seriesInfo = isBeta
-            ? await BetaCrunchyrollService.GetSeries(SeriesUrl)
-            : await CrunchyrollSeasonProvider.GetSeries(SeriesUrl);
-
-        foreach (var seasonsInfo in seriesInfo.Seasons)
+        var episodes = isBeta
+            ? await BetaCrunchyrollService.GetEpisodes(SeriesUrl).ToArrayAsync()
+            : await CrunchyrollSeasonProvider.GetEpisodes(SeriesUrl).ToArrayAsync();
+        
+        foreach (var episodesBySeason in episodes.GroupBy(i => i.SeasonInfo))
         {
-            await console.Output.WriteLineAsync($"S{seasonsInfo.Season:00} - {seasonsInfo.Title}");
+            await console.Output.WriteLineAsync($"S{episodesBySeason.Key.Season:00} - {episodesBySeason.Key.Title}");
 
-            foreach (var episode in seasonsInfo.Episodes)
+            foreach (var episode in episodesBySeason)
             {
                 await console.Output.WriteLineAsync($"- {episode.Number}: {episode.Name}");
             }

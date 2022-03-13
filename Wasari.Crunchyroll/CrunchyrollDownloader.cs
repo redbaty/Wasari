@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
@@ -10,14 +11,14 @@ namespace Wasari.Crunchyroll
 {
     internal class CrunchyrollDownloader : ISeriesDownloader<CrunchyrollEpisodeInfo>
     {
-        public CrunchyrollDownloader(YoutubeDlQueueService youtubeDlQueueService, FfmpegQueueService ffmpegQueueService, ILogger<CrunchyrollDownloader> logger)
+        public CrunchyrollDownloader(YoutubeDlQueueFactoryService youtubeDlQueueFactoryService, FfmpegQueueService ffmpegQueueService, ILogger<CrunchyrollDownloader> logger)
         {
-            YoutubeDlQueueService = youtubeDlQueueService;
+            YoutubeDlQueueFactoryService = youtubeDlQueueFactoryService;
             FfmpegQueueService = ffmpegQueueService;
             Logger = logger;
         }
 
-        private YoutubeDlQueueService YoutubeDlQueueService { get; }
+        private YoutubeDlQueueFactoryService YoutubeDlQueueFactoryService { get; }
         
         private FfmpegQueueService FfmpegQueueService { get; }
         
@@ -30,25 +31,28 @@ namespace Wasari.Crunchyroll
                 if (!Directory.Exists(downloadParameters.TemporaryDirectory))
                     Directory.CreateDirectory(downloadParameters.TemporaryDirectory);
             }
-            
-            var ytDlTask = YoutubeDlQueueService.Start(episodes, downloadParameters, downloadParameters.ParallelDownloads);
+
+            var youtubeDlQueue = YoutubeDlQueueFactoryService.CreateQueue(episodes, downloadParameters, downloadParameters.ParallelDownloads);
+            var ytDlTask = youtubeDlQueue.Start();
             var ffmpegTask = FfmpegQueueService.Start(downloadParameters, downloadParameters.ParallelMerging);
                 
-            await foreach (var youtubeDlResult in YoutubeDlQueueService.Reader.ReadAllAsync())
+            await foreach (var youtubeDlResultByEpisode in youtubeDlQueue.ByEpisodeReader.ReadAllAsync())
             {
+                var youtubeDlResult = youtubeDlResultByEpisode.Results.Single();
+                
                 yield return new DownloadedFile
                 {
-                    Path = youtubeDlResult.FinalEpisodeFile(downloadParameters),
+                    Path = youtubeDlResult.Episode.FinalEpisodeFile(downloadParameters),
                     Type = FileType.VideoFile
                 };
                 
                 if (downloadParameters.Subtitles || downloadParameters.UseHevc)
                 {
-                    await FfmpegQueueService.Enqueue(youtubeDlResult);
+                    await FfmpegQueueService.Enqueue(youtubeDlResultByEpisode);
                 }
                 else
                 {
-                    var finalEpisodeFile = youtubeDlResult.FinalEpisodeFile(downloadParameters);
+                    var finalEpisodeFile = youtubeDlResult.Episode.FinalEpisodeFile(downloadParameters);
                     var finalEpisodeDirectory = Path.GetDirectoryName(finalEpisodeFile);
 
                     if (finalEpisodeDirectory != null && !Directory.Exists(finalEpisodeDirectory))
@@ -62,7 +66,7 @@ namespace Wasari.Crunchyroll
                     Logger.LogProgressUpdate(new ProgressUpdate
                     {
                         Type = ProgressUpdateTypes.Completed,
-                        EpisodeId = youtubeDlResult.Episode.FilePrefix,
+                        EpisodeId = youtubeDlResult.Episode.Id,
                         Title = $"[DONE] {Path.GetFileName(finalEpisodeFile)}"
                     });
                 }

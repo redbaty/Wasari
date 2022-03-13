@@ -18,7 +18,7 @@ using WasariEnvironment;
 
 namespace Wasari.Crunchyroll
 {
-    internal class YoutubeDlService
+    public class YoutubeDlService
     {
         public YoutubeDlService(ILogger<YoutubeDlService> logger, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, EnvironmentService environmentService)
         {
@@ -43,6 +43,11 @@ namespace Wasari.Crunchyroll
                 using var respostaHttp = await httpClient.GetAsync(subtitle.Url);
                 await using var remoteStream = await respostaHttp.Content.ReadAsStreamAsync();
                 var temporaryFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Path.GetTempPath(), $"{episodeId}.{subtitle.Locale}.{subtitle.Format}");
+                var directory = Path.GetDirectoryName(temporaryFile);
+
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
                 await using var fs = File.Create(temporaryFile);
                 await remoteStream.CopyToAsync(fs);
 
@@ -76,10 +81,12 @@ namespace Wasari.Crunchyroll
         }
 
         [SuppressMessage("ReSharper", "AccessToModifiedClosure")]
-        public async Task<YoutubeDlResult> DownloadEpisode(CrunchyrollEpisodeInfo episodeInfo,
+        public async Task<YoutubeDlResult> DownloadEpisode(
+            EpisodeInfoVideoSource videoSource,
             DownloadParameters downloadParameters)
         {
-            var url = episodeInfo.Url;
+            var episodeInfo = videoSource.Episode;
+            var url = videoSource.Url;
             var files = new List<DownloadedFile>();
 
             if (downloadParameters.CookieFilePath != null && !File.Exists(downloadParameters.CookieFilePath))
@@ -87,9 +94,9 @@ namespace Wasari.Crunchyroll
                 throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
             }
 
-            if (episodeInfo.Url.EndsWith("/streams"))
+            if (videoSource.Url.EndsWith("/streams") && episodeInfo is CrunchyrollEpisodeInfo crunchyrollEpisodeInfo)
             {
-                var downloadBetaEpisode = await GetUrlAndSubtitles(episodeInfo, downloadParameters);
+                var downloadBetaEpisode = await GetUrlAndSubtitles(crunchyrollEpisodeInfo, downloadParameters);
                 url = downloadBetaEpisode.Url;
                 files.AddRange(downloadBetaEpisode.Files);
             }
@@ -97,7 +104,7 @@ namespace Wasari.Crunchyroll
             var fileSafeName = episodeInfo.Name.AsSafePath();
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Directory.GetCurrentDirectory(),
-                $"{episodeInfo.FilePrefix} - {fileSafeName}_temp.mp4");
+                $"{episodeInfo.FilePrefix} - {fileSafeName}_{episodeInfo.Id}_temp.mp4");
 
             Logger.LogInformation("Download of episode {@Episode} started", episodeInfo.FilePrefix);
 
@@ -121,61 +128,7 @@ namespace Wasari.Crunchyroll
                 .WithArguments(arguments, false)
                 .WithRetryCount(10)
                 .WithLogger(Logger)
-                .WithCommandHandler(@event =>
-                {
-                    if (@event is StandardOutputCommandEvent standardOutputCommandEvent)
-                    {
-                        if (standardOutputCommandEvent.Text.StartsWith("[info] Writing video subtitles to:"))
-                        {
-                            var path = standardOutputCommandEvent.Text[35..].Trim();
-
-                            files.Add(new DownloadedFile
-                            {
-                                Type = FileType.Subtitle,
-                                Path = path
-                            });
-                        }
-                        else if (standardOutputCommandEvent.Text.StartsWith("[download] Destination:"))
-                        {
-                            var path = standardOutputCommandEvent.Text[24..].Trim();
-                            var extension = Path.GetExtension(path);
-
-                            files.Add(extension == ".ass"
-                                ? new SubtitleFile
-                                {
-                                    Language = Regex.Match(path, "\\.(?<lang>(.*))\\.ass").Groups["lang"].Value.Replace("-", string.Empty).ToLower(),
-                                    Path = path
-                                }
-                                : new DownloadedFile
-                                {
-                                    Type = FileType.VideoFile,
-                                    Path = path
-                                });
-                        }
-                        else if (standardOutputCommandEvent.Text.StartsWith("[download]") &&
-                                 standardOutputCommandEvent.Text.Contains('%'))
-                        {
-                            if (standardOutputCommandEvent.Text.GetValueFromRegex<double>(@"(\d+\.\d+)%",
-                                    out var parsedPercentage) &&
-                                standardOutputCommandEvent.Text.GetValueFromRegex<string>(@"at (\d+\.\d+\w+/s)",
-                                    out var speed))
-                            {
-                                var currentFile = files.Last();
-
-                                var update = new ProgressUpdate
-                                {
-                                    Title =
-                                        $"[YT-DLP][{currentFile.Type}]({speed}) {Path.GetFileName(currentFile.Path)}",
-                                    Type = ProgressUpdateTypes.Current,
-                                    Value = (int)parsedPercentage,
-                                    EpisodeId = episodeInfo.FilePrefix
-                                };
-
-                                Logger.LogProgressUpdate(update);
-                            }
-                        }
-                    }
-                });
+                .WithCommandHandler(@event => ProcessCommandEvent(@event, files, episodeInfo));
             await command.Execute();
 
             files = files.GroupBy(i => new { i.Path, i.Type })
@@ -201,17 +154,79 @@ namespace Wasari.Crunchyroll
                 {
                     if (File.Exists(file.Path!))
                         File.Delete(file.Path!);
-                    
+
                     files.Remove(file);
                 }
             }
 
+            var currentFile = files.Single(i => i.Type == FileType.VideoFile);
             Logger.LogInformation("Download of episode {@Episode} ended", $"{episodeInfo.FilePrefix}");
+            Logger.LogProgressUpdate(CreateProgressUpdate(100, ProgressUpdateTypes.Completed, $"[YT-DLP][{currentFile.Type}][DONE] {Path.GetFileName(currentFile.Path)}", $"{episodeInfo.Id}_{currentFile.Type}"));
 
+            videoSource.LocalPath = temporaryEpisodeFile;
             return new YoutubeDlResult
             {
                 Files = files,
-                Episode = episodeInfo
+                Episode = episodeInfo,
+                Source = videoSource
+            };
+        }
+
+        private void ProcessCommandEvent(CommandEvent @event, List<DownloadedFile> files, IEpisodeInfo episodeInfo)
+        {
+            if (@event is StandardOutputCommandEvent standardOutputCommandEvent)
+            {
+                if (standardOutputCommandEvent.Text.StartsWith("[info] Writing video subtitles to:"))
+                {
+                    var path = standardOutputCommandEvent.Text[35..].Trim();
+
+                    files.Add(new DownloadedFile
+                    {
+                        Type = FileType.Subtitle,
+                        Path = path
+                    });
+                }
+                else if (standardOutputCommandEvent.Text.StartsWith("[download] Destination:"))
+                {
+                    var path = standardOutputCommandEvent.Text[24..].Trim();
+                    var extension = Path.GetExtension(path);
+
+                    files.Add(extension == ".ass"
+                        ? new SubtitleFile
+                        {
+                            Language = Regex.Match(path, "\\.(?<lang>(.*))\\.ass").Groups["lang"].Value.Replace("-", string.Empty).ToLower(),
+                            Path = path
+                        }
+                        : new DownloadedFile
+                        {
+                            Type = FileType.VideoFile,
+                            Path = path
+                        });
+                }
+                else if (standardOutputCommandEvent.Text.StartsWith("[download]") &&
+                         standardOutputCommandEvent.Text.Contains('%'))
+                {
+                    if (standardOutputCommandEvent.Text.GetValueFromRegex<double>(@"(\d+\.\d+)%",
+                            out var parsedPercentage) &&
+                        standardOutputCommandEvent.Text.GetValueFromRegex<string>(@"at (\d+\.\d+\w+/s)",
+                            out var speed))
+                    {
+                        var currentFile = files.Last();
+
+                        Logger.LogProgressUpdate(CreateProgressUpdate(parsedPercentage, ProgressUpdateTypes.Current, $"[YT-DLP][{currentFile.Type}]({speed}) {Path.GetFileName(currentFile.Path)}", $"{episodeInfo.Id}_{currentFile.Type}"));
+                    }
+                }
+            }
+        }
+
+        private static ProgressUpdate CreateProgressUpdate(double parsedPercentage, ProgressUpdateTypes updateType, string message, string id)
+        {
+            return new ProgressUpdate
+            {
+                Title = message,
+                Type = updateType,
+                Value = (int)parsedPercentage,
+                EpisodeId = id
             };
         }
     }

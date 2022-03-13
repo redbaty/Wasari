@@ -18,5 +18,8 @@ namespace Wasari.Crunchyroll.API
         
         [JsonPropertyName("season_number")]
         public int Number { get; init; }
+        
+        [JsonPropertyName("series_id")]
+        public string SeriesId { get; init; }
     }
 }

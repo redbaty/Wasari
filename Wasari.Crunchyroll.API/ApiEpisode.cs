@@ -49,5 +49,12 @@ namespace Wasari.Crunchyroll.API
         
         [JsonPropertyName("is_premium_only")]
         public bool IsPremium { get; init; }
+        
+        [JsonPropertyName("subtitle_locales")]
+        public string[] Subtitles { get; init; }
+
+        public string AudioLocale => ApiEpisodeStreams.AudioLocale;
+        
+        public ApiEpisodeStreams ApiEpisodeStreams { get; set; }
     }
 }

@@ -4,7 +4,7 @@ using Wasari.Abstractions;
 
 namespace Wasari.Crunchyroll.Abstractions
 {
-    public class CrunchyrollSeasonsInfo : ISeasonInfo<CrunchyrollEpisodeInfo> 
+    public class CrunchyrollSeasonsInfo : ISeasonInfo 
     {
         private string _id;
 
@@ -24,6 +24,10 @@ namespace Wasari.Crunchyroll.Abstractions
         
         public string Title { get; init; }
         
-        public ICollection<CrunchyrollEpisodeInfo> Episodes { get; init; }
+        public bool Dubbed { get; init; }
+        
+        public string DubbedLanguage { get; init; }
+
+        public ICollection<IEpisodeInfo> Episodes { get; init; }
     }
 }

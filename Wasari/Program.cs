@@ -29,7 +29,9 @@ namespace Wasari
 
             try
             {
-                loggerConfiguration = loggerConfiguration.WriteTo.ProgressConsole(enableProgressBars: useProgressBar);
+                loggerConfiguration = loggerConfiguration
+                    .MinimumLevel.Debug()
+                    .WriteTo.ProgressConsole(enableProgressBars: useProgressBar);
 
                 var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "Wasari", "logs", "log.txt");
@@ -52,6 +54,7 @@ namespace Wasari
                 serviceCollection.AddLogging(c => c.AddSerilog());
                 serviceCollection.Configure<ProgressBarOptions>(o => o.Enabled = true);
                 serviceCollection.AddMemoryCache();
+                serviceCollection.AddDownloadServices();
                 await serviceCollection.AddEnvironmentServices();
                 serviceCollection.AddCrunchyrollServices();
 

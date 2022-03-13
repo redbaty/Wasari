@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
-using FFMpegCore;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
@@ -82,14 +81,21 @@ namespace Wasari.Ffmpeg
             && await GetAvailableEncoders()
                 .AnyAsync(i => i.Contains("hevc_nvenc", StringComparison.InvariantCultureIgnoreCase));
 
-        private IEnumerable<string> CreateArguments(string videoFile, IEnumerable<string> subtitlesFiles,
+        private IEnumerable<string> CreateArguments(IReadOnlyCollection<EpisodeInfoVideoSource> videoFiles, IEnumerable<string> subtitlesFiles,
             string newVideoFile, DownloadParameters downloadParameters)
         {
             if (downloadParameters.UseAnime4K)
                 yield return "-init_hw_device vulkan";
 
-            yield return $"-i \"{videoFile}\"";
-            var subtitleArguments = CreateSubtitleArguments(subtitlesFiles);
+            foreach (var videoFile in videoFiles)
+            {
+                yield return $"-i \"{videoFile.LocalPath}\"";
+            }
+
+            var videoMappings = CreateVideoMappings(videoFiles).Aggregate((x, y) => $"{x} {y}");
+            var videoMetadataMapping = CreateMetadataMappings(videoFiles).Aggregate((x, y) => $"{x} {y}");
+            
+            var subtitleArguments = CreateSubtitleArguments(subtitlesFiles, videoFiles.Count, videoMappings, videoMetadataMapping) ?? videoMappings;
 
             if (downloadParameters.UseAnime4K)
                 yield return
@@ -140,7 +146,11 @@ namespace Wasari.Ffmpeg
             yield return $"\"{newVideoFile}\"";
         }
 
-        private static string CreateSubtitleArguments(IEnumerable<string> subs)
+        private static IEnumerable<string> CreateVideoMappings(IReadOnlyCollection<EpisodeInfoVideoSource> videoFiles) => Enumerable.Range(0, videoFiles.Count).Select(index => $"-map {index}");
+
+        private static IEnumerable<string> CreateMetadataMappings(IReadOnlyCollection<EpisodeInfoVideoSource> videoFiles) => videoFiles.Select((i, index) => $"-metadata:s:a:{index} language=\"{i.Language}\"");
+
+        private static string CreateSubtitleArguments(IEnumerable<string> subs, int startingIndex, string videoMappings, string videoMetadataMapping)
         {
             var subtitlesFiles = subs?.OrderBy(i => i).ToArray();
 
@@ -150,7 +160,7 @@ namespace Wasari.Ffmpeg
             var aggregate = subtitlesFiles.Select(i => $"-f ass -i \"{i}\"")
                 .Aggregate((x, y) => $"{x} {y}");
 
-            var mappings = subtitlesFiles.Select((_, i) => $"-map {i + 1}")
+            var mappings = subtitlesFiles.Select((_, i) => $"-map {i + startingIndex}")
                 .Aggregate((x, y) => $"{x} {y}");
 
             var metadata = subtitlesFiles.Select((i, index) =>
@@ -159,21 +169,12 @@ namespace Wasari.Ffmpeg
 
             var metadataMappings = metadata.Aggregate((x, y) => $"{x} {y}");
 
-            return $"{aggregate} -map 0:v -map 0:a {mappings} {metadataMappings}";
+            return $"{aggregate} {videoMappings} {mappings} {metadataMappings} {videoMetadataMapping}";
         }
 
-        public async Task Encode(string episodeId, string videoFile, string[] subtitlesFiles,
+        public async Task Encode(string episodeId, EpisodeInfoVideoSource[] videoFiles, string[] subtitlesFiles,
             string newVideoFile, DownloadParameters downloadParameters)
         {
-            var update = new ProgressUpdate
-            {
-                Title = "[FFMPEG] Merge Video To Subtitles",
-                Type = ProgressUpdateTypes.Current,
-                Value = 0,
-                EpisodeId = episodeId
-            };
-
-            Logger.LogProgressUpdate(update);
             Logger.LogInformation("Encoding of episode {@Episode} started", episodeId);
 
             if (downloadParameters.UseAnime4K)
@@ -197,18 +198,38 @@ namespace Wasari.Ffmpeg
                 .Distinct()
                 .MaxAsync();
 
-            update = new ProgressUpdate
-            {
-                Title = "FFMPEG - Merge Video To Subtitles",
-                Type = ProgressUpdateTypes.Max,
-                Value = (int)mediaAnalysis.Duration.TotalSeconds,
-                EpisodeId = episodeId
-            };
+            var statusUpdateEnabled = mediaAnalysis.HasValue;
 
-            Logger.LogProgressUpdate(update);
+            if (!statusUpdateEnabled)
+            {
+                Logger?.LogWarning("Failed to determined video duration for files {@Files} {@DownloadParameters}", videoFiles.Select(i => i.LocalPath).ToArray(), downloadParameters);
+            }
+
+            if (statusUpdateEnabled)
+            {
+                var update = new ProgressUpdate
+                {
+                    Title = "[FFMPEG] Merge Video To Subtitles",
+                    Type = ProgressUpdateTypes.Current,
+                    Value = 0,
+                    EpisodeId = episodeId
+                };
+
+                Logger.LogProgressUpdate(update);
+
+                update = new ProgressUpdate
+                {
+                    Title = "FFMPEG - Merge Video To Subtitles",
+                    Type = ProgressUpdateTypes.Max,
+                    Value = (int)mediaAnalysis.Value.TotalSeconds,
+                    EpisodeId = episodeId
+                };
+
+                Logger.LogProgressUpdate(update);
+            }
 
             var command = Cli.Wrap(Ffmpeg.Path)
-                .WithArguments(CreateArguments(videoFile, subtitlesFiles, newVideoFile, downloadParameters)
+                .WithArguments(CreateArguments(videoFiles, subtitlesFiles, newVideoFile, downloadParameters)
                     .Where(i => !string.IsNullOrEmpty(i)), false);
 
             Logger.LogDebug("Merging video file with subtitles. {@Command}", command.ToString());
@@ -224,22 +245,25 @@ namespace Wasari.Ffmpeg
                     _ => null
                 };
 
-                if (text != null 
-                    && text.GetValueFromRegex<double>(@"speed=(\d+.\d+)x", out var speed) 
+                if (text != null
+                    && text.GetValueFromRegex<double>(@"speed=(\d+.\d+)x", out var speed)
                     && text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time)
                     && time != null)
                 {
                     var timespan = TimeSpan.Parse(time);
 
-                    update = new ProgressUpdate
+                    if (statusUpdateEnabled)
                     {
-                        Title = $"[FFMPEG]({speed:0.000}x) {Path.GetFileName(newVideoFile)}",
-                        Type = ProgressUpdateTypes.Current,
-                        Value = (int)timespan.TotalSeconds,
-                        EpisodeId = episodeId
-                    };
+                        var update = new ProgressUpdate
+                        {
+                            Title = $"[FFMPEG]({speed:0.000}x) {Path.GetFileName(newVideoFile)}",
+                            Type = ProgressUpdateTypes.Current,
+                            Value = (int)timespan.TotalSeconds,
+                            EpisodeId = episodeId
+                        };
 
-                    Logger.LogProgressUpdate(update);
+                        Logger?.LogProgressUpdate(update);
+                    }
                 }
 
                 Logger?.LogTrace("[FFMpeg] {@Text}", text);
@@ -249,10 +273,13 @@ namespace Wasari.Ffmpeg
             {
                 var deletedFiles = 0;
 
-                if (File.Exists(videoFile))
+                foreach (var videoFile in videoFiles)
                 {
-                    File.Delete(videoFile);
-                    deletedFiles++;
+                    if (File.Exists(videoFile.LocalPath))
+                    {
+                        File.Delete(videoFile.LocalPath);
+                        deletedFiles++;
+                    }
                 }
 
                 if (subtitlesFiles != null)
@@ -263,13 +290,13 @@ namespace Wasari.Ffmpeg
                         deletedFiles++;
                     }
                 }
-                
-                Logger.LogInformation("{@DeletedFiles} were cleaned. {@EpisodeId}", deletedFiles, episodeId);
+
+                Logger?.LogInformation("{@DeletedFiles} were cleaned. {@EpisodeId}", deletedFiles, episodeId);
             }
-            
+
             stopwatch.Stop();
 
-            Logger.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId,
+            Logger?.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId,
                 newVideoFile, stopwatch.Elapsed);
         }
     }

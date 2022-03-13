@@ -21,12 +21,12 @@ namespace Wasari.Crunchyroll
 
         private FfmpegService FfmpegService { get; }
 
-        private Channel<YoutubeDlResult> Channel { get; } =
-            System.Threading.Channels.Channel.CreateUnbounded<YoutubeDlResult>();
+        private Channel<YoutubeDlEpisodeResult> Channel { get; } =
+            System.Threading.Channels.Channel.CreateUnbounded<YoutubeDlEpisodeResult>();
 
         private ILogger<FfmpegQueueService> Logger { get; }
 
-        public ValueTask Enqueue(YoutubeDlResult youtubeDlResult)
+        public ValueTask Enqueue(YoutubeDlEpisodeResult youtubeDlResult)
         {
             return Channel.Writer.WriteAsync(youtubeDlResult);
         }
@@ -47,9 +47,8 @@ namespace Wasari.Crunchyroll
                     var task = await Task.WhenAny(tasks);
                     tasks.Remove(task);
                 }
-
-
-                var episodeFile = youtubeDlResult.FinalEpisodeFile(downloadParameters);
+                
+                var episodeFile = youtubeDlResult.Episode.FinalEpisodeFile(downloadParameters);
 
                 var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(episodeFile) ??
                                                         throw new InvalidOperationException(
@@ -63,7 +62,7 @@ namespace Wasari.Crunchyroll
                     Logger.LogProgressUpdate(new ProgressUpdate
                     {
                         Type = ProgressUpdateTypes.Completed,
-                        EpisodeId = youtubeDlResult.Episode?.FilePrefix,
+                        EpisodeId = youtubeDlResult.Episode?.Id,
                         Title = $"[DONE] {Path.GetFileName(episodeFile)}"
                     });
 

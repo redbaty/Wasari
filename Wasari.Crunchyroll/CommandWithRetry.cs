@@ -55,7 +55,7 @@ namespace Wasari.Crunchyroll
 
                         await Task.Delay(Timeout);
                         CurrentCount++;
-                        Logger?.LogDebug("'{@Command}' failed for the {@CurrentRetryCount} time", Command.ToString(), CurrentCount);
+                        Logger?.LogError("'{@Command}' failed for the {@CurrentRetryCount} time, {@StdErr}", Command.ToString(), CurrentCount, stdOutputBuilder.ToString());
                     }
                     else if (commandEvent is StandardErrorCommandEvent standardErrorCommandEvent)
                     {

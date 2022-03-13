@@ -15,4 +15,7 @@ public class ApiEpisodeStreams
     [JsonPropertyName("streams")]
     [JsonConverter(typeof(StreamsConverter))]
     public ApiEpisodeStreamLink[] Streams { get; init; }
+    
+    [JsonPropertyName("audio_locale")]
+    public string AudioLocale { get; init; }
 }

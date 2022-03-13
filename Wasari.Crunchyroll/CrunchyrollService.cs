@@ -13,7 +13,7 @@ using Wasari.Puppeteer;
 
 namespace Wasari.Crunchyroll
 {
-    public class CrunchyrollService : ISeriesProvider<CrunchyrollSeasonsInfo>
+    public class CrunchyrollService : ISeriesProvider
     {
         public CrunchyrollService(ILogger<CrunchyrollService> logger, BrowserFactory browserFactory, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory)
         {
@@ -48,7 +48,7 @@ namespace Wasari.Crunchyroll
                     Season = season.Number,
                     Id = season.Id,
                     Title = season.Title,
-                    Episodes = new List<CrunchyrollEpisodeInfo>()
+                    Episodes = new List<IEpisodeInfo>()
                 };
 
                 foreach (var crunchyrollEpisodeInfo in episodesGroupedBySeason.Select((i, index) =>
@@ -69,61 +69,63 @@ namespace Wasari.Crunchyroll
             }
         }
 
-        public async Task<ISeriesInfo<CrunchyrollSeasonsInfo>> GetSeries(string seriesUrl)
+        public IAsyncEnumerable<IEpisodeInfo> GetEpisodes(string seriesUrl)
         {
-            var crunchyrollService = CrunchyrollApiServiceFactory.GetService();
-            var browser = await BrowserFactory.GetBrowserAsync();
+            throw new NotImplementedException();
             
-            Logger.LogDebug("Creating browser tab...");
-            await using var seriesPage = await browser.NewPageAsync();
-            Logger.LogDebug("Navigating to {@Url}", seriesUrl);
-            await seriesPage.GoToAsync(seriesUrl);
-
-            if (seriesPage.Url.Contains("beta."))
-            {
-                Logger.LogError("BETA Series with legacy link detected, please provide the beta link instead of the old one");
-                throw new InvalidOperationException("BETA Series with legacy link detected, please provide the beta link instead of the old one");
-            }
-
-            Logger.LogInformation("Parsing series page {@Url}", seriesUrl);
-            await using var titleHandle =
-                await seriesPage.WaitForXPathAsync("//*[@id=\"showview-content-header\"]/div[@class='ch-left']/h1");
-
-            if (titleHandle == null)
-                throw new Exception("Failed to find title handle. Is this a series URL?");
-
-            var name = await titleHandle.GetPropertyValue<string>("innerText");
-
-            Logger.LogDebug("Parsing seasons for series {@SeriesName}", name);
-
-            await seriesPage.WaitForXPathAsync("//*[@id=\"sidebar_elements\"]/li[1]/div");
-            var id = await seriesPage.EvaluateExpressionAsync<string>(
-                "document.getElementsByClassName(\"show-actions\")[0]?.attributes['data-contentmedia'].value.match(/\"mediaId\":\"(?<id>\\w+)\"/).groups.id");
-            
-            Logger.LogInformation("Media ID found {@Id}", id);
-            
-            var episodesDictionary = await crunchyrollService.GetAllEpisodes(id)
-                .ToDictionaryAsync(i => i.ThumbnailIds.Single());
-
-            var seasons = await GetSeasonsInfo(seriesPage, episodesDictionary, id).ToListAsync();
-            var specialSeason = CreateSpecialSeason(seasons);
-
-            if (specialSeason.Episodes.Any())
-                seasons.Add(specialSeason);
-
-            return new CrunchyrollSeriesInfo
-            {
-                Name = name,
-                Seasons = seasons.OrderBy(i => i.Season).ToArray(),
-                Id = id
-            };
+            // var crunchyrollService = CrunchyrollApiServiceFactory.GetService();
+            // var browser = await BrowserFactory.GetBrowserAsync();
+            //
+            // Logger.LogDebug("Creating browser tab...");
+            // await using var seriesPage = await browser.NewPageAsync();
+            // Logger.LogDebug("Navigating to {@Url}", seriesUrl);
+            // await seriesPage.GoToAsync(seriesUrl);
+            //
+            // if (seriesPage.Url.Contains("beta."))
+            // {
+            //     Logger.LogError("BETA Series with legacy link detected, please provide the beta link instead of the old one");
+            //     throw new InvalidOperationException("BETA Series with legacy link detected, please provide the beta link instead of the old one");
+            // }
+            //
+            // Logger.LogInformation("Parsing series page {@Url}", seriesUrl);
+            // await using var titleHandle =
+            //     await seriesPage.WaitForXPathAsync("//*[@id=\"showview-content-header\"]/div[@class='ch-left']/h1");
+            //
+            // if (titleHandle == null)
+            //     throw new Exception("Failed to find title handle. Is this a series URL?");
+            //
+            // var name = await titleHandle.GetPropertyValue<string>("innerText");
+            //
+            // Logger.LogDebug("Parsing seasons for series {@SeriesName}", name);
+            //
+            // await seriesPage.WaitForXPathAsync("//*[@id=\"sidebar_elements\"]/li[1]/div");
+            // var id = await seriesPage.EvaluateExpressionAsync<string>(
+            //     "document.getElementsByClassName(\"show-actions\")[0]?.attributes['data-contentmedia'].value.match(/\"mediaId\":\"(?<id>\\w+)\"/).groups.id");
+            //
+            // Logger.LogInformation("Media ID found {@Id}", id);
+            //
+            // var episodesDictionary = await crunchyrollService.GetAllEpisodes(id)
+            //     .ToDictionaryAsync(i => i.ThumbnailIds.Single());
+            //
+            // var seasons = await GetSeasonsInfo(seriesPage, episodesDictionary, id).ToListAsync();
+            // var specialSeason = CreateSpecialSeason(seasons);
+            //
+            // if (specialSeason.Episodes.Any())
+            //     seasons.Add(specialSeason);
+            //
+            // return new CrunchyrollSeriesInfo
+            // {
+            //     Name = name,
+            //     Seasons = seasons.OrderBy(i => i.Season).ToArray(),
+            //     Id = id
+            // };
         }
 
         private static CrunchyrollSeasonsInfo CreateSpecialSeason(List<CrunchyrollSeasonsInfo> seasons)
         {
             var specialSeason = new CrunchyrollSeasonsInfo
             {
-                Episodes = new List<CrunchyrollEpisodeInfo>(),
+                Episodes = new List<IEpisodeInfo>(),
                 Season = 0,
                 Title = "Specials"
             };
@@ -134,7 +136,7 @@ namespace Wasari.Crunchyroll
                 {
                     var specialEpisodes = seasonInfo.Episodes.Where(i => i.Special).OrderBy(i => i.Number).ToArray();
 
-                    foreach (var specialEpisode in specialEpisodes)
+                    foreach (var specialEpisode in specialEpisodes.OfType<CrunchyrollEpisodeInfo>())
                     {
                         var currentEpisode = specialSeason.Episodes.Any()
                             ? specialSeason.Episodes.Max(o => o.SequenceNumber)

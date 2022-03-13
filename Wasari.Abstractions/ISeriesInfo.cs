@@ -6,9 +6,4 @@ namespace Wasari.Abstractions
     {
         string Name { get; }
     }
-
-    public interface ISeriesInfo<T> : ISeriesInfo where T : ISeasonInfo
-    {
-        ICollection<T> Seasons { get; }
-    }
 }

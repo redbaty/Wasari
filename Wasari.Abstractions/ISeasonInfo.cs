@@ -7,10 +7,9 @@ namespace Wasari.Abstractions
         int Season { get; }
         
         string Title { get; }
-    }
-
-    public interface ISeasonInfo<T>: ISeasonInfo where T: IEpisodeInfo
-    {
-        ICollection<T> Episodes { get; }
+        
+        bool Dubbed { get; }
+        
+        string DubbedLanguage { get; }
     }
 }

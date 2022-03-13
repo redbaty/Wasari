@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Wasari.Abstractions;
 using Wasari.Crunchyroll.Abstractions;
 using Wasari.Crunchyroll.API;
 
@@ -8,12 +9,12 @@ namespace Wasari.Crunchyroll.Extensions;
 internal static class ApiExtensions
 {
     public static IEnumerable<CrunchyrollSeasonsInfo> ToSeasonsInfo(this IEnumerable<ApiSeason> apiSeasons,
-        IEnumerable<ApiEpisode> apiEpisodes)
+        IEnumerable<ApiEpisode> apiEpisodes, ISeriesInfo seriesInfo)
     {
         var episodeBySeason = apiEpisodes.ToLookup(i => i.SeasonId);
 
         var lastNumber = 1;
-        foreach (var season in apiSeasons.Where(i => !i.IsDubbed).OrderBy(i => i.Number))
+        foreach (var season in apiSeasons.OrderBy(i => i.Number))
         {
             if (lastNumber < 0)
             {
@@ -25,12 +26,14 @@ internal static class ApiExtensions
                 Id = season.Id,
                 Season = lastNumber,
                 Title = season.Title,
-                Episodes = new List<CrunchyrollEpisodeInfo>()
+                Dubbed = season.IsDubbed,
+                DubbedLanguage = season.IsDubbed ? GetSeasonDubLanguage(season, episodeBySeason[season.Id]) : season.Title,
+                Episodes = new List<IEpisodeInfo>()
             };
 
             foreach (var apiEpisode in episodeBySeason[season.Id])
             {
-                seasonInfo.Episodes.Add(new CrunchyrollEpisodeInfo
+                var crunchyrollEpisodeInfo = new CrunchyrollEpisodeInfo
                 {
                     Id = apiEpisode.Id,
                     Name = apiEpisode.Title,
@@ -40,14 +43,35 @@ internal static class ApiExtensions
                     Number = (apiEpisode.EpisodeNumber ?? apiEpisode.SequenceNumber).ToString("00"),
                     SequenceNumber = apiEpisode.EpisodeNumber ?? apiEpisode.SequenceNumber,
                     SeasonInfo = seasonInfo,
-                    Premium = apiEpisode.IsPremium
+                    Premium = apiEpisode.IsPremium,
+                    Dubbed = apiEpisode.IsDubbed,
+                    DubbedLanguage = apiEpisode.AudioLocale,
+                    SeriesInfo = seriesInfo
+                };
+
+                crunchyrollEpisodeInfo.Sources.Add(new EpisodeInfoVideoSource
+                {
+                    Url = apiEpisode.StreamLink,
+                    Language = seasonInfo.DubbedLanguage,
+                    Episode = crunchyrollEpisodeInfo
                 });
+
+                seasonInfo.Episodes.Add(crunchyrollEpisodeInfo);
             }
 
-            if (seasonInfo.Season > 0)
+            if (seasonInfo.Season > 0 && !season.IsDubbed)
                 lastNumber++;
-                
+
             yield return seasonInfo;
         }
+    }
+
+    private static string GetSeasonDubLanguage(ApiSeason season, IEnumerable<ApiEpisode> apiEpisodes)
+    {
+        var subLanguages = apiEpisodes.Select(o => o.AudioLocale).Distinct().ToArray();
+        if (subLanguages.Length == 1)
+            return subLanguages.Single();
+        
+        throw new System.NotImplementedException();
     }
 }
