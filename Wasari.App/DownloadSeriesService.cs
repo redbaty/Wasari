@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
@@ -71,7 +71,7 @@ public class DownloadSeriesService
             throw new InvalidOperationException($"Failed to create series provider. Type: {seriesProviderType.Name}");
 
         var episodes = await seriesProvider.GetEpisodes(url.ToString())
-            .Where(i => !i.SeasonInfo.Dubbed || downloadParameters.Dubs && (downloadParameters.DubsLanguage == null || downloadParameters.DubsLanguage.Any(o => i.DubbedLanguage != null && i.DubbedLanguage.Contains(o))))
+            .Where(i => !i.SeasonInfo.Dubbed || downloadParameters.Dubs && (downloadParameters.DubsLanguage == null || downloadParameters.DubsLanguage.Any(o => i.DubbedLanguage != null && i.DubbedLanguage.Contains(o, StringComparison.InvariantCultureIgnoreCase))))
             .OrderBy(i => i.SeasonInfo.Season)
             .GetEpisodesGrouped()
             .Reverse()
