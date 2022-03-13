@@ -22,7 +22,7 @@ public class CrunchyrollApiServiceFactory
     
     private ILogger<CrunchyrollApiServiceFactory> Logger { get; }
 
-    public bool IsAuthenticated { get; private set; }
+    public static bool IsAuthenticated { get; private set; }
 
     private const string ChaveCache = "crunchyroll_service";
 

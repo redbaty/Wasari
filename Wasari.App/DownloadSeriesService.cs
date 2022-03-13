@@ -2,7 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
+using Wasari.App.Exceptions;
 using Wasari.Crunchyroll;
+using Wasari.Crunchyroll.Abstractions;
+using Wasari.Crunchyroll.API;
 using Wasari.Crunchyroll.Extensions;
 using Wasari.Ffmpeg;
 
@@ -29,6 +32,35 @@ public class DownloadSeriesService
     
     private ILogger<DownloadSeriesService> Logger { get; }
 
+    private static int[] ParseRange(string range, int max)
+    {
+        if (string.IsNullOrEmpty(range))
+            return new[] { 0, max };
+
+        if (range.Any(i => !char.IsDigit(i) && i != '-'))
+            throw new InvalidEpisodeRangeException();
+
+        if (range.Contains('-'))
+        {
+            var episodesNumbers = range.Split('-');
+
+            if (episodesNumbers.Length != 2 || episodesNumbers.All(string.IsNullOrEmpty))
+                throw new InvalidEpisodeRangeException();
+
+            if (episodesNumbers.All(i => !string.IsNullOrEmpty(i)))
+                return episodesNumbers.Select(int.Parse).ToArray();
+
+            if (string.IsNullOrEmpty(episodesNumbers[0]))
+                return new[] { 0, int.Parse(episodesNumbers[1]) };
+
+            if (string.IsNullOrEmpty(episodesNumbers[1]))
+                return new[] { int.Parse(episodesNumbers[0]), max };
+        }
+
+        if (int.TryParse(range, out var episode)) return new[] { episode, episode };
+
+        throw new InvalidOperationException($"Invalid episode range. {range}");
+    }
 
     public async Task DownloadEpisodes(Uri url, DownloadParameters downloadParameters)
     {
@@ -43,6 +75,28 @@ public class DownloadSeriesService
             .GetEpisodesGrouped()
             .Reverse()
             .ToListAsync();
+
+        if (!string.IsNullOrEmpty(downloadParameters.SeasonRange))
+        {
+            var seasonsRange = ParseRange(downloadParameters.SeasonRange, episodes.Select(i => i.SeasonInfo.Season).Max());
+            episodes = episodes.Where(i =>
+                     i.SeasonInfo.Season >= seasonsRange[0]
+                     && i.SeasonInfo.Season <= seasonsRange[1])
+                 .ToList();
+        }
+        
+        if (!string.IsNullOrEmpty(downloadParameters.EpisodeRange))
+        {
+            var episodeRange = ParseRange(downloadParameters.EpisodeRange, (int)episodes.Select(i => i.SequenceNumber).Max());
+            Logger.LogInformation("Episodes range is {@Range}", episodeRange);
+            episodes = episodes.Where(i =>
+                    i.SequenceNumber >= episodeRange[0]
+                    && i.SequenceNumber <= episodeRange[1])
+                .ToList();
+        }
+        
+        if (episodes.OfType<CrunchyrollEpisodeInfo>().Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated && downloadParameters.CookieFilePath == null)
+            throw new PremiumEpisodesException(episodes.OfType<CrunchyrollEpisodeInfo>().Where(i => i.Premium).Cast<IEpisodeInfo>().ToArray());
         
         if (downloadParameters.SkipExistingEpisodes)
         {

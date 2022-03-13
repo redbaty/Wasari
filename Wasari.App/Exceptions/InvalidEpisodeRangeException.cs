@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Wasari.Exceptions
+﻿namespace Wasari.App.Exceptions
 {
     public sealed class InvalidEpisodeRangeException : Exception
     {
