@@ -20,8 +20,8 @@ internal static class EpisodeExtensions
                 var dubbed = await episodesGroup.AnyAsync(o => o.Dubbed == true);
                 var dubbedLanguages = await episodesGroup
                     .Where(o => !string.IsNullOrEmpty(o.DubbedLanguage))
-                    .DefaultIfEmpty()
                     .Select(i => i.DubbedLanguage)
+                    .DefaultIfEmpty()
                     .AggregateAsync((x, y) => $"{x}, {y}");
                 
                 var season = new DummySeasonInfo
