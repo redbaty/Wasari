@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Wasari.Crunchyroll
+﻿namespace Wasari.CliWrap.Extensions
 {
     public sealed class CommandFailedException : Exception
     {

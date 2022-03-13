@@ -4,6 +4,7 @@ using Wasari.Abstractions;
 using Wasari.Crunchyroll.Abstractions;
 using Wasari.Crunchyroll.API;
 using Wasari.Ffmpeg;
+using Wasari.YoutubeDl;
 
 namespace Wasari.Crunchyroll
 {

@@ -8,6 +8,7 @@ using Wasari.Crunchyroll.Abstractions;
 using Wasari.Crunchyroll.API;
 using Wasari.Crunchyroll.Extensions;
 using Wasari.Ffmpeg;
+using Wasari.YoutubeDl;
 
 namespace Wasari.App;
 
@@ -140,7 +141,19 @@ public class DownloadSeriesService
             if (!outputDirectory.Exists)
                 outputDirectory.Create();
 
-            await pool.Add(() => FfmpegService.Encode(youtubeDlResult, finalEpisodeFile, downloadParameters).ContinueWith(t =>
+            DownloadedFile[]? additionalSubs = null;
+
+            if (seriesProvider is BetaCrunchyrollService betaCrunchyrollService)
+            {
+                var subEpisodeId = youtubeDlResult.Results
+                    .Where(i => !(i.Source?.Episode?.Dubbed ?? true))
+                    .Select(i => i.Source?.Episode.Id)
+                    .FirstOrDefault(o => o != null);
+
+                additionalSubs = await betaCrunchyrollService.DownloadSubs(subEpisodeId, downloadParameters).ToArrayAsync();
+            }
+
+            await pool.Add(() => FfmpegService.Encode(youtubeDlResult.ToFfmpeg(additionalSubs), finalEpisodeFile, downloadParameters).ContinueWith(t =>
             {
                 Logger.LogProgressUpdate(new ProgressUpdate
                 {

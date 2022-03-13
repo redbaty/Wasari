@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using Wasari.Abstractions;
+﻿using Wasari.Abstractions;
 
-namespace Wasari.Crunchyroll
+namespace Wasari.YoutubeDl
 {
     public class YoutubeDlQueueFactoryService
     {

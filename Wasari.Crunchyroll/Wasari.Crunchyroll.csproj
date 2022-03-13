@@ -19,6 +19,7 @@
         <ProjectReference Include="..\Wasari.Crunchyroll.API\Wasari.Crunchyroll.API.csproj" />
         <ProjectReference Include="..\Wasari.Ffmpeg\Wasari.Ffmpeg.csproj" />
         <ProjectReference Include="..\Wasari.Puppeteer\Wasari.Puppeteer.csproj" />
+        <ProjectReference Include="..\Wasari.YoutubeDl\Wasari.YoutubeDl.csproj" />
     </ItemGroup>
 
 </Project>

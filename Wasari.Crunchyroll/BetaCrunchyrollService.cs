@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using TomLonghurst.EnumerableAsyncProcessor.Extensions;
 using Wasari.Abstractions;
 using Wasari.Crunchyroll.Abstractions;
@@ -18,6 +19,37 @@ public class BetaCrunchyrollService : ISeriesProvider
     }
 
     private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
+    
+    public async IAsyncEnumerable<DownloadedFile> DownloadSubs(string episodeId, DownloadParameters downloadParameters)
+    {
+        var crunchyService = CrunchyrollApiServiceFactory.GetService();
+        var episode = await crunchyService.GetEpisode(episodeId);
+        var streams = episode.ApiEpisodeStreams ?? await crunchyService.GetStreams(episode.StreamLink);
+        var subtitles = streams.Subtitles;
+        
+        using var httpClient = new HttpClient();
+
+        foreach (var subtitle in subtitles)
+        {
+            using var respostaHttp = await httpClient.GetAsync(subtitle.Url);
+            await using var remoteStream = await respostaHttp.Content.ReadAsStreamAsync();
+            var temporaryFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Path.GetTempPath(), $"{episodeId}.{subtitle.Locale}.{subtitle.Format}");
+            var directory = Path.GetDirectoryName(temporaryFile);
+
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            await using var fs = File.Create(temporaryFile);
+            await remoteStream.CopyToAsync(fs);
+
+            yield return new SubtitleFile
+            {
+                Type = FileType.Subtitle,
+                Path = temporaryFile,
+                Language = subtitle.Locale.Replace("-", string.Empty).ToLower()
+            };
+        }
+    }
 
     public async IAsyncEnumerable<IEpisodeInfo> GetEpisodes(string url)
     {

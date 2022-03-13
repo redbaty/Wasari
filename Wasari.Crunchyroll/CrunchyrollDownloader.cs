@@ -6,6 +6,9 @@ using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
 using Wasari.Crunchyroll.Abstractions;
+using Wasari.Crunchyroll.Extensions;
+using Wasari.Ffmpeg;
+using Wasari.YoutubeDl;
 
 namespace Wasari.Crunchyroll
 {
@@ -39,6 +42,11 @@ namespace Wasari.Crunchyroll
             await foreach (var youtubeDlResultByEpisode in youtubeDlQueue.ByEpisodeReader.ReadAllAsync())
             {
                 var youtubeDlResult = youtubeDlResultByEpisode.Results.Single();
+
+                if (youtubeDlResult.Episode == null)
+                {
+                    continue;
+                }
                 
                 yield return new DownloadedFile
                 {
@@ -48,7 +56,7 @@ namespace Wasari.Crunchyroll
                 
                 if (downloadParameters.Subtitles || downloadParameters.UseHevc)
                 {
-                    await FfmpegQueueService.Enqueue(youtubeDlResultByEpisode);
+                    await FfmpegQueueService.Enqueue(youtubeDlResultByEpisode.ToFfmpeg());
                 }
                 else
                 {

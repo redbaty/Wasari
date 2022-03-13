@@ -1,14 +1,11 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using CliWrap;
 using CliWrap.EventStream;
 using Microsoft.Extensions.Logging;
 
-namespace Wasari.Crunchyroll
+namespace Wasari.CliWrap.Extensions
 {
-    internal class CommandWithRetry
+    public class CommandWithRetry
     {
         public int RetryCount { get; }
 
@@ -18,13 +15,13 @@ namespace Wasari.Crunchyroll
 
         internal TimeSpan Timeout { get; }
 
-        internal ILogger Logger { get; }
+        internal ILogger? Logger { get; }
         
-        internal Action<CommandEvent> OnCommandEvent { get; }
+        internal Action<CommandEvent>? OnCommandEvent { get; }
 
         private string Name { get; }
 
-        public CommandWithRetry(int retryCount, Command command, TimeSpan timeout, ILogger logger, Action<CommandEvent> onCommandEvent)
+        public CommandWithRetry(int retryCount, Command command, TimeSpan timeout, ILogger? logger, Action<CommandEvent>? onCommandEvent)
         {
             RetryCount = retryCount;
             Command = command;

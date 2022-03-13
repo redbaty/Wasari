@@ -1,84 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using CliWrap;
 using CliWrap.EventStream;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
-using Wasari.Crunchyroll.Abstractions;
-using Wasari.Crunchyroll.API;
-using Wasari.Crunchyroll.Extensions;
+using Wasari.CliWrap.Extensions;
 using WasariEnvironment;
 
-namespace Wasari.Crunchyroll
+namespace Wasari.YoutubeDl
 {
     public class YoutubeDlService
     {
-        public YoutubeDlService(ILogger<YoutubeDlService> logger, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, EnvironmentService environmentService)
+        public YoutubeDlService(ILogger<YoutubeDlService> logger, EnvironmentService environmentService)
         {
             Logger = logger;
-            CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
             YtDlp = environmentService.GetFeatureOrThrow(EnvironmentFeatureType.YtDlp);
         }
 
         private ILogger<YoutubeDlService> Logger { get; }
 
-        private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
-
         private EnvironmentFeature YtDlp { get; }
 
-        private static async IAsyncEnumerable<DownloadedFile> DownloadSubs(string episodeId,
-            IEnumerable<ApiEpisodeStreamSubtitle> subtitles, DownloadParameters downloadParameters)
-        {
-            using var httpClient = new HttpClient();
-
-            foreach (var subtitle in subtitles)
-            {
-                using var respostaHttp = await httpClient.GetAsync(subtitle.Url);
-                await using var remoteStream = await respostaHttp.Content.ReadAsStreamAsync();
-                var temporaryFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Path.GetTempPath(), $"{episodeId}.{subtitle.Locale}.{subtitle.Format}");
-                var directory = Path.GetDirectoryName(temporaryFile);
-
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-
-                await using var fs = File.Create(temporaryFile);
-                await remoteStream.CopyToAsync(fs);
-
-                yield return new SubtitleFile
-                {
-                    Type = FileType.Subtitle,
-                    Path = temporaryFile,
-                    Language = subtitle.Locale.Replace("-", string.Empty).ToLower()
-                };
-            }
-        }
-
-        private async Task<BetaEpisodeResult> GetUrlAndSubtitles(CrunchyrollEpisodeInfo episodeInfo,
-            DownloadParameters downloadParameters)
-        {
-            var crunchyrollApiService = CrunchyrollApiServiceFactory.GetService();
-            var streams = await crunchyrollApiService.GetStreams(episodeInfo.Url);
-            var preferedLink = streams.Streams
-                .SingleOrDefault(i => i.Type == "adaptive_hls" && string.IsNullOrEmpty(i.Locale));
-
-            Logger.LogInformation("Stream URL found for Episode {@Episode}: {@Url}", episodeInfo.FilePrefix, preferedLink);
-
-            if (preferedLink == null)
-                throw new InvalidOperationException("Could not determine stream link");
-
-            return new BetaEpisodeResult
-            {
-                Files = await DownloadSubs(episodeInfo.Id, streams.Subtitles, downloadParameters).ToArrayAsync(),
-                Url = preferedLink.Url
-            };
-        }
 
         [SuppressMessage("ReSharper", "AccessToModifiedClosure")]
         public async Task<YoutubeDlResult> DownloadEpisode(
@@ -92,13 +35,6 @@ namespace Wasari.Crunchyroll
             if (downloadParameters.CookieFilePath != null && !File.Exists(downloadParameters.CookieFilePath))
             {
                 throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
-            }
-
-            if (videoSource.Url.EndsWith("/streams") && episodeInfo is CrunchyrollEpisodeInfo crunchyrollEpisodeInfo)
-            {
-                var downloadBetaEpisode = await GetUrlAndSubtitles(crunchyrollEpisodeInfo, downloadParameters);
-                url = downloadBetaEpisode.Url;
-                files.AddRange(downloadBetaEpisode.Files);
             }
 
             var fileSafeName = episodeInfo.Name.AsSafePath();
@@ -125,7 +61,7 @@ namespace Wasari.Crunchyroll
             }.Where(i => !string.IsNullOrEmpty(i));
 
             var command = Cli.Wrap(YtDlp.Path)
-                .WithArguments(arguments, false)
+                .WithArguments(arguments!, false)
                 .WithRetryCount(10)
                 .WithLogger(Logger)
                 .WithCommandHandler(@event => ProcessCommandEvent(@event, files, episodeInfo));

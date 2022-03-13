@@ -68,7 +68,18 @@ namespace Wasari.Crunchyroll.API
         public async Task<ApiEpisode> GetEpisode(string episodeId)
         {
             var url = await BuildUrlFromSignature($"episodes/{episodeId}");
-            return await HttpClient.GetFromJsonAsync<ApiEpisode>(url);
+            var apiEpisode = await HttpClient.GetFromJsonAsync<ApiEpisode>(url);
+
+            if (apiEpisode != null)
+            {
+                if (!string.IsNullOrEmpty(apiEpisode.StreamLink))
+                {
+                    var episodeStream = await GetStreams(apiEpisode.StreamLink);
+                    apiEpisode.ApiEpisodeStreams = episodeStream;
+                }
+            }
+            
+            return apiEpisode;
         }
 
         public async IAsyncEnumerable<ApiEpisode> GetEpisodes(string seasonId)

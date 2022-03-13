@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Channels;
-using System.Threading.Tasks;
+﻿using System.Threading.Channels;
 using Wasari.Abstractions;
 
-namespace Wasari.Crunchyroll;
+namespace Wasari.YoutubeDl;
 
 public class YoutubeDlQueue
 {

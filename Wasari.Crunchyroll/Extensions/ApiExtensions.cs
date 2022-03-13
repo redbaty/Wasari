@@ -33,12 +33,14 @@ internal static class ApiExtensions
 
             foreach (var apiEpisode in episodeBySeason[season.Id])
             {
+                var episodeUrl = apiEpisode.ApiEpisodeStreams.Streams
+                    .SingleOrDefault(i => i.Type == "adaptive_hls" && string.IsNullOrEmpty(i.Locale))?.Url ?? apiEpisode.StreamLink;
                 var crunchyrollEpisodeInfo = new CrunchyrollEpisodeInfo
                 {
                     Id = apiEpisode.Id,
                     Name = apiEpisode.Title,
                     Special = !apiEpisode.EpisodeNumber.HasValue,
-                    Url = apiEpisode.StreamLink,
+                    Url = episodeUrl,
                     ThumbnailId = null,
                     Number = (apiEpisode.EpisodeNumber ?? apiEpisode.SequenceNumber).ToString("00"),
                     SequenceNumber = apiEpisode.EpisodeNumber ?? apiEpisode.SequenceNumber,
@@ -51,7 +53,7 @@ internal static class ApiExtensions
 
                 crunchyrollEpisodeInfo.Sources.Add(new EpisodeInfoVideoSource
                 {
-                    Url = apiEpisode.StreamLink,
+                    Url = episodeUrl,
                     Language = seasonInfo.DubbedLanguage,
                     Episode = crunchyrollEpisodeInfo
                 });
