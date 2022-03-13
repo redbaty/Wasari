@@ -17,10 +17,11 @@ namespace Wasari.Ffmpeg
 {
     public class FfmpegService
     {
-        public FfmpegService(ILogger<FfmpegService> logger, EnvironmentService environmentService)
+        public FfmpegService(ILogger<FfmpegService> logger, EnvironmentService environmentService, FfprobeService ffprobeService)
         {
             Logger = logger;
             EnvironmentService = environmentService;
+            FfprobeService = ffprobeService;
             Ffmpeg = EnvironmentService.GetFeatureOrThrow(EnvironmentFeatureType.Ffmpeg);
         }
 
@@ -29,6 +30,8 @@ namespace Wasari.Ffmpeg
         private EnvironmentService EnvironmentService { get; }
 
         private EnvironmentFeature Ffmpeg { get; }
+        
+        private FfprobeService FfprobeService { get; }
 
         private static object CheckShaderLock { get; } = new();
 
@@ -188,8 +191,11 @@ namespace Wasari.Ffmpeg
                     }
                 }
             }
-
-            var mediaAnalysis = await FFProbe.AnalyseAsync(videoFile);
+            
+            var mediaAnalysis = await videoFiles.ToAsyncEnumerable()
+                .SelectAwait(async o => await FfprobeService.GetVideoDuration(o.LocalPath))
+                .Distinct()
+                .MaxAsync();
 
             update = new ProgressUpdate
             {
