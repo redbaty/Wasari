@@ -99,12 +99,15 @@ public class DownloadSeriesService
         if (episodes.OfType<CrunchyrollEpisodeInfo>().Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated && downloadParameters.CookieFilePath == null)
             throw new PremiumEpisodesException(episodes.OfType<CrunchyrollEpisodeInfo>().Where(i => i.Premium).Cast<IEpisodeInfo>().ToArray());
 
+        var series = episodes.Select(i => i.SeriesInfo).Distinct().Single();
+        var outputDirectory = new DirectoryInfo( downloadParameters.FinalOutputDirectory(series.Name));
+
+        if (!outputDirectory.Exists)
+            outputDirectory.Create();
+
         if (downloadParameters.SkipExistingEpisodes)
         {
-            var series = episodes.Select(i => i.SeriesInfo).Distinct().Single();
-            var outputDirectory = downloadParameters.FinalOutputDirectory(series.Name);
-
-            foreach (var file in Directory.GetFiles(outputDirectory, "*.*", SearchOption.AllDirectories))
+            foreach (var file in Directory.GetFiles(outputDirectory.FullName, "*.*", SearchOption.AllDirectories))
             {
                 const string regex = @"S(?<season>\d+)E(?<episode>\d+) -";
 
@@ -143,12 +146,12 @@ public class DownloadSeriesService
                 
                 var finalEpisodeFile = youtubeDlResult.Episode.FinalEpisodeFile(downloadParameters);
 
-                var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(finalEpisodeFile) ??
+                var episdeOutputDirectory = new DirectoryInfo(Path.GetDirectoryName(finalEpisodeFile) ??
                                                         throw new InvalidOperationException(
                                                             "Invalid output directory"));
 
-                if (!outputDirectory.Exists)
-                    outputDirectory.Create();
+                if (!episdeOutputDirectory.Exists)
+                    episdeOutputDirectory.Create();
 
                 DownloadedFile[]? additionalSubs = null;
 
