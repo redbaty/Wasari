@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
@@ -8,7 +7,7 @@ using Wasari.Abstractions;
 using Wasari.Crunchyroll;
 using Wasari.Crunchyroll.API;
 
-namespace Wasari.Commands;
+namespace Wasari.Cli.Commands;
 
 [Command("crunchy-list")]
 internal class CrunchyrollListSeriesCommand : ICommand

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Wasari.Models
+namespace Wasari.Cli.Models
 {
     public class TemporaryCookieFile : IDisposable
     {

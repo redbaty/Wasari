@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using CliFx.Attributes;
 
-namespace Wasari.Commands
+namespace Wasari.Cli.Commands
 {
     internal abstract class CommonDownloadCommand
     {

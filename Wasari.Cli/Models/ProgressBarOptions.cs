@@ -1,4 +1,4 @@
-﻿namespace Wasari.Models
+﻿namespace Wasari.Cli.Models
 {
     internal class ProgressBarOptions
     {

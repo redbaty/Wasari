@@ -3,10 +3,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wasari.Cli.Exceptions;
 using Wasari.Crunchyroll;
-using Wasari.Exceptions;
 
-namespace Wasari.App
+namespace Wasari.Cli.App
 {
     public class CrunchyRollAuthenticationService
     {

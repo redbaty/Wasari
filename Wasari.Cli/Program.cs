@@ -9,13 +9,14 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
 using Wasari.App;
-using Wasari.Commands;
+using Wasari.Cli.App;
+using Wasari.Cli.Commands;
+using Wasari.Cli.Models;
 using Wasari.Crunchyroll;
-using Wasari.Models;
 using Wasari.ProgressSink;
 using WasariEnvironment;
 
-namespace Wasari
+namespace Wasari.Cli
 {
     internal static class Program
     {
@@ -34,7 +35,7 @@ namespace Wasari
                     .WriteTo.ProgressConsole(enableProgressBars: useProgressBar);
 
                 var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Wasari", "logs", "log.txt");
+                    "Wasari.Cli", "logs", "log.txt");
                 
                 Log.Logger = loggerConfiguration
                     .WriteTo.File(

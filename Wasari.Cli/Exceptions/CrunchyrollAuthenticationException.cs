@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Wasari.Exceptions
+namespace Wasari.Cli.Exceptions
 {
     public sealed class CrunchyrollAuthenticationException : Exception
     {

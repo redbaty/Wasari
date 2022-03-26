@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
@@ -10,16 +9,16 @@ using CliFx.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
-using Wasari.Abstractions.Extensions;
 using Wasari.App;
+using Wasari.Cli.App;
+using Wasari.Cli.Exceptions;
+using Wasari.Cli.Models;
 using Wasari.Crunchyroll;
 using Wasari.Crunchyroll.API;
-using Wasari.Exceptions;
 using Wasari.Ffmpeg;
-using Wasari.Models;
 using WasariEnvironment;
 
-namespace Wasari.Commands
+namespace Wasari.Cli.Commands
 {
     [Command("crunchy")]
     internal class CrunchyrollDownloadSeriesCommand : CommonDownloadCommand, ICommand
@@ -70,7 +69,7 @@ namespace Wasari.Commands
         public bool GpuAcceleration { get; init; } = true;
 
         [CommandOption("temp-dir", 't', Description = "The directory for temporary files")]
-        public string TemporaryDirectory { get; init; } = Path.Combine(Path.GetTempPath(), "Wasari");
+        public string TemporaryDirectory { get; init; } = Path.Combine(Path.GetTempPath(), "Wasari.Cli");
 
         [CommandOption("skip-existing-episodes", Description = "Skip download from existing episodes")]
         public bool SkipExistingEpisodes { get; init; } = true;

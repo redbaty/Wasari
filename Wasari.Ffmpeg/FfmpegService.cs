@@ -186,7 +186,7 @@ namespace Wasari.Ffmpeg
                         Logger.LogInformation("Creating main shader");
                         using var manifestResourceStream =
                             Assembly.GetAssembly(typeof(FfmpegService))!.GetManifestResourceStream(
-                                "Wasari.Ffmpeg.shaders.main.glsl");
+                                "Wasari.Cli.Ffmpeg.shaders.main.glsl");
                         using var fs = File.Create("main.glsl");
                         manifestResourceStream!.CopyTo(fs);
                     }
