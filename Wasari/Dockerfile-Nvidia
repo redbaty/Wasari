@@ -9,7 +9,6 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES all
 ENV DEBIAN_FRONTEND=noninteractive 
 ENV TZ=Etc/UTC
-ENV NO_PROGRESS_BAR=yes
 
 RUN rm -rf /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
 RUN rm -rf /usr/lib/x86_64-linux-gnu/libcuda.so.1
@@ -36,9 +35,6 @@ COPY . .
 RUN dotnet publish "./Wasari/Wasari.csproj" --configuration Release --self-contained -r linux-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true -o /app/publish
 
 FROM base AS final
-RUN adduser --uid 99 -gid 100 app
 WORKDIR /app
-RUN chown app -R /app
-USER app
-COPY --chown=app:100 --from=build /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["./Wasari"]
