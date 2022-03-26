@@ -33,7 +33,12 @@ internal static class ApiExtensions
 
             foreach (var apiEpisode in episodeBySeason[season.Id])
             {
-                var episodeUrl = apiEpisode.ApiEpisodeStreams.Streams
+                var streams = apiEpisode.ApiEpisodeStreams?.Streams;
+                
+                if(streams is not { Length: > 0 })
+                    continue;
+                
+                var episodeUrl = streams
                     .SingleOrDefault(i => i.Type == "adaptive_hls" && string.IsNullOrEmpty(i.Locale))?.Url ?? apiEpisode.StreamLink;
                 var crunchyrollEpisodeInfo = new CrunchyrollEpisodeInfo
                 {
