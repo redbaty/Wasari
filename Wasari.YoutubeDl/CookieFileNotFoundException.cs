@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace Wasari.Crunchyroll
+﻿namespace Wasari.YoutubeDl
 {
     public sealed class CookieFileNotFoundException : FileNotFoundException
     {

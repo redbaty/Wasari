@@ -22,7 +22,7 @@ public class CrunchyrollApiServiceFactory
     
     private ILogger<CrunchyrollApiServiceFactory> Logger { get; }
 
-    public bool IsAuthenticated { get; private set; }
+    public static bool IsAuthenticated { get; private set; }
 
     private const string ChaveCache = "crunchyroll_service";
 
@@ -39,7 +39,7 @@ public class CrunchyrollApiServiceFactory
         };
 
         Logger.LogInformation("Created unauthenticated API service");
-        Cache.Set(ChaveCache, new CrunchyrollApiService(httpClient));
+        Cache.Set(ChaveCache, new CrunchyrollApiService(httpClient, Cache));
     }
 
     public async Task CreateAuthenticatedService(string username, string password)
@@ -53,6 +53,6 @@ public class CrunchyrollApiServiceFactory
 
         Logger.LogInformation("Created authenticated API service");
         IsAuthenticated = true;
-        Cache.Set(ChaveCache, new CrunchyrollApiService(httpClient));
+        Cache.Set(ChaveCache, new CrunchyrollApiService(httpClient, Cache));
     }
 }

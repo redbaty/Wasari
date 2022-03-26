@@ -2,7 +2,7 @@
 {
     public class DownloadParameters
     {
-        public string? OutputDirectory { get; init; }
+        public string? BaseOutputDirectory { get; init; }
 
         public string[]? SubtitleLanguage { get; init; }
 
@@ -22,14 +22,30 @@
 
         public string? TemporaryDirectory { get; init; }
         
-        public bool Subtitles { get; set; }
+        public bool Subtitles { get; init; }
         
         public int ParallelDownloads { get; init; }
         
         public int ParallelMerging { get; init; }
         
-        public bool CreateSeasonFolder { get; set; }
+        public bool CreateSeriesFolder { get; init; }
+        
+        public bool CreateSeasonFolder { get; init; }
 
-        public string? FileMask { get; set; }
+        public string? FileMask { get; init; }
+
+        public bool Dubs { get; init; }
+
+        public string[]? DubsLanguage { get; init; }
+        
+        public bool SkipExistingEpisodes { get; init; }
+        
+        public int DownloadPoolSize { get; init; }
+        
+        public int EncodingPoolSize { get; init; }
+        
+        public string? EpisodeRange { get; init; }
+        
+        public string? SeasonRange { get; init; }
     }
 }

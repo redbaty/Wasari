@@ -7,6 +7,7 @@ namespace Wasari.Ffmpeg
         public static void AddFfmpegServices(this IServiceCollection serviceCollection)
         {
             serviceCollection.AddTransient<FfmpegService>();
+            serviceCollection.AddTransient<FfprobeService>();
         }
     }
 }

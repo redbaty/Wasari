@@ -4,6 +4,7 @@ using Wasari.Abstractions;
 using Wasari.Crunchyroll.Abstractions;
 using Wasari.Crunchyroll.API;
 using Wasari.Ffmpeg;
+using Wasari.YoutubeDl;
 
 namespace Wasari.Crunchyroll
 {
@@ -19,11 +20,11 @@ namespace Wasari.Crunchyroll
 
             serviceCollection.AddSingleton<BrowserFactory>();
             serviceCollection.AddTransient<ISeriesDownloader<CrunchyrollEpisodeInfo>, CrunchyrollDownloader>();
-            serviceCollection.AddTransient<ISeriesProvider<CrunchyrollSeasonsInfo>, CrunchyrollService>();
+            serviceCollection.AddTransient<CrunchyrollService>();
             serviceCollection.AddTransient<BetaCrunchyrollService>();
             serviceCollection.AddTransient<YoutubeDlService>();
             serviceCollection.AddFfmpegServices();
-            serviceCollection.AddSingleton<YoutubeDlQueueService>();
+            serviceCollection.AddTransient<YoutubeDlQueueFactoryService>();
             serviceCollection.AddSingleton<FfmpegQueueService>();
             serviceCollection.AddCrunchyrollApiServices();
         }

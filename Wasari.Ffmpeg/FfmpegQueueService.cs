@@ -6,12 +6,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
-using Wasari.Crunchyroll.Extensions;
-using Wasari.Ffmpeg;
 
-namespace Wasari.Crunchyroll
+namespace Wasari.Ffmpeg
 {
-    internal class FfmpegQueueService
+    public class FfmpegQueueService
     {
         public FfmpegQueueService(FfmpegService ffmpegService, ILogger<FfmpegQueueService> logger)
         {
@@ -21,14 +19,13 @@ namespace Wasari.Crunchyroll
 
         private FfmpegService FfmpegService { get; }
 
-        private Channel<YoutubeDlResult> Channel { get; } =
-            System.Threading.Channels.Channel.CreateUnbounded<YoutubeDlResult>();
+        private Channel<FfmpegEpisodeToEncode> Channel { get; } = System.Threading.Channels.Channel.CreateUnbounded<FfmpegEpisodeToEncode>();
 
         private ILogger<FfmpegQueueService> Logger { get; }
 
-        public ValueTask Enqueue(YoutubeDlResult youtubeDlResult)
+        public ValueTask Enqueue(FfmpegEpisodeToEncode episodeToEncode)
         {
-            return Channel.Writer.WriteAsync(youtubeDlResult);
+            return Channel.Writer.WriteAsync(episodeToEncode);
         }
 
         public void Ended()
@@ -40,16 +37,15 @@ namespace Wasari.Crunchyroll
         {
             var tasks = new List<Task>(poolSize);
 
-            await foreach (var youtubeDlResult in Channel.Reader.ReadAllAsync())
+            await foreach (var episode in Channel.Reader.ReadAllAsync())
             {
                 if (tasks.Count >= poolSize)
                 {
                     var task = await Task.WhenAny(tasks);
                     tasks.Remove(task);
                 }
-
-
-                var episodeFile = youtubeDlResult.FinalEpisodeFile(downloadParameters);
+                
+                var episodeFile = episode.Episode.FinalEpisodeFile(downloadParameters);
 
                 var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(episodeFile) ??
                                                         throw new InvalidOperationException(
@@ -58,18 +54,18 @@ namespace Wasari.Crunchyroll
                 if (!outputDirectory.Exists)
                     outputDirectory.Create();
 
-                tasks.Add(FfmpegService.Encode(youtubeDlResult, episodeFile, downloadParameters).ContinueWith(t =>
+                tasks.Add(FfmpegService.Encode(episode, episodeFile, downloadParameters).ContinueWith(t =>
                 {
                     Logger.LogProgressUpdate(new ProgressUpdate
                     {
                         Type = ProgressUpdateTypes.Completed,
-                        EpisodeId = youtubeDlResult.Episode?.FilePrefix,
+                        EpisodeId = episode?.Episode.Id,
                         Title = $"[DONE] {Path.GetFileName(episodeFile)}"
                     });
 
                     if (!t.IsCompletedSuccessfully)
                     {
-                        Logger.LogError(t.Exception, "Failed while running encoding for episode {@Id}", youtubeDlResult.Episode?.FilePrefix);
+                        Logger.LogError(t.Exception, "Failed while running encoding for episode {@Id}", episode.Episode?.FilePrefix);
                     }
                 }));
             }

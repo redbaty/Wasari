@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Wasari.Abstractions
 {
-    public interface ISeriesProvider<T> where T : ISeasonInfo
+    public interface ISeriesProvider
     {
-        Task<ISeriesInfo<T>> GetSeries(string url);
+        IAsyncEnumerable<IEpisodeInfo> GetEpisodes(string url);
     }
 }

@@ -8,7 +8,7 @@
 
     <ItemGroup>
       <PackageReference Include="CliFx" Version="2.2.2" />
-      <PackageReference Include="CliWrap" Version="3.4.1" />
+      <PackageReference Include="CliWrap" Version="3.4.2" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
       <PackageReference Include="Serilog.Extensions.Hosting" Version="4.2.0" />
       <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Wasari.App\Wasari.App.csproj" />
       <ProjectReference Include="..\Wasari.Crunchyroll\Wasari.Crunchyroll.csproj" />
       <ProjectReference Include="..\Wasari.Abstractions\Wasari.Abstractions.csproj" />
       <ProjectReference Include="..\Wasari.Environment\Wasari.Environment.csproj" />

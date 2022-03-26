@@ -8,19 +8,23 @@ using System.Threading.Tasks;
 using Flurl;
 using JsonExtensions.Http;
 using JsonExtensions.Reading;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Wasari.Crunchyroll.API
 {
     public class CrunchyrollApiService
     {
-        internal CrunchyrollApiService(HttpClient httpClient)
+        internal CrunchyrollApiService(HttpClient httpClient, IMemoryCache memoryCache)
         {
             HttpClient = httpClient;
+            MemoryCache = memoryCache;
         }
 
         private HttpClient HttpClient { get; }
 
         private ApiSignature ApiSignature { get; set; }
+
+        private IMemoryCache MemoryCache { get; }
 
         private async Task<ApiSignature> GetApiSignature()
         {
@@ -57,21 +61,54 @@ namespace Wasari.Crunchyroll.API
         public IAsyncEnumerable<ApiEpisode> GetAllEpisodes(string seriesId)
         {
             return GetSeasons(seriesId)
-                .Where(i => !i.IsDubbed && i.IsSubbed)
-                .SelectMany(season => GetEpisodes(season.Id).Where(i => !i.IsDubbed && i.IsSubbed));
+                .SelectMany(season => GetEpisodes(season.Id));
+        }
+
+        public async Task<ApiEpisode> GetEpisode(string episodeId)
+        {
+            var url = await BuildUrlFromSignature($"episodes/{episodeId}");
+            var apiEpisode = await HttpClient.GetFromJsonAsync<ApiEpisode>(url);
+
+            if (apiEpisode != null)
+            {
+                if (!string.IsNullOrEmpty(apiEpisode.StreamLink))
+                {
+                    var episodeStream = await GetStreams(apiEpisode.StreamLink);
+                    apiEpisode.ApiEpisodeStreams = episodeStream;
+                }
+            }
+
+            return apiEpisode;
         }
 
         public async IAsyncEnumerable<ApiEpisode> GetEpisodes(string seasonId)
         {
             var url = await BuildUrlFromSignature("episodes");
             url = url.SetQueryParam("season_id", seasonId);
-            
+
             var responseJson = await HttpClient.GetJsonAsync(url);
 
             foreach (var jsonElement in responseJson.GetProperty("items").EnumerateArray())
             {
-                yield return jsonElement.Deserialize<ApiEpisode>();
+                var apiEpisode = jsonElement.Deserialize<ApiEpisode>();
+
+                if (apiEpisode != null)
+                {
+                    if (!string.IsNullOrEmpty(apiEpisode.StreamLink))
+                    {
+                        var episodeStream = await GetStreams(apiEpisode.StreamLink);
+                        apiEpisode.ApiEpisodeStreams = episodeStream;
+                    }
+
+                    yield return apiEpisode;
+                }
             }
+        }
+
+        public async Task<ApiSeason> GetSeason(string seasonId)
+        {
+            var url = await BuildUrlFromSignature($"seasons/{seasonId}");
+            return await HttpClient.GetFromJsonAsync<ApiSeason>(url);
         }
 
         public async IAsyncEnumerable<ApiSeason> GetSeasons(string seriesId)
@@ -80,9 +117,21 @@ namespace Wasari.Crunchyroll.API
             url = url.SetQueryParam("series_id", seriesId);
 
             var responseJson = await HttpClient.GetJsonAsync(url);
+            var lastNumber = 1;
+            
             foreach (var jsonElement in responseJson.GetProperty("items").EnumerateArray())
             {
-                yield return jsonElement.Deserialize<ApiSeason>();
+                var apiSeason = jsonElement.Deserialize<ApiSeason>();
+
+                if (apiSeason != null)
+                {
+                    apiSeason.Number = lastNumber;
+                    
+                    if (apiSeason.Number > 0 && !apiSeason.IsDubbed)
+                        lastNumber++;
+                }
+                
+                yield return apiSeason;
             }
         }
 
@@ -90,21 +139,24 @@ namespace Wasari.Crunchyroll.API
         {
             if (string.IsNullOrEmpty(seriesId))
                 return null;
-            
+
             var url = await BuildUrlFromSignature($"series/{seriesId}");
             return await HttpClient.GetFromJsonAsync<ApiSeries>(url);
         }
 
-        public async Task<ApiEpisodeStreams> GetStreams(string streamUrl)
+        public Task<ApiEpisodeStreams> GetStreams(string streamUrl)
         {
-            if (string.IsNullOrEmpty(streamUrl))
-                return null;
+            return MemoryCache.GetOrCreateAsync(streamUrl, async _ =>
+            {
+                if (string.IsNullOrEmpty(streamUrl))
+                    return null;
 
-            var match = Regex.Match(streamUrl, @"videos\/(?<STREAM_ID>\w+)\/streams");
-            var id = match.Groups["STREAM_ID"].Value;
-            var url = await BuildUrlFromSignature($"videos/{id}/streams");
-            
-            return await HttpClient.GetFromJsonAsync<ApiEpisodeStreams>(url);
+                var match = Regex.Match(streamUrl, @"videos\/(?<STREAM_ID>\w+)\/streams");
+                var id = match.Groups["STREAM_ID"].Value;
+                var url = await BuildUrlFromSignature($"videos/{id}/streams");
+
+                return await HttpClient.GetFromJsonAsync<ApiEpisodeStreams>(url);
+            });
         }
     }
 }
