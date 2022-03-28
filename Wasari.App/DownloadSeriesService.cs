@@ -74,7 +74,6 @@ public class DownloadSeriesService
             .Where(i => !i.SeasonInfo.Dubbed || downloadParameters.Dubs && (downloadParameters.DubsLanguage == null || downloadParameters.DubsLanguage.Any(o => i.DubbedLanguage != null && i.DubbedLanguage.Contains(o, StringComparison.InvariantCultureIgnoreCase))))
             .OrderBy(i => i.SeasonInfo.Season)
             .GetEpisodesGrouped()
-            .Reverse()
             .ToListAsync();
 
         if (!string.IsNullOrEmpty(downloadParameters.SeasonRange))
