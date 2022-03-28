@@ -189,6 +189,8 @@ namespace Wasari.Ffmpeg
                                 "Wasari.Ffmpeg.shaders.main.glsl");
                         using var fs = File.Create("main.glsl");
                         manifestResourceStream!.CopyTo(fs);
+                        fs.Close();
+                        manifestResourceStream.Close();
                     }
                 }
             }
