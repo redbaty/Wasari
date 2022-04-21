@@ -230,8 +230,10 @@ namespace Wasari.Ffmpeg
                 Logger.LogProgressUpdate(update);
             }
 
+            var temporaryFinalFile = $"{Path.GetTempFileName()}{Path.GetExtension(newVideoFile)}";
+
             var command = Cli.Wrap(Ffmpeg.Path)
-                .WithArguments(CreateArguments(videoFiles, subtitlesFiles, newVideoFile, downloadParameters)
+                .WithArguments(CreateArguments(videoFiles, subtitlesFiles, temporaryFinalFile, downloadParameters)
                     .Where(i => !string.IsNullOrEmpty(i)), false);
 
             Logger.LogDebug("Merging video file with subtitles. {@Command}", command.ToString());
@@ -296,6 +298,7 @@ namespace Wasari.Ffmpeg
                 Logger?.LogInformation("{@DeletedFiles} were cleaned. {@EpisodeId}", deletedFiles, episodeId);
             }
 
+            File.Move(temporaryFinalFile, newVideoFile);
             stopwatch.Stop();
 
             Logger?.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId,
