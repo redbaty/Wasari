@@ -1,4 +1,5 @@
 ﻿using Wasari.Abstractions;
+#pragma warning disable CS8766
 
 namespace Wasari.App;
 

@@ -1,10 +1,11 @@
 ﻿using Wasari.Abstractions;
+#pragma warning disable CS8766
 
 namespace Wasari.App;
 
 internal class DummyEpisodeInfo : IEpisodeInfo
 {
-    public string? Id { get; init; }
+    public string? Id { get; set; }
 
     public ISeasonInfo? SeasonInfo { get; init; }
 
