@@ -128,7 +128,7 @@ namespace Wasari.Ffmpeg
             {
                 if (downloadParameters.UseAnime4K)
                 {
-                    if (downloadParameters.UseNvidiaAcceleration) yield return "-c:v h264_nvenc";
+                    if (downloadParameters.UseNvidiaAcceleration) yield return "-c:v h264_nvenc -rc vbr -cq 24 -qmin 24 -qmax 24";
                     else yield return "-c:v lix264";
                 }
                 else
