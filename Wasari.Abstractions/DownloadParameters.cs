@@ -23,11 +23,7 @@
         public string? TemporaryDirectory { get; init; }
         
         public bool Subtitles { get; init; }
-        
-        public int ParallelDownloads { get; init; }
-        
-        public int ParallelMerging { get; init; }
-        
+
         public bool CreateSeriesFolder { get; init; }
         
         public bool CreateSeasonFolder { get; init; }

@@ -217,8 +217,6 @@ namespace Wasari.Commands
                 DeleteTemporaryFiles = CleanTemporaryFiles,
                 UseHevc = ConvertToHevc,
                 TemporaryDirectory = TemporaryDirectory,
-                ParallelDownloads = DownloadPoolSize,
-                ParallelMerging = EncodingPoolSize,
                 UseAnime4K = anime4K,
                 Format = Format,
                 FileMask = FileMask,

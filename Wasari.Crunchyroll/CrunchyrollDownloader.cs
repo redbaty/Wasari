@@ -35,9 +35,9 @@ namespace Wasari.Crunchyroll
                     Directory.CreateDirectory(downloadParameters.TemporaryDirectory);
             }
 
-            var youtubeDlQueue = YoutubeDlQueueFactoryService.CreateQueue(episodes, downloadParameters, downloadParameters.ParallelDownloads);
+            var youtubeDlQueue = YoutubeDlQueueFactoryService.CreateQueue(episodes, downloadParameters, downloadParameters.DownloadPoolSize);
             var ytDlTask = youtubeDlQueue.Start();
-            var ffmpegTask = FfmpegQueueService.Start(downloadParameters, downloadParameters.ParallelMerging);
+            var ffmpegTask = FfmpegQueueService.Start(downloadParameters, downloadParameters.EncodingPoolSize);
                 
             await foreach (var youtubeDlResultByEpisode in youtubeDlQueue.ByEpisodeReader.ReadAllAsync())
             {
