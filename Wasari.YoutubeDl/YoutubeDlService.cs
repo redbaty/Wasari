@@ -48,7 +48,7 @@ namespace Wasari.YoutubeDl
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Directory.GetCurrentDirectory(),
                 $"{episodeInfo.FilePrefix} - {fileSafeName}_{episodeInfo.Id}_temp.mp4");
 
-            Logger.LogInformation("Download of episode {@Episode} started", episodeInfo.FilePrefix);
+            Logger.LogInformation("Download of episode {@Episode} started \"{@Url}\"", episodeInfo.FilePrefix, videoSource.Url);
 
             var arguments = new[]
             {

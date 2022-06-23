@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -66,6 +67,11 @@ namespace Wasari.Crunchyroll.API
 
         public async Task<ApiEpisode> GetEpisode(string episodeId)
         {
+            if (string.IsNullOrEmpty(episodeId))
+            {
+                throw new ArgumentNullException(nameof(episodeId));
+            }
+            
             var url = await BuildUrlFromSignature($"episodes/{episodeId}");
             var apiEpisode = await HttpClient.GetFromJsonAsync<ApiEpisode>(url);
 
