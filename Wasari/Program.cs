@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
+using Serilog.Formatting.Compact;
 using Wasari.App;
 using Wasari.Commands;
 using Wasari.Crunchyroll;
@@ -19,29 +21,33 @@ namespace Wasari
 {
     internal static class Program
     {
+        private static HashSet<string> ReservedArguments { get; } = new() { Wasari.ReservedArguments.NoProgressBar, Wasari.ReservedArguments.JsonOutput };
+
         private static async Task<int> Main(string[] args)
         {
             var loggerConfiguration = new LoggerConfiguration();
 
-            var useProgressBar = Environment.GetEnvironmentVariable("NO_PROGRESS_BAR") == null && Environment.UserInteractive && args.All(i => i != "-np");
+            var useProgressBar = Environment.GetEnvironmentVariable("NO_PROGRESS_BAR") == null && Environment.UserInteractive && args.All(i => i != Wasari.ReservedArguments.NoProgressBar);
+            var useJsonOutput = Environment.GetEnvironmentVariable("JSON_OUTPUT") != null && args.Any(i => i == Wasari.ReservedArguments.JsonOutput);
 
             if (useProgressBar) Console.CursorVisible = false;
 
             try
             {
                 loggerConfiguration = loggerConfiguration
-                    .MinimumLevel.Debug()
-                    .WriteTo.ProgressConsole(enableProgressBars: useProgressBar);
+                    .MinimumLevel.Debug();
+
+                loggerConfiguration = useJsonOutput ? loggerConfiguration.WriteTo.Console(new CompactJsonFormatter()) : loggerConfiguration.WriteTo.ProgressConsole(enableProgressBars: useProgressBar);
 
                 var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "Wasari", "logs", "log.txt");
-                
+
                 Log.Logger = loggerConfiguration
                     .CreateLogger();
 
                 if (!useProgressBar)
                     Log.Logger.Warning("Progress bars disabled");
-                
+
                 Log.Logger.Information("Logging to file at path {@Path}", logPath);
 
                 var serviceCollection = new ServiceCollection();
@@ -72,7 +78,7 @@ namespace Wasari
                     .AddCommand<CrunchyrollListSeriesCommand>()
                     .UseTypeActivator(serviceProvider.GetService)
                     .Build()
-                    .RunAsync(args.Where(i => i != "-np").ToArray());
+                    .RunAsync(args.Where(i => !ReservedArguments.Contains(i)).ToArray());
             }
             finally
             {
