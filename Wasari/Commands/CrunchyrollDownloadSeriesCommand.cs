@@ -26,22 +26,16 @@ namespace Wasari.Commands
     internal class CrunchyrollDownloadSeriesCommand : AuthenticatedCommand, ICommand
     {
         public CrunchyrollDownloadSeriesCommand(
-            CrunchyRollAuthenticationService crunchyRollAuthenticationService,
             ILogger<CrunchyrollDownloadSeriesCommand> logger,
             EnvironmentService environmentService,
-            BrowserFactory browserFactory,
             CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, IServiceProvider serviceProvider, DownloadSeriesService downloadSeriesService) : base(crunchyrollApiServiceFactory)
         {
-            CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
             Logger = logger;
             EnvironmentService = environmentService;
-            BrowserFactory = browserFactory;
             ServiceProvider = serviceProvider;
             DownloadSeriesService = downloadSeriesService;
         }
-
-        private CrunchyRollAuthenticationService CrunchyRollAuthenticationService { get; }
-
+        
         [CommandParameter(0, Description = "Series URL.")]
         public string SeriesUrl { get; init; }
         
@@ -113,14 +107,11 @@ namespace Wasari.Commands
         private EnvironmentService EnvironmentService { get; }
 
         private IServiceProvider ServiceProvider { get; }
-
-        private BrowserFactory BrowserFactory { get; }
-
+        
         private DownloadSeriesService DownloadSeriesService { get; }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
-            BrowserFactory.Headless = Headless;
             EnvironmentService.ThrowIfFeatureNotAvailable(EnvironmentFeatureType.Ffmpeg, EnvironmentFeatureType.YtDlp);
 
             var stopwatch = Stopwatch.StartNew();
@@ -137,8 +128,7 @@ namespace Wasari.Commands
 
             await AuthenticateCrunchyroll();
 
-            using var cookieFile = isBeta ? null : await CreateCookiesFile();
-            var downloadParameters = await CreateDownloadParameters(cookieFile);
+            var downloadParameters = await CreateDownloadParameters();
             
             try
             {
@@ -149,38 +139,10 @@ namespace Wasari.Commands
                 throw new CommandException(noEpisodes.Message, 404);
             }
             
-            if (isBeta)
-                await BrowserFactory.DisposeAsync();
-
-            if (cookieFile != null)
-            {
-                Logger.LogDebug("Cleaning cookie file {@CookieFile}", cookieFile);
-                cookieFile?.Dispose();
-            }
-
             stopwatch.Stop();
             Logger.LogInformation("Completed. Time Elapsed {@TimeElapsed}", stopwatch.Elapsed);
         }
-
-        private async Task<TemporaryCookieFile> CreateCookiesFile()
-        {
-            if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password)) return null;
-
-            if (string.IsNullOrEmpty(Username))
-                throw new CrunchyrollAuthenticationException("Missing username", Username, Password);
-
-            if (string.IsNullOrEmpty(Password))
-                throw new CrunchyrollAuthenticationException("Missing password", Username, Password);
-
-            var cookies = await CrunchyRollAuthenticationService.GetCookies(Username, Password);
-            var cookieFileName = Path.GetTempFileName();
-            await File.WriteAllTextAsync(cookieFileName, cookies);
-
-            Logger.LogInformation("Cookie file written to {@FilePath}", cookieFileName);
-
-            return new TemporaryCookieFile { Path = cookieFileName };
-        }
-
+        
         private bool IsValidSeriesUrl()
         {
             if (Uri.TryCreate(SeriesUrl, UriKind.Absolute, out var parsedUri))
@@ -197,7 +159,7 @@ namespace Wasari.Commands
             return true;
         }
 
-        private async Task<DownloadParameters> CreateDownloadParameters(TemporaryCookieFile file)
+        private async Task<DownloadParameters> CreateDownloadParameters()
         {
             var isNvidiaAvailable = GpuAcceleration
                                     && await ServiceProvider.GetService<FfmpegService>()!.IsNvidiaAvailable()
@@ -223,7 +185,6 @@ namespace Wasari.Commands
 
             return new DownloadParameters
             {
-                CookieFilePath = file?.Path,
                 SubtitleLanguage = SubtitleLanguage?.Split(","),
                 Subtitles = !string.IsNullOrEmpty(SubtitleLanguage) || Subtitles,
                 BaseOutputDirectory = OutputDirectory,

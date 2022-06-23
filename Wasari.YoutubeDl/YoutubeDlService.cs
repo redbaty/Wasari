@@ -37,12 +37,7 @@ namespace Wasari.YoutubeDl
             
             var url = videoSource.Url;
             var files = new List<DownloadedFile>();
-
-            if (downloadParameters.CookieFilePath != null && !File.Exists(downloadParameters.CookieFilePath))
-            {
-                throw new CookieFileNotFoundException(downloadParameters.CookieFilePath);
-            }
-
+            
             var fileSafeName = episodeInfo.Name.AsSafePath();
 
             var temporaryEpisodeFile = Path.Combine(downloadParameters.TemporaryDirectory ?? Directory.GetCurrentDirectory(),
@@ -57,9 +52,6 @@ namespace Wasari.YoutubeDl
                 "--newline",
                 "--no-continue",
                 "--no-part",
-                string.IsNullOrEmpty(downloadParameters.CookieFilePath)
-                    ? null
-                    : $"--cookies \"{downloadParameters.CookieFilePath}\"",
                 downloadParameters.Subtitles ? "--all-subs" : null,
                 $"-f \"{downloadParameters.Format}\"",
                 $"\"{url}\"",

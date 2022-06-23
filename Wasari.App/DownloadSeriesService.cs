@@ -1,5 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using CliWrap.Exceptions;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
@@ -96,7 +95,7 @@ public class DownloadSeriesService
                 .ToList();
         }
 
-        if (episodes.OfType<CrunchyrollEpisodeInfo>().Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated && downloadParameters.CookieFilePath == null)
+        if (episodes.OfType<CrunchyrollEpisodeInfo>().Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated)
             throw new PremiumEpisodesException(episodes.OfType<CrunchyrollEpisodeInfo>().Where(i => i.Premium).Cast<IEpisodeInfo>().ToArray());
 
         if (!episodes.Any())

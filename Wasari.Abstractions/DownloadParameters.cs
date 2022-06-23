@@ -5,9 +5,7 @@
         public string? BaseOutputDirectory { get; init; }
 
         public string[]? SubtitleLanguage { get; init; }
-
-        public string? CookieFilePath { get; init; }
-
+        
         public bool UseHevc { get; init; }
         
         public bool UseAnime4K { get; init; }

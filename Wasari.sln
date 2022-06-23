@@ -10,8 +10,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Crunchyroll", "Crunchyroll"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Crunchyroll.Abstractions", "Wasari.Crunchyroll.Abstractions\Wasari.Crunchyroll.Abstractions.csproj", "{E59D6201-0039-4E24-AD01-34C3FCEE277F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Puppeteer", "Wasari.Puppeteer\Wasari.Puppeteer.csproj", "{F6CB1256-8325-4516-BC8C-8103C253B20E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Ffmpeg", "Wasari.Ffmpeg\Wasari.Ffmpeg.csproj", "{B28032EE-3EBF-4FCA-B105-43CAB5353D56}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Crunchyroll.API", "Wasari.Crunchyroll.API\Wasari.Crunchyroll.API.csproj", "{4AE9B7C5-B348-41C6-9F1B-FD5AAF4BB153}"
@@ -50,10 +48,6 @@ Global
 		{E59D6201-0039-4E24-AD01-34C3FCEE277F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E59D6201-0039-4E24-AD01-34C3FCEE277F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E59D6201-0039-4E24-AD01-34C3FCEE277F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F6CB1256-8325-4516-BC8C-8103C253B20E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F6CB1256-8325-4516-BC8C-8103C253B20E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F6CB1256-8325-4516-BC8C-8103C253B20E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F6CB1256-8325-4516-BC8C-8103C253B20E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B28032EE-3EBF-4FCA-B105-43CAB5353D56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B28032EE-3EBF-4FCA-B105-43CAB5353D56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B28032EE-3EBF-4FCA-B105-43CAB5353D56}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -51,7 +51,6 @@ namespace Wasari
                 Log.Logger.Information("Logging to file at path {@Path}", logPath);
 
                 var serviceCollection = new ServiceCollection();
-                serviceCollection.AddTransient<CrunchyRollAuthenticationService>();
                 serviceCollection.AddTransient<CrunchyrollDownloadSeriesCommand>();
                 serviceCollection.AddTransient<CrunchyrollListSeriesCommand>();
                 serviceCollection.AddLogging(c => c.AddSerilog());

@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 using Wasari.Abstractions;
 using Wasari.Crunchyroll.Abstractions;
 using Wasari.Crunchyroll.API;
@@ -12,15 +11,7 @@ namespace Wasari.Crunchyroll
     {
         public static void AddCrunchyrollServices(this IServiceCollection serviceCollection)
         {
-            Log.Logger.Information("Setting up chromium...");
-
-         
-
-             Log.Logger.Information("Chromium set up successfully");
-
-            serviceCollection.AddSingleton<BrowserFactory>();
             serviceCollection.AddTransient<ISeriesDownloader<CrunchyrollEpisodeInfo>, CrunchyrollDownloader>();
-            serviceCollection.AddTransient<CrunchyrollService>();
             serviceCollection.AddTransient<BetaCrunchyrollService>();
             serviceCollection.AddTransient<YoutubeDlService>();
             serviceCollection.AddFfmpegServices();
