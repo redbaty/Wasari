@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -37,9 +37,6 @@ namespace Wasari
                     "Wasari", "logs", "log.txt");
                 
                 Log.Logger = loggerConfiguration
-                    .WriteTo.File(
-                        logPath, rollingInterval: RollingInterval.Day,
-                        restrictedToMinimumLevel: LogEventLevel.Verbose)
                     .CreateLogger();
 
                 if (!useProgressBar)
