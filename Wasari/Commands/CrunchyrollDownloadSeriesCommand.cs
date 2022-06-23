@@ -65,10 +65,7 @@ namespace Wasari.Commands
 
         [CommandOption("anime-4k", Description = "Uses Anime4K to upscale final video file to 4K")]
         public bool UseAnime4K { get; init; } = false;
-
-        [CommandOption("headless", Description = "Chromium headless mode")]
-        public bool Headless { get; init; } = true;
-
+        
         [CommandOption("format", 'f', Description = "Format passed to yt-dlp")]
         public string Format { get; init; } = "best";
 
