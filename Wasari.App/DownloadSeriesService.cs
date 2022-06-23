@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using CliWrap.Exceptions;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
@@ -76,7 +77,7 @@ public class DownloadSeriesService
             .GetEpisodesGrouped()
             .ToListAsync();
 
-        if (!string.IsNullOrEmpty(downloadParameters.SeasonRange))
+        if (!string.IsNullOrEmpty(downloadParameters.SeasonRange) && episodes.Any())
         {
             var seasonsRange = ParseRange(downloadParameters.SeasonRange, episodes.Select(i => i.SeasonInfo.Season).Max());
             episodes = episodes.Where(i =>
@@ -85,7 +86,7 @@ public class DownloadSeriesService
                 .ToList();
         }
 
-        if (!string.IsNullOrEmpty(downloadParameters.EpisodeRange))
+        if (!string.IsNullOrEmpty(downloadParameters.EpisodeRange) && episodes.Any())
         {
             var episodeRange = ParseRange(downloadParameters.EpisodeRange, (int)episodes.Select(i => i.SequenceNumber).Max());
             Logger.LogInformation("Episodes range is {@Range}", episodeRange);
@@ -97,6 +98,9 @@ public class DownloadSeriesService
 
         if (episodes.OfType<CrunchyrollEpisodeInfo>().Any(i => i.Premium) && !CrunchyrollApiServiceFactory.IsAuthenticated && downloadParameters.CookieFilePath == null)
             throw new PremiumEpisodesException(episodes.OfType<CrunchyrollEpisodeInfo>().Where(i => i.Premium).Cast<IEpisodeInfo>().ToArray());
+
+        if (!episodes.Any())
+            throw new NoEpisodeFoundException();
 
         var series = episodes.Select(i => i.SeriesInfo).Distinct().Single();
         var outputDirectory = new DirectoryInfo( downloadParameters.FinalOutputDirectory(series.Name));
