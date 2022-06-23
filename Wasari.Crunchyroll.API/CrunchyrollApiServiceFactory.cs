@@ -55,4 +55,17 @@ public class CrunchyrollApiServiceFactory
         IsAuthenticated = true;
         Cache.Set(ChaveCache, new CrunchyrollApiService(httpClient, Cache));
     }
+    
+    public void CreateAuthenticatedFromTokenService(string token)
+    {
+        var httpClient = new HttpClient
+        {
+            BaseAddress = new Uri("https://beta-api.crunchyroll.com/"),
+            DefaultRequestHeaders = { { "Authorization", $"Bearer {token}" } }
+        };
+
+        Logger.LogInformation("Created authenticated API service");
+        IsAuthenticated = true;
+        Cache.Set(ChaveCache, new CrunchyrollApiService(httpClient, Cache));
+    }
 }

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.Abstractions.Extensions;
 using Wasari.App;
+using Wasari.App.Exceptions;
 using Wasari.Crunchyroll;
 using Wasari.Crunchyroll.API;
 using Wasari.Exceptions;
@@ -22,20 +23,19 @@ using WasariEnvironment;
 namespace Wasari.Commands
 {
     [Command("crunchy")]
-    internal class CrunchyrollDownloadSeriesCommand : CommonDownloadCommand, ICommand
+    internal class CrunchyrollDownloadSeriesCommand : AuthenticatedCommand, ICommand
     {
         public CrunchyrollDownloadSeriesCommand(
             CrunchyRollAuthenticationService crunchyRollAuthenticationService,
             ILogger<CrunchyrollDownloadSeriesCommand> logger,
             EnvironmentService environmentService,
             BrowserFactory browserFactory,
-            CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, IServiceProvider serviceProvider, DownloadSeriesService downloadSeriesService)
+            CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, IServiceProvider serviceProvider, DownloadSeriesService downloadSeriesService) : base(crunchyrollApiServiceFactory)
         {
             CrunchyRollAuthenticationService = crunchyRollAuthenticationService;
             Logger = logger;
             EnvironmentService = environmentService;
             BrowserFactory = browserFactory;
-            CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
             ServiceProvider = serviceProvider;
             DownloadSeriesService = downloadSeriesService;
         }
@@ -44,13 +44,7 @@ namespace Wasari.Commands
 
         [CommandParameter(0, Description = "Series URL.")]
         public string SeriesUrl { get; init; }
-
-        [CommandOption("username", 'u', Description = "Crunchyroll username.")]
-        public string Username { get; init; }
-
-        [CommandOption("password", 'p', Description = "Crunchyroll password.")]
-        public string Password { get; init; }
-
+        
         [CommandOption("episodes", 'e', Description = "Episodes range (eg. 1-5 would be episode 1 to 5)")]
         public string EpisodeRange { get; init; }
 
@@ -83,21 +77,46 @@ namespace Wasari.Commands
 
         [CommandOption("format", 'f', Description = "Format passed to yt-dlp")]
         public string Format { get; init; } = "best";
-        
+
         [CommandOption("mask", 'm', Description = "Final episode file mask. Available parameters are: 0: Season and episode prefix (S00E00). 1: Safe episode title")]
         public string FileMask { get; init; } = "{0} - {1}";
+        
+        [CommandOption("create-subdir", 'c')]
+        public bool CreateSubdirectory { get; init; } = true;
+        
+        [CommandOption("season-folder")]
+        public bool CreateSeasonFolder { get; init; } = true;
+
+        [CommandOption("output-directory", 'o')]
+        public string OutputDirectory { get; init; } = Directory.GetCurrentDirectory();
+
+        [CommandOption("sub")]
+        public bool Subtitles { get; init; } = true;
+
+        [CommandOption("sub-language", 'l')]
+        public string SubtitleLanguage { get; init; }
+        
+        [CommandOption("dub")]
+        public bool Dubs { get; init; } = false;
+
+        [CommandOption("dub-languages")]
+        public string DubsLanguages { get; init; }
+
+        [CommandOption("encoding-pool", 'b')]
+        public int EncodingPoolSize { get; init; } = 1;
+
+        [CommandOption("download-pool", 'd')]
+        public int DownloadPoolSize { get; init; } = 2;
 
         private ILogger<CrunchyrollDownloadSeriesCommand> Logger { get; }
 
         private EnvironmentService EnvironmentService { get; }
-        
+
         private IServiceProvider ServiceProvider { get; }
 
         private BrowserFactory BrowserFactory { get; }
-        
-        private DownloadSeriesService DownloadSeriesService { get; }
 
-        private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
+        private DownloadSeriesService DownloadSeriesService { get; }
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -108,7 +127,7 @@ namespace Wasari.Commands
             var isValidSeriesUrl = IsValidSeriesUrl();
             if (!isValidSeriesUrl)
                 throw new CommandException("The URL provided doesnt seem to be a crunchyroll SERIES page URL.");
-            
+
             var isBeta = SeriesUrl.Contains("beta.");
 
             if (isBeta)
@@ -116,32 +135,29 @@ namespace Wasari.Commands
                 Logger.LogInformation("BETA Series detected");
             }
 
-            if ((!string.IsNullOrEmpty(Username) || !string.IsNullOrEmpty(Password)) && isBeta)
-            {
-                if (string.IsNullOrEmpty(Username))
-                    throw new CrunchyrollAuthenticationException("Missing username", Username, Password);
+            await AuthenticateCrunchyroll();
 
-                if (string.IsNullOrEmpty(Password))
-                    throw new CrunchyrollAuthenticationException("Missing password", Username, Password);
-
-                await CrunchyrollApiServiceFactory.CreateAuthenticatedService(Username, Password);
-            }
-            else
-            {
-                await CrunchyrollApiServiceFactory.CreateUnauthenticatedService();
-            }
-            
             using var cookieFile = isBeta ? null : await CreateCookiesFile();
             var downloadParameters = await CreateDownloadParameters(cookieFile);
-            await DownloadSeriesService.DownloadEpisodes(new Uri(SeriesUrl), downloadParameters);
-            await BrowserFactory.DisposeAsync();
             
+            try
+            {
+                await DownloadSeriesService.DownloadEpisodes(new Uri(SeriesUrl), downloadParameters);
+            }
+            catch (NoEpisodeFoundException noEpisodes)
+            {
+                throw new CommandException(noEpisodes.Message, 404);
+            }
+            
+            if (isBeta)
+                await BrowserFactory.DisposeAsync();
+
             if (cookieFile != null)
             {
                 Logger.LogDebug("Cleaning cookie file {@CookieFile}", cookieFile);
                 cookieFile?.Dispose();
             }
-            
+
             stopwatch.Stop();
             Logger.LogInformation("Completed. Time Elapsed {@TimeElapsed}", stopwatch.Elapsed);
         }
@@ -171,7 +187,7 @@ namespace Wasari.Commands
             {
                 var crunchyHost =
                     parsedUri.Host.EndsWith("crunchyroll.com", StringComparison.InvariantCultureIgnoreCase);
-                
+
                 if (parsedUri.Host == "beta.crunchyroll.com")
                     return (SeriesUrl?.Contains("/series/") ?? false) || (SeriesUrl?.Contains("/watch/") ?? false);
 
@@ -204,7 +220,7 @@ namespace Wasari.Commands
                     anime4K = false;
                 }
             }
-            
+
             return new DownloadParameters
             {
                 CookieFilePath = file?.Path,
@@ -230,7 +246,5 @@ namespace Wasari.Commands
                 DubsLanguage = DubsLanguages?.Split(",")
             };
         }
-
-       
     }
 }

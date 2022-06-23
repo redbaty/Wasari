@@ -4,51 +4,71 @@ using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
-using Wasari.Crunchyroll;
+using Wasari.App;
 using Wasari.Crunchyroll.API;
 
 namespace Wasari.Commands;
 
 [Command("crunchy-list")]
-internal class CrunchyrollListSeriesCommand : ICommand
+internal class CrunchyrollListSeriesCommand : AuthenticatedCommand, ICommand
 {
     [CommandParameter(0, Description = "Series URL.")]
-    public string SeriesUrl { get; init; }
+    public Uri SeriesUrl { get; init; }
         
-    public CrunchyrollListSeriesCommand(ISeriesProvider crunchyrollSeasonProvider, CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, BetaCrunchyrollService betaCrunchyrollService)
+    public CrunchyrollListSeriesCommand(CrunchyrollApiServiceFactory crunchyrollApiServiceFactory, ILogger<CrunchyrollListSeriesCommand> logger, SeriesProviderSolver seriesProviderSolver, IServiceProvider serviceProvider) : base(crunchyrollApiServiceFactory)
     {
-        CrunchyrollSeasonProvider = crunchyrollSeasonProvider;
-        CrunchyrollApiServiceFactory = crunchyrollApiServiceFactory;
-        BetaCrunchyrollService = betaCrunchyrollService;
+        Logger = logger;
+        SeriesProviderSolver = seriesProviderSolver;
+        ServiceProvider = serviceProvider;
     }
     
-    private CrunchyrollApiServiceFactory CrunchyrollApiServiceFactory { get; }
+    private SeriesProviderSolver SeriesProviderSolver { get; }
     
-    private BetaCrunchyrollService BetaCrunchyrollService { get; }
+    private ILogger<CrunchyrollListSeriesCommand> Logger { get; }
 
-    private ISeriesProvider CrunchyrollSeasonProvider { get; }
-        
+    private static readonly EventId EpisodesFoundEvent = new(200, "Episodes found");
+    
+    private static readonly EventId EpisodesNotFoundEvent = new(404, "No episodes found");
+    
+    private IServiceProvider ServiceProvider { get; }
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
-        var isBeta = SeriesUrl.Contains("beta.");
-    
-        await CrunchyrollApiServiceFactory.CreateUnauthenticatedService();
-
-        var episodes = isBeta
-            ? await BetaCrunchyrollService.GetEpisodes(SeriesUrl).ToArrayAsync()
-            : await CrunchyrollSeasonProvider.GetEpisodes(SeriesUrl).ToArrayAsync();
+        await AuthenticateCrunchyroll();
         
-        foreach (var episodesBySeason in episodes.GroupBy(i => i.SeasonInfo))
+        if (!CrunchyrollApiServiceFactory.IsAuthenticated)
         {
-            await console.Output.WriteLineAsync($"S{episodesBySeason.Key.Season:00} - {episodesBySeason.Key.Title}");
-
-            foreach (var episode in episodesBySeason)
-            {
-                await console.Output.WriteLineAsync($"- {episode.Number}: {episode.Name}");
-            }
-
-            await console.Output.WriteLineAsync();
+            Logger.LogWarning("Using unauthenticated API, results might be incomplete");
         }
+        
+        var seriesProviderType = SeriesProviderSolver.GetProvider(SeriesUrl);
+
+        if (ServiceProvider.GetService(seriesProviderType) is not ISeriesProvider seriesProvider)
+            throw new InvalidOperationException($"Failed to create series provider. Type: {seriesProviderType.Name}");
+        
+        var episodes = await seriesProvider.GetEpisodes(SeriesUrl.ToString())
+            .Where(i => !i.SeasonInfo.Dubbed)
+            .Select(i => new
+            {
+                i.Id,
+                i.Name,
+                i.FilePrefix,
+                i.SeriesInfo,
+                Season = new
+                {
+                    i.SeasonInfo.Dubbed,
+                    i.SeasonInfo.Season,
+                    i.SeasonInfo.Title,
+                    i.SeasonInfo.DubbedLanguage
+                }
+            })
+            .ToArrayAsync();
+
+        if (episodes.Any())
+            Logger.LogInformation(EpisodesFoundEvent, "Crunchyroll episodes found {Count} {@Episodes}", episodes.Length, episodes);
+        else
+            Logger.LogError(EpisodesNotFoundEvent, "No episodes found in crunchyroll {Url}", SeriesUrl);
     }
 }
