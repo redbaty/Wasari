@@ -1,6 +1,18 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
-COPY ffmpeg/ /usr/local/bin/
+﻿FROM alpine:3.15 AS ffmpeg-base
+RUN apk update && apk add wget
+RUN wget https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
+RUN mkdir /ffmpeg
+RUN tar -C /ffmpeg -xvf ffmpeg-master-latest-linux64-gpl.tar.xz --strip-components=1
+
+FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
 WORKDIR /app
+RUN apt-get update && apt-get -f install && apt-get -y install curl python3 wget gnupg2 apt-utils curl
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+    && apt-get update \
+    && apt-get install -y google-chrome-unstable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \
+      --no-install-recommends
+
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
@@ -12,15 +24,10 @@ RUN dotnet publish "./Wasari/Wasari.csproj" --configuration Release --self-conta
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-RUN apt update && apt install curl python3 -y
+COPY --from=ffmpeg-base /ffmpeg/bin/ /usr/local/bin/
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
 RUN chmod a+rx /usr/local/bin/yt-dlp
 RUN chmod a+rx /usr/local/bin/ffmpeg
-RUN apt-get update && apt-get -f install && apt-get -y install wget gnupg2 apt-utils curl
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-    && apt-get update \
-    && apt-get install -y google-chrome-unstable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \
-      --no-install-recommends
+
 ENV PUPPETEER_EXECUTABLE_PATH "/usr/bin/google-chrome-unstable"
 ENTRYPOINT ["./Wasari"]
