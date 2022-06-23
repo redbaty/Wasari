@@ -75,10 +75,19 @@ internal static class ApiExtensions
 
     private static string GetSeasonDubLanguage(IEnumerable<ApiEpisode> apiEpisodes)
     {
-        var subLanguages = apiEpisodes.Select(o => o.AudioLocale).Distinct().ToArray();
+        var subLanguages = apiEpisodes.Select(o =>
+            {
+                if (string.IsNullOrEmpty(o.AudioLocale) && o.Subtitles is { Length: 1 })
+                    return o.Subtitles.Single();
+
+                return o.AudioLocale;
+            }).Distinct()
+            .Where(i => !string.IsNullOrEmpty(i))
+            .ToArray();
+        
         if (subLanguages.Length == 1)
             return subLanguages.Single();
-        
+
         throw new System.NotImplementedException();
     }
 }
