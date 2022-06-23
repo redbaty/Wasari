@@ -122,7 +122,7 @@ namespace Wasari.Ffmpeg
                     yield return "-rc vbr -cq 24 -qmin 24 -qmax 24 -profile:v main10 -pix_fmt p010le";
                 }
                 else
-                    yield return "-pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10";
+                    yield return "-crf 24 -pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10";
             }
             else
             {
@@ -204,7 +204,7 @@ namespace Wasari.Ffmpeg
 
             if (!statusUpdateEnabled)
             {
-                Logger?.LogWarning("Failed to determined video duration for files {@Files} {@DownloadParameters}", videoFiles.Select(i => i.LocalPath).ToArray(), downloadParameters);
+                Logger.LogWarning("Failed to determined video duration for files {@Files} {@DownloadParameters}", videoFiles.Select(i => i.LocalPath).ToArray(), downloadParameters);
             }
 
             if (statusUpdateEnabled)
@@ -236,7 +236,7 @@ namespace Wasari.Ffmpeg
                 .WithArguments(CreateArguments(videoFiles, subtitlesFiles, temporaryFinalFile, downloadParameters)
                     .Where(i => !string.IsNullOrEmpty(i)), false);
 
-            Logger.LogDebug("Merging video file with subtitles. {@Command}", command.ToString());
+            Logger.LogInformation("Encoding final video file. {@Command}", command.ToString());
 
             var stopwatch = Stopwatch.StartNew();
 
@@ -266,11 +266,11 @@ namespace Wasari.Ffmpeg
                             EpisodeId = episodeId
                         };
 
-                        Logger?.LogProgressUpdate(update);
+                        Logger.LogProgressUpdate(update);
                     }
                 }
 
-                Logger?.LogTrace("[FFMpeg] {@Text}", text);
+                Logger.LogTrace("[FFMpeg] {@Text}", text);
             }
 
             if (downloadParameters.DeleteTemporaryFiles)
@@ -295,13 +295,13 @@ namespace Wasari.Ffmpeg
                     }
                 }
 
-                Logger?.LogInformation("{@DeletedFiles} were cleaned. {@EpisodeId}", deletedFiles, episodeId);
+                Logger.LogInformation("{@DeletedFiles} were cleaned. {@EpisodeId}", deletedFiles, episodeId);
             }
 
             File.Move(temporaryFinalFile, newVideoFile);
             stopwatch.Stop();
 
-            Logger?.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId,
+            Logger.LogInformation("Encoding of {@Episode} to {@NewVideoFile} has ended and took {@Elapsed}", episodeId,
                 newVideoFile, stopwatch.Elapsed);
         }
     }
