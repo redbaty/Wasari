@@ -7,7 +7,7 @@ WORKDIR /src
 COPY . .
 
 FROM build AS publish
-RUN dotnet publish "./Wasari/Wasari.csproj" --configuration Release --self-contained -r linux-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true -o /app/publish
+RUN dotnet publish "./Wasari/Wasari.csproj" --configuration Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
