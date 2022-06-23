@@ -27,5 +27,5 @@ jobs:
         with:
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: redbaty/wasari:latest
+          tags: redbaty/wasari:latest,redbaty/wasari:b-${{ github.run_number }}
           file: Wasari/Dockerfile
