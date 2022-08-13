@@ -8,6 +8,8 @@ namespace Wasari.Crunchyroll.Extensions;
 
 internal static class ApiExtensions
 {
+    private static bool IsSpecialEpisode(this ApiEpisode apiEpisode) => !apiEpisode.EpisodeNumber.HasValue || string.IsNullOrEmpty(apiEpisode.Episode);
+    
     public static IEnumerable<CrunchyrollSeasonsInfo> ToSeasonsInfo(this IEnumerable<ApiSeason> apiSeasons,
         IEnumerable<ApiEpisode> apiEpisodes, ISeriesInfo seriesInfo)
     {
@@ -21,14 +23,16 @@ internal static class ApiExtensions
                 lastNumber = season.Number;
             }
 
+            var isSpecial = episodeBySeason[season.Id].All(o => o.IsSpecialEpisode());
             var seasonInfo = new CrunchyrollSeasonsInfo
             {
                 Id = season.Id,
-                Season = lastNumber,
+                Season = isSpecial ? 0 : lastNumber,
                 Title = season.Title,
                 Dubbed = season.IsDubbed,
                 DubbedLanguage = season.IsDubbed ? GetSeasonDubLanguage(season, episodeBySeason[season.Id]) : season.Title,
-                Episodes = new List<IEpisodeInfo>()
+                Episodes = new List<IEpisodeInfo>(),
+                Special = isSpecial
             };
 
             foreach (var apiEpisode in episodeBySeason[season.Id])
@@ -44,7 +48,7 @@ internal static class ApiExtensions
                 {
                     Id = apiEpisode.Id,
                     Name = apiEpisode.Title,
-                    Special = !apiEpisode.EpisodeNumber.HasValue || string.IsNullOrEmpty(apiEpisode.Episode),
+                    Special = apiEpisode.IsSpecialEpisode(),
                     Url = episodeUrl,
                     ThumbnailId = null,
                     Number = (apiEpisode.EpisodeNumber ?? apiEpisode.SequenceNumber).ToString("00"),
@@ -65,8 +69,8 @@ internal static class ApiExtensions
 
                 seasonInfo.Episodes.Add(crunchyrollEpisodeInfo);
             }
-
-            if (seasonInfo.Season > 0 && !season.IsDubbed)
+            
+            if (!seasonInfo.Special && seasonInfo.Season > 0 && !season.IsDubbed)
                 lastNumber++;
 
             yield return seasonInfo;
