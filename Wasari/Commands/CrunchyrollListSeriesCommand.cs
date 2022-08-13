@@ -50,13 +50,15 @@ internal class CrunchyrollListSeriesCommand : AuthenticatedCommand, ICommand
             throw new InvalidOperationException($"Failed to create series provider. Type: {seriesProviderType.Name}");
         
         var episodes = await seriesProvider.GetEpisodes(SeriesUrl.ToString())
-            .Where(i => !i.SeasonInfo.Dubbed)
             .Select(i => new
             {
                 i.Id,
                 i.Name,
                 i.FilePrefix,
                 i.SeriesInfo,
+                i.Dubbed,
+                i.DubbedLanguage,
+                i.Special,
                 Season = new
                 {
                     i.SeasonInfo.Dubbed,
