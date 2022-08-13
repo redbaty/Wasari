@@ -16,6 +16,9 @@ namespace Wasari.Crunchyroll.API
         [JsonPropertyName("is_subbed")]
         public bool IsSubbed { get; init; }
         
+        [JsonPropertyName("audio_locales")]
+        public string[] AudioLocales { get; init; }
+        
         [JsonPropertyName("season_number")]
         public int Number { get; set; }
         

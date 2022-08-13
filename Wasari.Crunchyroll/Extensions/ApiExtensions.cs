@@ -27,7 +27,7 @@ internal static class ApiExtensions
                 Season = lastNumber,
                 Title = season.Title,
                 Dubbed = season.IsDubbed,
-                DubbedLanguage = season.IsDubbed ? GetSeasonDubLanguage(episodeBySeason[season.Id]) : season.Title,
+                DubbedLanguage = season.IsDubbed ? GetSeasonDubLanguage(season, episodeBySeason[season.Id]) : season.Title,
                 Episodes = new List<IEpisodeInfo>()
             };
 
@@ -73,8 +73,13 @@ internal static class ApiExtensions
         }
     }
 
-    private static string GetSeasonDubLanguage(IEnumerable<ApiEpisode> apiEpisodes)
+    private static string GetSeasonDubLanguage(ApiSeason season, IEnumerable<ApiEpisode> apiEpisodes)
     {
+        if (season.AudioLocales is { Length: 1 })
+        {
+            return season.AudioLocales.Single();
+        }
+        
         var subLanguages = apiEpisodes.Select(o =>
             {
                 if (string.IsNullOrEmpty(o.AudioLocale) && o.Subtitles is { Length: 1 })
