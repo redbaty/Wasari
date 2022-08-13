@@ -44,7 +44,7 @@ internal static class ApiExtensions
                 {
                     Id = apiEpisode.Id,
                     Name = apiEpisode.Title,
-                    Special = !apiEpisode.EpisodeNumber.HasValue,
+                    Special = !apiEpisode.EpisodeNumber.HasValue || string.IsNullOrEmpty(apiEpisode.Episode),
                     Url = episodeUrl,
                     ThumbnailId = null,
                     Number = (apiEpisode.EpisodeNumber ?? apiEpisode.SequenceNumber).ToString("00"),
