@@ -123,12 +123,16 @@ namespace Wasari.Crunchyroll.API
             url = url.SetQueryParam("series_id", seriesId);
 
             var responseJson = await HttpClient.GetJsonAsync(url);
-            var lastNumber = 1;
+           
+            var seasons = responseJson.GetProperty("items").EnumerateArray()
+                .Select(i => i.Deserialize<ApiSeason>())
+                .Where(i => i != null)
+                .ToArray();
             
-            foreach (var jsonElement in responseJson.GetProperty("items").EnumerateArray())
-            {
-                var apiSeason = jsonElement.Deserialize<ApiSeason>();
+            var lastNumber = seasons.Length > 0 ? seasons.Max(o => o.Number) : 1;
 
+            foreach (var apiSeason in seasons)
+            {
                 if (apiSeason != null)
                 {
                     apiSeason.Number = lastNumber;

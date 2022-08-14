@@ -15,8 +15,9 @@ internal static class ApiExtensions
     {
         var episodeBySeason = apiEpisodes.ToLookup(i => i.SeasonId);
 
-        var lastNumber = 1;
-        foreach (var season in apiSeasons.OrderBy(i => i.Number))
+        var seasons = apiSeasons.OrderBy(i => i.Number).ToArray();
+        var lastNumber = seasons.Length > 0 ? seasons.Min(o => o.Number) : 1;
+        foreach (var season in seasons)
         {
             if (lastNumber < 0)
             {
