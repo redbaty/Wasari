@@ -26,6 +26,8 @@ namespace Wasari.Crunchyroll.Abstractions
         
         public bool Dubbed { get; init; }
         
+        public bool Special { get; set; }
+
         public string DubbedLanguage { get; init; }
 
         public ICollection<IEpisodeInfo> Episodes { get; init; }

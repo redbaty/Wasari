@@ -29,7 +29,8 @@ internal static class EpisodeExtensions
                     Season = episodesGroup.Key.Season,
                     Dubbed = dubbed,
                     DubbedLanguage = dubbedLanguages ?? string.Empty,
-                    Title = await episodesGroup.Where(i => !(i.Dubbed ?? false)).Select(i => i.SeasonInfo.Title).FirstOrDefaultAsync() ?? await episodesGroup.Select(i => i.SeasonInfo.Title).FirstAsync()
+                    Title = await episodesGroup.Where(i => !(i.Dubbed ?? false)).Select(i => i.SeasonInfo.Title).FirstOrDefaultAsync() ?? await episodesGroup.Select(i => i.SeasonInfo.Title).FirstAsync(),
+                    Special = episodesGroup.Key.Special
                 };
 
           

@@ -8,6 +8,8 @@
         
         bool Dubbed { get; }
         
+        bool Special { get; }
+        
         string DubbedLanguage { get; }
     }
 }

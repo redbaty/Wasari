@@ -11,5 +11,7 @@ internal class DummySeasonInfo : ISeasonInfo
     
     public bool Dubbed { get; init; }
     
+    public bool Special { get; init; }
+
     public string? DubbedLanguage { get; init; }
 }

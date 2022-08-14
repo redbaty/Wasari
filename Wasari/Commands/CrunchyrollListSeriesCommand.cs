@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wasari.Abstractions;
 using Wasari.App;
@@ -44,18 +45,20 @@ internal class CrunchyrollListSeriesCommand : AuthenticatedCommand, ICommand
         }
         
         var seriesProviderType = SeriesProviderSolver.GetProvider(SeriesUrl);
-
-        if (ServiceProvider.GetService(seriesProviderType) is not ISeriesProvider seriesProvider)
+        
+        if (ServiceProvider.GetRequiredService(seriesProviderType) is not ISeriesProvider seriesProvider)
             throw new InvalidOperationException($"Failed to create series provider. Type: {seriesProviderType.Name}");
         
         var episodes = await seriesProvider.GetEpisodes(SeriesUrl.ToString())
-            .Where(i => !i.SeasonInfo.Dubbed)
             .Select(i => new
             {
                 i.Id,
                 i.Name,
                 i.FilePrefix,
                 i.SeriesInfo,
+                i.Dubbed,
+                i.DubbedLanguage,
+                i.Special,
                 Season = new
                 {
                     i.SeasonInfo.Dubbed,
