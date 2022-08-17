@@ -129,7 +129,7 @@ namespace Wasari.Crunchyroll.API
                 .Where(i => i != null)
                 .ToArray();
             
-            var lastNumber = seasons.Length > 0 ? seasons.Max(o => o.Number) : 1;
+            var lastNumber = seasons.Length > 0 ? seasons.Min(o => o.Number) : 1;
 
             foreach (var apiSeason in seasons)
             {
