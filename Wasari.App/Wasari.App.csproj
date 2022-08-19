@@ -7,9 +7,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Wasari.Crunchyroll.Abstractions\Wasari.Crunchyroll.Abstractions.csproj" />
-      <ProjectReference Include="..\Wasari.Crunchyroll.API\Wasari.Crunchyroll.API.csproj" />
-      <ProjectReference Include="..\Wasari.Crunchyroll\Wasari.Crunchyroll.csproj" />
+      <ProjectReference Include="..\Wasari.App.Abstractions\Wasari.App.Abstractions.csproj" />
+      <ProjectReference Include="..\Wasari.FFmpeg\Wasari.FFmpeg.csproj" />
+      <ProjectReference Include="..\Wasari.YoutubeDlp\Wasari.YoutubeDlp.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
+      <PackageReference Include="TomLonghurst.EnumerableAsyncProcessor" Version="1.1.0" />
     </ItemGroup>
 
 </Project>
