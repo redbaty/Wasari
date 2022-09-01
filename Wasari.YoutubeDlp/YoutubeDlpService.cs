@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using System.Threading.Channels;
 using CliWrap;
-using CliWrap.Buffered;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -79,9 +78,8 @@ public class YoutubeDlpService
     {
         var command = CreateCommand()
             .WithArguments(BuildArgumentsForEpisode(url).Concat(additionalArguments), false);
-
-        var commandResult = await command.ExecuteBufferedAsync();
-        var jsonDocument = JsonDocument.Parse(commandResult.StandardOutput);
+        
+        var jsonDocument = JsonDocument.Parse(await command.ExecuteAndGetStdOut());
         var type = jsonDocument.RootElement.GetProperty("_type").GetString();
 
         switch (type)

@@ -6,5 +6,5 @@ public interface IWasariBasicInfo
     
     int SeasonNumber { get; }
     
-    int AbsoluteNumber { get; }
+    int? AbsoluteNumber { get; }
 }

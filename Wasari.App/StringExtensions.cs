@@ -2,7 +2,7 @@
 
 namespace Wasari.App;
 
-public static class StringExtensions
+internal static class StringExtensions
 {
     private static readonly Regex RemoveInvalidChars = new($"[{Regex.Escape(new string(Path.GetInvalidFileNameChars()))}]",
         RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant);

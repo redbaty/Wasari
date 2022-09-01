@@ -1,27 +1,38 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using CliFx;
 using CliFx.Attributes;
+using CliFx.Exceptions;
 using CliFx.Infrastructure;
+using CliWrap;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Wasari.App;
 using Wasari.FFmpeg;
 using Wasari.YoutubeDlp;
+using WasariEnvironment;
+using Range = Wasari.App.Range;
 
 namespace Wasari.Cli.Commands;
 
 [Command]
 public class DownloadCommand : ICommand
 {
-    [CommandParameter(0, Description = "Series URL.", IsRequired = true)]
-    public Uri SeriesUrl { get; init; }
+    public DownloadCommand(EnvironmentService environmentService, ILogger<DownloadCommand> logger)
+    {
+        EnvironmentService = environmentService;
+        Logger = logger;
+    }
 
-    [CommandOption("output-directory", 'o')]
-    public string OutputDirectory { get; init; } = Directory.GetCurrentDirectory();
+    [CommandParameter(0, Description = "Series, season or episode URL.", IsRequired = true)]
+    public Uri? Url { get; init; }
 
-    [CommandOption("username", 'u', Description = "Crunchyroll username.", EnvironmentVariable = "WASARI_USERNAME")]
+    [CommandOption("output-directory", 'o', EnvironmentVariable = "OUTPUT_DIRECTORY")]
+    public string OutputDirectory { get; init; } = Environment.GetEnvironmentVariable("DEFAULT_OUTPUT_DIRECTORY") ?? Directory.GetCurrentDirectory();
+
+    [CommandOption("username", 'u', Description = "Username", EnvironmentVariable = "WASARI_USERNAME")]
     public string? Username { get; init; }
 
-    [CommandOption("password", 'p', Description = "Crunchyroll password.", EnvironmentVariable = "WASARI_PASSWORD")]
+    [CommandOption("password", 'p', Description = "Password", EnvironmentVariable = "WASARI_PASSWORD")]
     public string? Password { get; init; }
     
     [CommandOption("hevc", Description = "Encode final video file in H265/HEVC")]
@@ -45,12 +56,89 @@ public class DownloadCommand : ICommand
     [CommandOption("level-parallelism", 'l')]
     [Range(1, 10)]
     public int LevelOfParallelism { get; init; } = 2;
+    
+    [CommandOption("episodes", 'e', Description = "Episodes range (eg. 1-5 would be episode 1 to 5)")]
+    public string? EpisodeRange { get; init; }
+
+    [CommandOption("seasons", 's', Description = "Seasons range (eg. 1-3 would be seasons 1 to 5)")]
+    public string? SeasonsRange { get; init; }
+    
+    [CommandOption("no-update", Description = "Do not try to update yt-dlp")]
+    public bool NoUpdate { get; init; }
+    
+    private EnvironmentService EnvironmentService { get; }
+    
+    private ILogger<DownloadCommand> Logger { get; }
+
+    private static Range? ParseRange(string? range)
+    {
+        if (string.IsNullOrEmpty(range))
+            return null;
+
+        if (range.Any(i => !char.IsDigit(i) && i != '-'))
+            throw new InvalidEpisodeRangeException();
+
+        if (range.Contains('-'))
+        {
+            var episodesNumbers = range.Split('-');
+
+            if (episodesNumbers.Length != 2 || episodesNumbers.All(string.IsNullOrEmpty))
+                throw new InvalidEpisodeRangeException();
+
+            var numbers = episodesNumbers.Select(int.Parse).Cast<int?>().ToArray();
+            
+            if (episodesNumbers.All(i => !string.IsNullOrEmpty(i)))
+                return new Range(numbers.ElementAtOrDefault(0), numbers.ElementAtOrDefault(1));
+
+            if (string.IsNullOrEmpty(episodesNumbers[0]))
+                return new Range(null, numbers.ElementAtOrDefault(1));
+
+            if (string.IsNullOrEmpty(episodesNumbers[1]))
+                return new Range(numbers.ElementAtOrDefault(0), null);
+        }
+
+        if (int.TryParse(range, out var episode)) return new Range(episode, episode);
+
+        throw new InvalidOperationException($"Invalid episode range. {range}");
+    }
+
+    private static Task<CommandResult> TryYtdlpUpdate()
+    {
+        var command = CliWrap.Cli.Wrap("yt-dlp")
+            .WithArguments("-U")
+            .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.Error.WriteLine))
+            .WithStandardErrorPipe(PipeTarget.ToDelegate(Console.Error.WriteLine))
+            .WithValidation(CommandResultValidation.None);
+        return command.ExecuteAsync();
+    }
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
-        var serviceCollection = new ServiceCollection().AddRootServices();
+        if (Url == null)
+        {
+            throw new CommandException("SeriesURL is required");
+        }
+
+        var missingEnvironmentFeatures = EnvironmentService.GetMissingFeatures(EnvironmentFeatureType.Ffmpeg, EnvironmentFeatureType.YtDlp).ToArray();
+        if (missingEnvironmentFeatures.Length > 0)
+        {
+            throw new CommandException($"One or more environment features are missing. ({missingEnvironmentFeatures.Select(i => i.ToString()).Aggregate((x, y) => $"{x},{y}")})");
+        }
+
+        if (NoUpdate)
+        {
+            var ytDlpCommandResult = await TryYtdlpUpdate();
+
+            if (ytDlpCommandResult.ExitCode == 0)
+                Logger.LogInformation("YT-DLP is up-to-date");
+            else
+                Logger.LogError("Failed to update YT-DLP");
+        }
+
+        var serviceCollection = await new ServiceCollection().AddRootServices();
         serviceCollection.AddFfmpegServices();
         serviceCollection.AddYoutubeDlpServices();
+        serviceCollection.AddDownloadModifier<CrunchyrollBetaDownloadModifier>("CrunchyrollBeta");
         serviceCollection.AddScoped<DownloadService>();
         serviceCollection.Configure<DownloadOptions>(o =>
         {
@@ -58,6 +146,8 @@ public class DownloadCommand : ICommand
             o.IncludeDubs = IncludeDubs;
             o.IncludeSubs = IncludeSubs;
             o.SkipExistingFiles = SkipExistingFiles;
+            o.EpisodesRange = ParseRange(EpisodeRange);
+            o.SeasonsRange = ParseRange(SeasonsRange);
         });
         serviceCollection.Configure<FFmpegOptions>(o =>
         {
@@ -73,6 +163,6 @@ public class DownloadCommand : ICommand
         await using var serviceProvider = serviceCollection.BuildServiceProvider();
 
         var downloadService = serviceProvider.GetRequiredService<DownloadService>();
-        await downloadService.DownloadEpisodes(SeriesUrl.ToString(), LevelOfParallelism);
+        await downloadService.DownloadEpisodes(Url.ToString(), LevelOfParallelism);
     }
 }
