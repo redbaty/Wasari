@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -54,8 +55,9 @@ public class BetaCrunchyrollService : ISeriesProvider
     public async IAsyncEnumerable<IEpisodeInfo> GetEpisodes(string url)
     {
         var crunchyService = CrunchyrollApiServiceFactory.GetService();
-        var match = Regex.Match(url, @"series\/(?<seriesId>\w+)\/|watch\/(?<episodeId>\w+)\/");
+        var match = Regex.Match(url, @"series\/(?<seriesId>\w+)|watch\/(?<episodeId>\w+)\/");
 
+        
         var seriesId = match.Groups["seriesId"].Value;
 
         if (match.Groups["episodeId"].Success)
@@ -75,6 +77,11 @@ public class BetaCrunchyrollService : ISeriesProvider
             {
                 yield return episodeInfo;
             }
+        }
+
+        if (!match.Groups["seriesId"].Success)
+        {
+            throw new Exception("Failed to determined series ID from URL");
         }
 
         var info = await crunchyService.GetSeriesInformation(seriesId);
