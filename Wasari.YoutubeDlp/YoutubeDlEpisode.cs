@@ -15,6 +15,8 @@ public record YoutubeDlEpisode(
     int SeasonNumber,
     [property: JsonPropertyName("season_id")]
     string SeasonId,
+    [property: JsonPropertyName("series")]
+    string SeriesName,
     [property: JsonPropertyName("requested_downloads")]
     IReadOnlyList<YoutubeDlEpisodeDownload> RequestedDownloads,
     [property: JsonPropertyName("subtitles")]

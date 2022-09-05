@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TomLonghurst.EnumerableAsyncProcessor.Builders;
@@ -66,9 +66,27 @@ public class DownloadService
             .Cast<IWasariEpisodeInput>()
             .ToArray();
 
+        var outputDirectory = Options.Value.OutputDirectory ?? Environment.CurrentDirectory;
+
+        if (Options.Value.CreateSeriesFolder)
+        {
+            outputDirectory = Path.Combine(outputDirectory, episode.SeriesName);
+
+            if (!Directory.Exists(outputDirectory))
+                Directory.CreateDirectory(outputDirectory);
+        }
+        
+        if (Options.Value.CreateSeasonFolder)
+        {
+            outputDirectory = Path.Combine(outputDirectory, $"Season {episode.SeasonNumber:00}");
+
+            if (!Directory.Exists(outputDirectory))
+                Directory.CreateDirectory(outputDirectory);
+        }
+        
         var episodeName = $"S{episode.SeasonNumber:00}E{episode.Number:00}";
         var fileName = $"{episodeName} - {episode.Title}.mkv".AsSafePath();
-        var filepath = string.IsNullOrEmpty(Options.Value.OutputDirectory) ? fileName : Path.Combine(Options.Value.OutputDirectory, fileName);
+        var filepath = Path.Combine(outputDirectory, fileName);
         var wasariEpisode = new WasariEpisode(episode.Title, episode.SeasonNumber, episode.AbsoluteNumber, inputs, TimeSpan.FromSeconds(episode.Duration));
 
         if (Options.Value.SkipExistingFiles && File.Exists(filepath))

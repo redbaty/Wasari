@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Exceptions;
@@ -65,6 +65,12 @@ public class DownloadCommand : ICommand
     
     [CommandOption("no-update", Description = "Do not try to update yt-dlp")]
     public bool NoUpdate { get; init; }
+    
+    [CommandOption("series-folder")]
+    public bool CreateSeriesFolder { get; init; } = true;
+        
+    [CommandOption("season-folder")]
+    public bool CreateSeasonFolder { get; init; } = true;
     
     private EnvironmentService EnvironmentService { get; }
     
@@ -148,6 +154,8 @@ public class DownloadCommand : ICommand
             o.SkipExistingFiles = SkipExistingFiles;
             o.EpisodesRange = ParseRange(EpisodeRange);
             o.SeasonsRange = ParseRange(SeasonsRange);
+            o.CreateSeriesFolder = CreateSeriesFolder;
+            o.CreateSeasonFolder = CreateSeasonFolder;
         });
         serviceCollection.Configure<FFmpegOptions>(o =>
         {

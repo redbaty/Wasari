@@ -17,4 +17,8 @@ public record DownloadOptions
     public Range? SeasonsRange { get; set; }
 
     internal Dictionary<string, Type> Modifiers { get; set; } = new();
+    
+    public bool CreateSeriesFolder { get; set; }
+    
+    public bool CreateSeasonFolder { get; set; }
 }
