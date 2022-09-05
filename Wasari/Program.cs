@@ -34,13 +34,16 @@ namespace Wasari
 
             try
             {
+                var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Wasari", "logs", "log.txt");
+                
                 loggerConfiguration = loggerConfiguration
-                    .MinimumLevel.Debug();
+                    .MinimumLevel.Debug()
+                    .WriteTo.File(logPath);
 
                 loggerConfiguration = useJsonOutput ? loggerConfiguration.WriteTo.Console(new CompactJsonFormatter()) : loggerConfiguration.WriteTo.ProgressConsole(enableProgressBars: useProgressBar);
 
-                var logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Wasari", "logs", "log.txt");
+            
 
                 Log.Logger = loggerConfiguration
                     .CreateLogger();
