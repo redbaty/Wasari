@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Exceptions;
@@ -131,7 +131,7 @@ public class DownloadCommand : ICommand
             throw new CommandException($"One or more environment features are missing. ({missingEnvironmentFeatures.Select(i => i.ToString()).Aggregate((x, y) => $"{x},{y}")})");
         }
 
-        if (NoUpdate)
+        if (!NoUpdate)
         {
             var ytDlpCommandResult = await TryYtdlpUpdate();
 
@@ -140,6 +140,8 @@ public class DownloadCommand : ICommand
             else
                 Logger.LogError("Failed to update YT-DLP");
         }
+        
+        Logger.LogInformation("Output directory is {@OutputDirectory}", OutputDirectory);
 
         var serviceCollection = await new ServiceCollection().AddRootServices();
         serviceCollection.AddFfmpegServices();

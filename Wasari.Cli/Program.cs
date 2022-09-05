@@ -27,7 +27,7 @@ internal static class Program
 
         if (environmentOptions?.Value?.Features is { } features)
         {
-            await Console.Error.WriteLineAsync($"Available environment features: {features.Select(i => i.Type.ToString()).Aggregate((x, y) => $"\"{x}\", \"{y}\"")}");
+            await Console.Error.WriteLineAsync($"Available environment features: {features.Select(i => $"\"{i.Type}\"").Aggregate((x, y) => $"{x}, {y}")}");
         }
 
         return await new CliApplicationBuilder()

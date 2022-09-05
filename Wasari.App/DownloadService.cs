@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TomLonghurst.EnumerableAsyncProcessor.Builders;
@@ -46,6 +46,8 @@ public class DownloadService
             })
             .FilterEpisodes(Options.Value.EpisodesRange, Options.Value.SeasonsRange)
             .ToArrayAsync();
+        
+        Logger.LogInformation("{@DownloadCount} episodes gathered to download", episodesArray.Length);
 
         return await AsyncProcessorBuilder.WithItems(episodesArray)
             .SelectAsync(DownloadEpisode)
@@ -98,13 +100,13 @@ public class DownloadService
         var episodeProgress = new Progress<double>();
         var lastValue = double.MinValue;
 
-        episodeProgress.ProgressChanged += (sender, d) =>
+        episodeProgress.ProgressChanged += (_, d) =>
         {
             var delta = d - lastValue;
 
             if (delta > 0.01)
             {
-                Logger.LogInformation("Encoding update {@Episode} {Percentage:p}", episodeName, d);
+                Logger.LogInformation("Encoding update {@Episode} {Path} {Percentage:p}", episodeName, filepath, d);
                 lastValue = d;
             }
         };

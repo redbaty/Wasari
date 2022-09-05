@@ -69,19 +69,21 @@ public class YoutubeDlpService
         await parallelTask;
     }
 
-    public IAsyncEnumerable<YoutubeDlEpisode> GetEpisodes(string url)
+    private IAsyncEnumerable<YoutubeDlEpisode> GetEpisodes(string url)
     {
         return ExecuteYtdlp<YoutubeDlEpisode>(url);
     }
 
     private async IAsyncEnumerable<T> ExecuteYtdlp<T>(string url, params string[] additionalArguments)
     {
+        Logger.LogInformation("Getting information for {@Url}", url);
+        
         var command = CreateCommand()
             .WithArguments(BuildArgumentsForEpisode(url).Concat(additionalArguments), false);
         
         var jsonDocument = JsonDocument.Parse(await command.ExecuteAndGetStdOut());
         var type = jsonDocument.RootElement.GetProperty("_type").GetString();
-
+        
         switch (type)
         {
             case "video":
@@ -92,8 +94,9 @@ public class YoutubeDlpService
                 {
                     yield return jsonElement.Deserialize<T>() ?? throw new InvalidOperationException("Failed to deserialize yt-dlp");
                 }
-
                 break;
+            default:
+                throw new NotImplementedException($"No parser defined for type: {type}");
         }
     }
 }
