@@ -17,7 +17,7 @@ public static class YoutubeDlEpisodeExtensions
 
         if (flag && range.Maximum.HasValue)
         {
-            flag = number <= range.Minimum;
+            flag = number <= range.Maximum;
         }
 
         return flag;
