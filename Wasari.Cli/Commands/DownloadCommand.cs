@@ -72,6 +72,9 @@ public class DownloadCommand : ICommand
     [CommandOption("season-folder")]
     public bool CreateSeasonFolder { get; init; } = true;
     
+    [CommandOption("cookie", EnvironmentVariable = "COOKIE_FILE_PATH")]
+    public string CookieFilePath { get; init; }
+    
     private EnvironmentService EnvironmentService { get; }
     
     private ILogger<DownloadCommand> Logger { get; }
@@ -169,6 +172,7 @@ public class DownloadCommand : ICommand
         {
             o.Username = Username;
             o.Password = Password;
+            o.CookieFilePath = CookieFilePath;
         });
         await using var serviceProvider = serviceCollection.BuildServiceProvider();
 
