@@ -18,7 +18,7 @@ public class YoutubeDlpService
 
     private ILogger<YoutubeDlpService> Logger { get; }
 
-    private IEnumerable<string> BuildArgumentsForEpisode(string url)
+    private IEnumerable<string> BuildArgumentsForEpisode(string[] urls)
     {
         yield return "-J";
 
@@ -34,7 +34,16 @@ public class YoutubeDlpService
         if (!string.IsNullOrEmpty(Options.Value.CookieFilePath))
             yield return $"--cookies \"{Options.Value.CookieFilePath}\"";
 
-        yield return $"\"{url}\"";
+        foreach (var url in urls)
+        {
+            yield return $"\"{url}\"";
+        }
+   
+    }
+
+    public IAsyncEnumerable<YoutubeDlEpisode> GetPlaylist(string url)
+    {
+        return ExecuteYtdlp<YoutubeDlEpisode>(url);
     }
 
     public IAsyncEnumerable<YoutubeDlFlatPlaylistEpisode> GetFlatPlaylist(string url)
@@ -74,12 +83,17 @@ public class YoutubeDlpService
         return ExecuteYtdlp<YoutubeDlEpisode>(url);
     }
 
-    private async IAsyncEnumerable<T> ExecuteYtdlp<T>(string url, params string[] additionalArguments)
+    private IAsyncEnumerable<T> ExecuteYtdlp<T>(string url, params string[] additionalArguments)
     {
-        Logger.LogInformation("Getting information for {@Url}", url);
+        return ExecuteYtdlp<T>(new[] { url }, additionalArguments);
+    }
+    
+    private async IAsyncEnumerable<T> ExecuteYtdlp<T>(string[] urls, params string[] additionalArguments)
+    {
+        Logger.LogInformation("Getting information for {@Urls}", urls);
         
         var command = CreateCommand()
-            .WithArguments(BuildArgumentsForEpisode(url).Concat(additionalArguments), false);
+            .WithArguments(BuildArgumentsForEpisode(urls).Concat(additionalArguments), false);
         
         var jsonDocument = JsonDocument.Parse(await command.ExecuteAndGetStdOut());
         var type = jsonDocument.RootElement.GetProperty("_type").GetString();
