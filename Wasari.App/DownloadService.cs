@@ -103,7 +103,7 @@ public class DownloadService
         {
             var delta = d - lastValue;
 
-            if (delta > 0.01)
+            if (delta > 0.01 || d >= 1d)
             {
                 Logger.LogInformation("Encoding update {@Episode} {Path} {Percentage:p}", episodeName, filepath, d);
                 lastValue = d;

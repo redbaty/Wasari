@@ -129,5 +129,7 @@ public class FFmpegService
         {
             File.Move(tempFileName, filePath);
         }
+        
+        progress?.Report(1);
     }
 }
