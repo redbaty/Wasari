@@ -29,8 +29,7 @@ public class DownloadService
 
     private YoutubeDlpService YoutubeDlpService { get; }
 
-    public Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism) => DownloadEpisodes(YoutubeDlpService
-        .GetEpisodes(YoutubeDlpService.GetFlatPlaylist(url))
+    public Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism) => DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
         .OrderBy(i => i.SeasonNumber)
         .ThenBy(i => i.Number), levelOfParallelism);
 
