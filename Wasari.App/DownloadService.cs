@@ -79,7 +79,7 @@ public class DownloadService
         
         if (Options.Value.CreateSeasonFolder)
         {
-            outputDirectory = Path.Combine(outputDirectory, $"Season {episode.SeasonNumber:00}");
+            outputDirectory = Path.Combine(outputDirectory, $"Season {episode.SeasonNumber}");
 
             if (!Directory.Exists(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
