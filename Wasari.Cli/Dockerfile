@@ -5,7 +5,7 @@ RUN mkdir /ffmpeg
 RUN tar -C /ffmpeg -xvf ffmpeg-master-latest-linux64-gpl.tar.xz --strip-components=1
 
 FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
-RUN apt update && apt install curl -y
+RUN apt update && apt install curl python3 -y
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
 RUN chmod a+rx /usr/local/bin/yt-dlp
 WORKDIR /app
