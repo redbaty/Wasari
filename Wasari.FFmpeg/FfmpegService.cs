@@ -4,20 +4,24 @@ using CliWrap.EventStream;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasari.App.Abstractions;
+using WasariEnvironment;
 
 namespace Wasari.FFmpeg;
 
 public class FFmpegService
 {
-    public FFmpegService(ILogger<FFmpegService> logger, IOptions<FFmpegOptions> options)
+    public FFmpegService(ILogger<FFmpegService> logger, IOptions<FFmpegOptions> options, EnvironmentService environmentService)
     {
         Logger = logger;
         Options = options;
+        EnvironmentService = environmentService;
     }
 
     private ILogger<FFmpegService> Logger { get; }
 
     private IOptions<FFmpegOptions> Options { get; }
+    
+    private EnvironmentService EnvironmentService { get; }
     
     private IEnumerable<string> BuildArgumentsForEpisode(IWasariEpisode episode, string filePath)
     {
@@ -57,7 +61,7 @@ public class FFmpegService
         
         if (Options.Value.UseHevc)
         {
-            if (Options.Value.UseNvidiaAcceleration)
+            if (Options.Value.UseNvidiaAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu))
             {
                 yield return "-c:v hevc_nvenc -rc vbr -cq 24 -qmin 24 -qmax 24 -profile:v main10 -pix_fmt p010le";
             }

@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Wasari.App.Abstractions\Wasari.App.Abstractions.csproj" />
+      <ProjectReference Include="..\Wasari.Environment\Wasari.Environment.csproj" />
     </ItemGroup>
 
     <ItemGroup>
