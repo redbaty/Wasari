@@ -34,7 +34,7 @@ public static class EnvironmentFeatureFinder
 
                     throw t.Exception ??
                           throw new InvalidOperationException(
-                              "An unexpected erro occurred while scanning environment features");
+                              "An unexpected error occurred while scanning environment features");
                 }
 
 
@@ -43,6 +43,8 @@ public static class EnvironmentFeatureFinder
 
         if (string.IsNullOrEmpty(executionResult))
             return null;
+        else
+            executionResult = executionResult.Trim();
 
         Version? mainVersion = null;
         EnvironmentFeatureModule[]? modules = null;

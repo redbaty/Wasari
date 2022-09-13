@@ -77,7 +77,7 @@ public static class StringExtensions
     {
         if (!string.IsNullOrEmpty(input) && Regex.Match(input, regex) is { Success: true } match)
         {
-            @out = match.Groups[1].Value;
+            @out = match.Groups.Count == 1 ? match.Groups[0].Value : match.Groups[1].Value;
             return true;
         }
 
