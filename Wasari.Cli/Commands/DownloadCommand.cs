@@ -77,6 +77,9 @@ public class DownloadCommand : ICommand
     [CommandOption("cookie", EnvironmentVariable = "COOKIE_FILE_PATH")]
     public string CookieFilePath { get; init; }
     
+    [CommandOption("verbose", 'v')]
+    public bool Verbose { get; init; }
+    
     private EnvironmentService EnvironmentService { get; }
     
     private ILogger<DownloadCommand> Logger { get; }
@@ -148,6 +151,11 @@ public class DownloadCommand : ICommand
         
         Logger.LogInformation("Output directory is {@OutputDirectory}", OutputDirectory);
 
+        if (Verbose)
+        {
+            Environment.SetEnvironmentVariable("LOG_LEVEL", "0");
+        }
+        
         var serviceCollection = await new ServiceCollection().AddRootServices();
         serviceCollection.AddFfmpegServices();
         serviceCollection.AddYoutubeDlpServices();

@@ -13,11 +13,7 @@ internal static class Program
     private static async Task<int> Main()
     {
         await Console.Error.WriteLineAsync(FiggleFonts.Standard.Render("Wasari"));
-
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
-            .CreateLogger();
-
+        
         var serviceCollection = await new ServiceCollection()
             .AddRootServices();
         serviceCollection.AddScoped<DownloadCommand>();
