@@ -33,4 +33,5 @@ COPY --from=publish /app/publish .
 COPY --from=ffmpeg-base /ffmpeg/bin/ /usr/local/bin/
 RUN chmod a+rx /usr/local/bin/ffmpeg
 ENV DEFAULT_OUTPUT_DIRECTORY /output
+ENV NVIDIA_DRIVER_CAPABILITIES="compute,video,utility"
 ENTRYPOINT ["dotnet", "Wasari.Cli.dll"]
