@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Threading.Channels;
 using CliWrap;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -61,41 +60,10 @@ public class YoutubeDlpService
         });
     }
 
-    public IAsyncEnumerable<YoutubeDlFlatPlaylistEpisode> GetFlatPlaylist(string url)
-    {
-        return ExecuteYtdlp<YoutubeDlFlatPlaylistEpisode>(url, "--flat-playlist");
-    }
-
     private Command CreateCommand()
     {
         return Cli.Wrap("yt-dlp")
             .WithStandardErrorPipe(PipeTarget.ToDelegate(s => Logger.LogInformation("YT-DLP output: {Message}", s)));
-    }
-
-    public async IAsyncEnumerable<YoutubeDlEpisode> GetEpisodes(IAsyncEnumerable<YoutubeDlFlatPlaylistEpisode> episodes)
-    {
-        var queue = Channel.CreateUnbounded<YoutubeDlEpisode>();
-
-        var parallelTask = Parallel.ForEachAsync(episodes, async (episode, token) =>
-            {
-                await foreach (var youtubeDlEpisode in GetEpisodes(episode.Type == "video" && !string.IsNullOrEmpty(episode.WebpageUrl) ? episode.WebpageUrl : episode.Url).WithCancellation(token))
-                {
-                    await queue.Writer.WriteAsync(youtubeDlEpisode, token);
-                }
-            })
-            .ContinueWith(_ => { queue.Writer.Complete(); });
-
-        await foreach (var youtubeDlEpisode in queue.Reader.ReadAllAsync())
-        {
-            yield return youtubeDlEpisode;
-        }
-
-        await parallelTask;
-    }
-
-    private IAsyncEnumerable<YoutubeDlEpisode> GetEpisodes(string url)
-    {
-        return ExecuteYtdlp<YoutubeDlEpisode>(url);
     }
 
     private IAsyncEnumerable<T> ExecuteYtdlp<T>(string url, params string[] additionalArguments)

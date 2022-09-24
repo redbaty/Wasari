@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Wasari.App;
 using Wasari.App.Extensions;
 
 namespace Wasari.Crunchyroll

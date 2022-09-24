@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Wasari.App.Abstractions;
 
 namespace Wasari.YoutubeDlp;
 
