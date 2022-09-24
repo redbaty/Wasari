@@ -8,11 +8,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wasari.App;
 using Wasari.App.Abstractions;
+using Wasari.App.Extensions;
 using Wasari.Crunchyroll;
 using Wasari.FFmpeg;
 using Wasari.YoutubeDlp;
 using WasariEnvironment;
-using Range = Wasari.App.Range;
+using Range = Wasari.App.Abstractions.Range;
 
 namespace Wasari.Cli.Commands;
 
@@ -55,7 +56,7 @@ public class DownloadCommand : ICommand
     [CommandOption("temp-encoding", Description = "Uses a temporary file for encoding, and moves it to final path at the end")]
     public bool UseTemporaryEncodingPath { get; init; } = true;
 
-    [CommandOption("level-parallelism", 'l')]
+    [CommandOption("level-parallelism", 'l', Description = "Defines how many downloads are going to run in parallel")]
     [Range(1, 10)]
     public int LevelOfParallelism { get; init; } = 2;
     
@@ -68,16 +69,13 @@ public class DownloadCommand : ICommand
     [CommandOption("no-update", Description = "Do not try to update yt-dlp")]
     public bool NoUpdate { get; init; }
     
-    [CommandOption("series-folder")]
+    [CommandOption("series-folder", Description = "Creates a sub-directory with the series name")]
     public bool CreateSeriesFolder { get; init; } = true;
         
-    [CommandOption("season-folder")]
+    [CommandOption("season-folder", Description = "Creates a sub-directory with the season number")]
     public bool CreateSeasonFolder { get; init; } = true;
-    
-    [CommandOption("cookie", EnvironmentVariable = "COOKIE_FILE_PATH")]
-    public string CookieFilePath { get; init; }
-    
-    [CommandOption("verbose", 'v')]
+
+    [CommandOption("verbose", 'v', Description = "Sets the logging level to verbose (Helps with FFmpeg debug)")]
     public bool Verbose { get; init; }
     
     private EnvironmentService EnvironmentService { get; }
@@ -90,14 +88,14 @@ public class DownloadCommand : ICommand
             return null;
 
         if (range.Any(i => !char.IsDigit(i) && i != '-'))
-            throw new InvalidEpisodeRangeException();
+            throw new InvalidRangeException();
 
         if (range.Contains('-'))
         {
             var episodesNumbers = range.Split('-');
 
             if (episodesNumbers.Length != 2 || episodesNumbers.All(string.IsNullOrEmpty))
-                throw new InvalidEpisodeRangeException();
+                throw new InvalidRangeException();
 
             var numbers = episodesNumbers.Select(int.Parse).Cast<int?>().ToArray();
             
@@ -184,10 +182,7 @@ public class DownloadCommand : ICommand
             o.Username = Username;
             o.Password = Password;
         });
-        serviceCollection.Configure<YoutubeDlpOptions>(o =>
-        {
-            o.CookieFilePath = CookieFilePath;
-        });
+
         await using var serviceProvider = serviceCollection.BuildServiceProvider();
 
         var downloadService = serviceProvider.GetRequiredService<DownloadServiceSolver>();

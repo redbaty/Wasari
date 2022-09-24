@@ -14,14 +14,14 @@ using Wasari.YoutubeDlp;
 
 namespace Wasari.Crunchyroll;
 
-public class CrunchyrollDownloadService : GenericDownloadService
+internal class CrunchyrollDownloadService : GenericDownloadService
 {
     private CrunchyrollApiService CrunchyrollApiService { get; }
     
     private IOptions<DownloadOptions> DownloadOptions { get; }
 
     public CrunchyrollDownloadService(ILogger<CrunchyrollDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, IServiceProvider serviceProvider, CrunchyrollApiService crunchyrollApiService, IOptions<DownloadOptions> downloadOptions) : base(logger, fFmpegService, options,
-        youtubeDlpService, serviceProvider)
+        youtubeDlpService)
     {
         CrunchyrollApiService = crunchyrollApiService;
         DownloadOptions = downloadOptions;

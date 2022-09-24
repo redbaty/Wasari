@@ -3,32 +3,25 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TomLonghurst.EnumerableAsyncProcessor.Builders;
 using Wasari.App.Abstractions;
+using Wasari.App.Extensions;
 using Wasari.FFmpeg;
 using Wasari.YoutubeDlp;
 
 namespace Wasari.App;
 
-public interface IDownloadService
-{
-    Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism);
-}
-
 public class GenericDownloadService : IDownloadService
 {
-    public GenericDownloadService(ILogger<GenericDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, IServiceProvider serviceProvider)
+    public GenericDownloadService(ILogger<GenericDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService)
     {
         Logger = logger;
         FFmpegService = fFmpegService;
         Options = options;
         YoutubeDlpService = youtubeDlpService;
-        ServiceProvider = serviceProvider;
     }
 
     protected ILogger<GenericDownloadService> Logger { get; }
 
     private IOptions<DownloadOptions> Options { get; }
-
-    private IServiceProvider ServiceProvider { get; }
 
     private FFmpegService FFmpegService { get; }
 

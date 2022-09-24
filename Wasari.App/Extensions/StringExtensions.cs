@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Wasari.App;
+namespace Wasari.App.Extensions;
 
 internal static class StringExtensions
 {

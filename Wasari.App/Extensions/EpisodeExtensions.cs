@@ -1,6 +1,7 @@
 using Wasari.App.Abstractions;
+using Range = Wasari.App.Abstractions.Range;
 
-namespace Wasari.App;
+namespace Wasari.App.Extensions;
 
 public static class EpisodeExtensions
 {

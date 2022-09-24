@@ -34,10 +34,7 @@ public class YoutubeDlpService
 
         if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
             yield return $"-p \"{AuthenticationOptions.Value.Password}\"";
-
-        if (!string.IsNullOrEmpty(Options.Value.CookieFilePath))
-            yield return $"--cookies \"{Options.Value.CookieFilePath}\"";
-
+        
         foreach (var url in urls)
         {
             yield return $"\"{url}\"";

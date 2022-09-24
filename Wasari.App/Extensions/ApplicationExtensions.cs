@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wasari.App.Abstractions;
 
-namespace Wasari.App;
+namespace Wasari.App.Extensions;
 
 public static class ApplicationExtensions
 {

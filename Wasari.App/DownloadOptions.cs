@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wasari.App.Abstractions;
+using Range = Wasari.App.Abstractions.Range;
 
 namespace Wasari.App;
-
-public record Range(int? Minimum, int? Maximum);
 
 public record DownloadOptions
 {
