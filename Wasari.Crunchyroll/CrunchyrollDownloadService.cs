@@ -20,7 +20,7 @@ internal class CrunchyrollDownloadService : GenericDownloadService
     
     private IOptions<DownloadOptions> DownloadOptions { get; }
 
-    public CrunchyrollDownloadService(ILogger<CrunchyrollDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, IServiceProvider serviceProvider, CrunchyrollApiService crunchyrollApiService, IOptions<DownloadOptions> downloadOptions) : base(logger, fFmpegService, options,
+    public CrunchyrollDownloadService(ILogger<CrunchyrollDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, CrunchyrollApiService crunchyrollApiService, IOptions<DownloadOptions> downloadOptions) : base(logger, fFmpegService, options,
         youtubeDlpService)
     {
         CrunchyrollApiService = crunchyrollApiService;
