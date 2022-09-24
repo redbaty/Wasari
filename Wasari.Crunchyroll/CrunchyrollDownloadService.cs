@@ -64,13 +64,20 @@ internal class CrunchyrollDownloadService : GenericDownloadService
         return await base.DownloadEpisodes(url, levelOfParallelism);
     }
 
-    private static async IAsyncEnumerable<IWasariEpisodeInput> ProcessEpisode(ApiEpisode i, CrunchyrollApiService crunchyrollApiService)
+    private async IAsyncEnumerable<IWasariEpisodeInput> ProcessEpisode(ApiEpisode episode, CrunchyrollApiService crunchyrollApiService)
     {
-        await i.LoadStreams(crunchyrollApiService);
-        var stream = i.ApiEpisodeStreams.Streams.Single(o => o.Type == "adaptive_hls" && string.IsNullOrEmpty(o.Locale));
+        await episode.LoadStreams(crunchyrollApiService);
+
+        if (episode.ApiEpisodeStreams?.Streams == null || episode.ApiEpisodeStreams.Streams.Length > 0)
+        {
+            Logger.LogWarning("Episode found with no stream options: {@Episode}", episode);
+            yield break;
+        }
+        
+        var stream = episode.ApiEpisodeStreams.Streams.Single(o => o.Type == "adaptive_hls" && string.IsNullOrEmpty(o.Locale));
         var mediaInfo = await FFProbe.AnalyseAsync(new Uri(stream.Url));
         var bestVideo = mediaInfo.VideoStreams.OrderBy(vStream => vStream.Height + vStream.Width).Last();
 
-        yield return new WasariEpisodeInputWithStream(stream.Url, i.Locale, !i.IsDubbed ? InputType.VideoWithAudio : InputType.Audio, mediaInfo.PrimaryAudioStream?.Index, !i.IsDubbed ? bestVideo.Index : null);
+        yield return new WasariEpisodeInputWithStream(stream.Url, episode.Locale, !episode.IsDubbed ? InputType.VideoWithAudio : InputType.Audio, mediaInfo.PrimaryAudioStream?.Index, !episode.IsDubbed ? bestVideo.Index : null);
     }
 }
