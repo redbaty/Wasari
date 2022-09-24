@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TomLonghurst.EnumerableAsyncProcessor.Builders;
 using Wasari.App.Abstractions;
@@ -74,17 +73,17 @@ public class GenericDownloadService : IDownloadService
             return new DownloadedEpisode(filepath, false, episode);
         }
 
-        var episodeProgress = new Progress<double>();
+        var episodeProgress = new Progress<FFmpegProgressUpdate>();
         var lastValue = double.MinValue;
 
         episodeProgress.ProgressChanged += (_, d) =>
         {
-            var delta = d - lastValue;
+            var delta = d.Progress - lastValue;
 
-            if (delta > 0.01 || d >= 1d)
+            if (delta > 0.01 || d.Progress >= 1d)
             {
-                Logger.LogInformation("Encoding update {@Episode} {Path} {Percentage:p}", episodeName, filepath, d);
-                lastValue = d;
+                Logger.LogInformation("Encoding update {@Episode} {Path} {Percentage:p} {Speed}x", episodeName, filepath, d.Progress, d.Speed);
+                lastValue = d.Progress;
             }
         };
 

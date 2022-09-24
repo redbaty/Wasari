@@ -74,7 +74,7 @@ public class FFmpegService
                  }))
         {
             var index = 0;
-        
+
             foreach (var input in inputsGroup)
             {
                 if (!string.IsNullOrEmpty(input.Language))
@@ -82,7 +82,7 @@ public class FFmpegService
                     var cultureInfo = CultureInfo.GetCultureInfo(input.Language);
                     yield return $"-metadata:s:{(input.Type == InputType.Subtitle ? "s" : "a")}:{index} language=\"{cultureInfo.ThreeLetterISOLanguageName}\"";
                 }
-        
+
                 index++;
             }
         }
@@ -122,7 +122,7 @@ public class FFmpegService
         return Path.Combine(Path.GetTempPath(), $"{tempFileName}.mkv");
     }
 
-    public async Task DownloadEpisode<T>(T episode, string filePath, IProgress<double>? progress) where T : IWasariEpisode
+    public async Task DownloadEpisode<T>(T episode, string filePath, IProgress<FFmpegProgressUpdate>? progress) where T : IWasariEpisode
     {
         var tempFileName = GetTemporaryFile();
         var arguments = await BuildArgumentsForEpisode(episode, tempFileName ?? filePath).ToArrayAsync();
@@ -132,54 +132,57 @@ public class FFmpegService
 
         await foreach (var commandEvent in ffmpegCommand.ListenAsync())
         {
-            switch (commandEvent)
-            {
-                case ExitedCommandEvent exitedCommandEvent:
-                {
-                    progress?.Report(1);
-                
-                    if (exitedCommandEvent.ExitCode != 0)
-                    {
-                        throw new CommandExecutionException(ffmpegCommand, exitedCommandEvent.ExitCode, "Failed to run FFmpeg command");
-                    }
-
-                    break;
-                }
-                case StartedCommandEvent startedCommandEvent:
-                    Logger.LogInformation("FFmpeg process started: {@ProcessId}", startedCommandEvent.ProcessId);
-                    break;
-                default:
-                {
-                    var text = commandEvent switch
-                    {
-                        StandardErrorCommandEvent standardErrorCommandEvent => standardErrorCommandEvent.Text,
-                        StandardOutputCommandEvent standardOutputCommandEvent => standardOutputCommandEvent.Text,
-                        _ => null
-                    };
-
-                    if (text != null
-                        && text.GetValueFromRegex<double>(@"speed=(\d+.\d+)x", out var speed)
-                        && text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time)
-                        && time != null
-                        && progress != null
-                        && episode.Duration.HasValue)
-                    {
-                        var timespan = TimeSpan.Parse(time);
-                        var delta = timespan.TotalSeconds / episode.Duration.Value.TotalSeconds;
-                        progress.Report(delta);
-                    }
-
-                    Logger.LogTrace("[FFMpeg] {@Text}", text);
-                    break;
-                }
-            }
+            ProcessEvent(episode, progress, commandEvent, ffmpegCommand);
         }
 
         if (tempFileName != null)
         {
             File.Move(tempFileName, filePath);
         }
+    }
 
-        
+    private void ProcessEvent<T>(T episode, IProgress<FFmpegProgressUpdate>? progress, CommandEvent commandEvent, ICommandConfiguration ffmpegCommand) where T : IWasariEpisode
+    {
+        switch (commandEvent)
+        {
+            case ExitedCommandEvent exitedCommandEvent:
+            {
+                progress?.Report(new FFmpegProgressUpdate(1, 1));
+
+                if (exitedCommandEvent.ExitCode != 0)
+                {
+                    throw new CommandExecutionException(ffmpegCommand, exitedCommandEvent.ExitCode, "Failed to run FFmpeg command");
+                }
+
+                break;
+            }
+            case StartedCommandEvent startedCommandEvent:
+                Logger.LogInformation("FFmpeg process started: {@ProcessId}", startedCommandEvent.ProcessId);
+                break;
+            default:
+            {
+                var text = commandEvent switch
+                {
+                    StandardErrorCommandEvent standardErrorCommandEvent => standardErrorCommandEvent.Text,
+                    StandardOutputCommandEvent standardOutputCommandEvent => standardOutputCommandEvent.Text,
+                    _ => null
+                };
+
+                if (progress != null
+                    && episode.Duration.HasValue
+                    && text != null
+                    && text.GetValueFromRegex<double>(@"speed=(\d+.\d+)x", out var speed)
+                    && text.GetValueFromRegex<string>(@"time=(\d+:\d+:\d+.\d+)", out var time)
+                    && time != null
+                   )
+                {
+                    var timespan = TimeSpan.Parse(time);
+                    progress.Report(new FFmpegProgressUpdate(speed, timespan.TotalSeconds / episode.Duration.Value.TotalSeconds));
+                }
+
+                Logger.LogTrace("[FFMpeg] {@Text}", text);
+                break;
+            }
+        }
     }
 }
