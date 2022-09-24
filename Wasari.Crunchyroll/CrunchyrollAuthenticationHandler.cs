@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasari.App.Abstractions;
 
@@ -11,16 +13,19 @@ namespace Wasari.Crunchyroll;
 
 internal class CrunchyrollAuthenticationHandler : DelegatingHandler
 {
-    public CrunchyrollAuthenticationHandler(IOptions<CrunchyrollAuthenticationOptions> options, HttpClient authHttpClient, IOptions<AuthenticationOptions> authenticationOptions)
+    public CrunchyrollAuthenticationHandler(IOptions<CrunchyrollAuthenticationOptions> options, HttpClient authHttpClient, IOptions<AuthenticationOptions> authenticationOptions, ILogger<CrunchyrollAuthenticationHandler> logger)
     {
         Options = options;
         AuthHttpClient = authHttpClient;
         AuthenticationOptions = authenticationOptions;
+        Logger = logger;
     }
 
     private IOptions<CrunchyrollAuthenticationOptions> Options { get; }
         
     private IOptions<AuthenticationOptions> AuthenticationOptions { get; }
+    
+    private ILogger<CrunchyrollAuthenticationHandler> Logger { get; }
 
     private HttpClient AuthHttpClient { get; }
 
@@ -34,7 +39,7 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
         var jsonDocument = await JsonDocument.ParseAsync(responseStream);
         return jsonDocument.RootElement.GetProperty("access_token").GetString();
     }
-
+    
     private async Task<string> CreateAccessToken(string username, string password)
     {
         using var formUrlEncodedContent = new FormUrlEncodedContent(new[]
@@ -57,13 +62,20 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
     {
         if (string.IsNullOrEmpty(Options.Value.Token))
         {
-            if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Username) && !string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
+            if (Environment.GetEnvironmentVariable("WASARI_AUTH_TOKEN") is { } envToken && !string.IsNullOrEmpty(envToken))
+            {
+                Options.Value.Token = envToken;
+                Logger.LogInformation("Authenticated to crunchyroll using environment token");
+            }
+            else if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Username) && !string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
             {
                 Options.Value.Token = await CreateAccessToken(AuthenticationOptions.Value.Username, AuthenticationOptions.Value.Password);
+                Logger.LogInformation("Authenticated to crunchyroll using username/password");
             }
             else
             {
                 Options.Value.Token = await CreateAccessToken();
+                Logger.LogWarning("Authenticated to crunchyroll using no authentication, this might lead to incomplete results");
             }
         }
 
