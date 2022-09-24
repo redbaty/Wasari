@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -60,14 +61,25 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(Options.Value.Token))
+        if (string.IsNullOrEmpty(Options.Value.Token) && Environment.GetEnvironmentVariable("WASARI_AUTH_TOKEN") is { } envToken && !string.IsNullOrEmpty(envToken))
         {
-            if (Environment.GetEnvironmentVariable("WASARI_AUTH_TOKEN") is { } envToken && !string.IsNullOrEmpty(envToken))
+            var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
+            var jwtSecurityToken = jwtSecurityTokenHandler.ReadJwtToken(envToken);
+
+            if (jwtSecurityToken.ValidTo.ToLocalTime() < DateTime.Now)
+            {
+                Logger.LogWarning("Skipping 'WASARI_AUTH_TOKEN' since it has expired");
+            }
+            else
             {
                 Options.Value.Token = envToken;
                 Logger.LogInformation("Authenticated to crunchyroll using environment token");
             }
-            else if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Username) && !string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
+        }
+        
+        if (string.IsNullOrEmpty(Options.Value.Token))
+        {
+            if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Username) && !string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
             {
                 Options.Value.Token = await CreateAccessToken(AuthenticationOptions.Value.Username, AuthenticationOptions.Value.Password);
                 Logger.LogInformation("Authenticated to crunchyroll using username/password");
