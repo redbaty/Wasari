@@ -68,7 +68,7 @@ internal class CrunchyrollDownloadService : GenericDownloadService
     {
         await episode.LoadStreams(crunchyrollApiService);
 
-        if (episode.ApiEpisodeStreams?.Streams == null || episode.ApiEpisodeStreams.Streams.Length > 0)
+        if (episode.ApiEpisodeStreams?.Streams == null || episode.ApiEpisodeStreams.Streams.Length <= 0)
         {
             Logger.LogWarning("Episode found with no stream options: {@Episode}", episode);
             yield break;
