@@ -18,6 +18,7 @@ COPY ["Wasari.App.Abstractions/Wasari.App.Abstractions.csproj", "Wasari.App.Abst
 COPY ["Wasari.FFmpeg/Wasari.FFmpeg.csproj", "Wasari.FFmpeg/"]
 COPY ["Wasari.YoutubeDlp/Wasari.YoutubeDlp.csproj", "Wasari.YoutubeDlp/"]
 COPY ["Wasari.Environment/Wasari.Environment.csproj", "Wasari.Environment/"]
+COPY ["Wasari.Crunchyroll/Wasari.Crunchyroll.csproj", "Wasari.Crunchyroll/"]
 RUN dotnet restore "Wasari.Cli/Wasari.Cli.csproj"
 COPY . .
 WORKDIR "/src/Wasari.Cli"
