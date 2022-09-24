@@ -8,9 +8,14 @@ using Wasari.YoutubeDlp;
 
 namespace Wasari.App;
 
-public class DownloadService
+public interface IDownloadService
 {
-    public DownloadService(ILogger<DownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, IServiceProvider serviceProvider)
+    Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism);
+}
+
+public class GenericDownloadService : IDownloadService
+{
+    public GenericDownloadService(ILogger<GenericDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, IServiceProvider serviceProvider)
     {
         Logger = logger;
         FFmpegService = fFmpegService;
@@ -19,7 +24,7 @@ public class DownloadService
         ServiceProvider = serviceProvider;
     }
 
-    private ILogger<DownloadService> Logger { get; }
+    protected ILogger<GenericDownloadService> Logger { get; }
 
     private IOptions<DownloadOptions> Options { get; }
 
@@ -29,20 +34,13 @@ public class DownloadService
 
     private YoutubeDlpService YoutubeDlpService { get; }
 
-    public Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism) => DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
+    public virtual Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism) => DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
         .OrderBy(i => i.SeasonNumber)
         .ThenBy(i => i.Number), levelOfParallelism);
 
-    private async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<YoutubeDlEpisode> episodes, int levelOfParallelism)
+    protected async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<WasariEpisode> episodes, int levelOfParallelism)
     {
-        var episodesArray = await episodes.GroupBy(i => i.ExtractorKey)
-            .SelectMany(i =>
-            {
-                if (!Options.Value.Modifiers.TryGetValue(i.Key, out var modifierType)) return i;
-
-                var modifierService = (IDownloadModifier)ServiceProvider.GetRequiredService(modifierType);
-                return modifierService.Modify(i);
-            })
+        var episodesArray = await episodes
             .FilterEpisodes(Options.Value.EpisodesRange, Options.Value.SeasonsRange)
             .ToArrayAsync();
         
@@ -53,20 +51,8 @@ public class DownloadService
             .ProcessInParallel(levelOfParallelism);
     }
 
-    private async Task<DownloadedEpisode> DownloadEpisode(YoutubeDlEpisode episode)
+    private async Task<DownloadedEpisode> DownloadEpisode(WasariEpisode episode)
     {
-        var subtitleInputs = Options.Value.IncludeSubs
-            ? episode.Subtitles
-                .SelectMany(i => i.Value
-                    .Select(o => new WasariEpisodeInput(o.Url, i.Key, InputType.Subtitle)))
-            : ArraySegment<WasariEpisodeInput>.Empty;
-
-        var inputs = episode.RequestedDownloads
-            .Select(i => new WasariEpisodeInput(i.Url, i.Language, string.IsNullOrEmpty(i.Vcodec) ? InputType.Audio : InputType.Video))
-            .Concat(subtitleInputs)
-            .Cast<IWasariEpisodeInput>()
-            .ToArray();
-
         var outputDirectory = Options.Value.OutputDirectory ?? Environment.CurrentDirectory;
 
         if (Options.Value.CreateSeriesFolder)
@@ -88,12 +74,11 @@ public class DownloadService
         var episodeName = $"S{episode.SeasonNumber:00}E{episode.Number:00}";
         var fileName = $"{episodeName} - {episode.Title}.mkv".AsSafePath();
         var filepath = Path.Combine(outputDirectory, fileName);
-        var wasariEpisode = new WasariEpisode(episode.Title, episode.SeasonNumber, episode.AbsoluteNumber, inputs, TimeSpan.FromSeconds(episode.Duration));
 
         if (Options.Value.SkipExistingFiles && File.Exists(filepath))
         {
             Logger.LogWarning("Skipping episode since it already exists: {Path}", filepath);
-            return new DownloadedEpisode(filepath, false, wasariEpisode);
+            return new DownloadedEpisode(filepath, false, episode);
         }
 
         var episodeProgress = new Progress<double>();
@@ -111,7 +96,7 @@ public class DownloadService
         };
 
 
-        await FFmpegService.DownloadEpisode(wasariEpisode, filepath, episodeProgress);
-        return new DownloadedEpisode(filepath, true, wasariEpisode);
+        await FFmpegService.DownloadEpisode(episode, filepath, episodeProgress);
+        return new DownloadedEpisode(filepath, true, episode);
     }
 }

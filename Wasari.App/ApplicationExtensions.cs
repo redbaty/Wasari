@@ -4,14 +4,20 @@ namespace Wasari.App;
 
 public static class ApplicationExtensions
 {
-    public static IServiceCollection AddDownloadModifier<T>(this IServiceCollection serviceCollection, string extractorKey) where T : class, IDownloadModifier
+    public static IServiceCollection AddHostDownloader<T>(this IServiceCollection serviceCollection, string host) where T : class, IDownloadService
     {
-        serviceCollection.Configure<DownloadOptions>(o =>
+        serviceCollection.Configure<DownloadOptions>(c =>
         {
-            o.Modifiers.Add(extractorKey, typeof(T));
+            c.AddHostDownloader<T>(host);
         });
         serviceCollection.AddScoped<T>();
-        
+        return serviceCollection;
+    }
+
+    public static IServiceCollection AddDownloadServices(this IServiceCollection serviceCollection)
+    {
+        serviceCollection.AddScoped<GenericDownloadService>();
+        serviceCollection.AddScoped<DownloadServiceSolver>();
         return serviceCollection;
     }
 }

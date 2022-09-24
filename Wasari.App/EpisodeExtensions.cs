@@ -1,8 +1,8 @@
-using Wasari.YoutubeDlp;
+using Wasari.App.Abstractions;
 
 namespace Wasari.App;
 
-public static class YoutubeDlEpisodeExtensions
+public static class EpisodeExtensions
 {
     private static bool FilterEpisodes(Range? range, int number)
     {
@@ -23,6 +23,6 @@ public static class YoutubeDlEpisodeExtensions
         return flag;
     }
 
-    public static IAsyncEnumerable<YoutubeDlEpisode> FilterEpisodes(this IAsyncEnumerable<YoutubeDlEpisode> episodes, Range? episodesRange, Range? seasonsRange) =>
+    public static IAsyncEnumerable<WasariEpisode> FilterEpisodes(this IAsyncEnumerable<WasariEpisode> episodes, Range? episodesRange, Range? seasonsRange) =>
         episodes.Where(episode => FilterEpisodes(episodesRange, episode.Number) && FilterEpisodes(seasonsRange, episode.SeasonNumber));
 }

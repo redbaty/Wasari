@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.FFmpeg", "Wasari.FFm
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Environment", "Wasari.Environment\Wasari.Environment.csproj", "{37811EA7-976E-4F5D-BCD3-7FE79C928C50}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasari.Crunchyroll", "Wasari.Crunchyroll\Wasari.Crunchyroll.csproj", "{58D52AD7-CB6F-4975-9BBD-711C5DBD7CD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{37811EA7-976E-4F5D-BCD3-7FE79C928C50}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37811EA7-976E-4F5D-BCD3-7FE79C928C50}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37811EA7-976E-4F5D-BCD3-7FE79C928C50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58D52AD7-CB6F-4975-9BBD-711C5DBD7CD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58D52AD7-CB6F-4975-9BBD-711C5DBD7CD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58D52AD7-CB6F-4975-9BBD-711C5DBD7CD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58D52AD7-CB6F-4975-9BBD-711C5DBD7CD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

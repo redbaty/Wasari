@@ -4,5 +4,5 @@ public interface IWasariEpisode : IWasariBasicInfo
 {
     TimeSpan? Duration { get; }
     
-    ICollection<IWasariEpisodeInput> Inputs { get; }
+    Func<IServiceProvider, Task<ICollection<IWasariEpisodeInput>>> InputsFactory { get; }
 }

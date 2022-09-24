@@ -7,6 +7,8 @@ using CliWrap;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wasari.App;
+using Wasari.App.Abstractions;
+using Wasari.Crunchyroll;
 using Wasari.FFmpeg;
 using Wasari.YoutubeDlp;
 using WasariEnvironment;
@@ -149,8 +151,9 @@ public class DownloadCommand : ICommand
         var serviceCollection = await new ServiceCollection().AddRootServices();
         serviceCollection.AddFfmpegServices();
         serviceCollection.AddYoutubeDlpServices();
-        serviceCollection.AddDownloadModifier<CrunchyrollBetaDownloadModifier>("CrunchyrollBeta");
-        serviceCollection.AddScoped<DownloadService>();
+        serviceCollection.AddDownloadServices();
+        serviceCollection.AddCrunchyrollServices();
+        serviceCollection.AddMemoryCache();
         serviceCollection.Configure<DownloadOptions>(o =>
         {
             o.OutputDirectory = OutputDirectory;
@@ -168,15 +171,18 @@ public class DownloadCommand : ICommand
             o.UseNvidiaAcceleration = UseNvenc;
             o.UseTemporaryEncodingPath = UseTemporaryEncodingPath;
         });
-        serviceCollection.Configure<YoutubeDlpOptions>(o =>
+        serviceCollection.Configure<AuthenticationOptions>(o =>
         {
             o.Username = Username;
             o.Password = Password;
+        });
+        serviceCollection.Configure<YoutubeDlpOptions>(o =>
+        {
             o.CookieFilePath = CookieFilePath;
         });
         await using var serviceProvider = serviceCollection.BuildServiceProvider();
 
-        var downloadService = serviceProvider.GetRequiredService<DownloadService>();
+        var downloadService = serviceProvider.GetRequiredService<DownloadServiceSolver>();
         await downloadService.DownloadEpisodes(Url.ToString(), LevelOfParallelism);
     }
 }
