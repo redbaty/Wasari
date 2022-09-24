@@ -71,7 +71,7 @@ namespace Wasari.Crunchyroll
 
         public string Locale => string.IsNullOrEmpty(AudioLocale) ? ApiEpisodeStreams?.AudioLocale : AudioLocale;
         
-        public ApiEpisodeStreams ApiEpisodeStreams { get; set; }
+        public ApiEpisodeStreams ApiEpisodeStreams { get; private set; }
 
         public async Task LoadStreams(CrunchyrollApiService crunchyrollApiService)
         {
