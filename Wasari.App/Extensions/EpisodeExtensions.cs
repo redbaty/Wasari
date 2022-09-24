@@ -1,11 +1,10 @@
 using Wasari.App.Abstractions;
-using Range = Wasari.App.Abstractions.Range;
 
 namespace Wasari.App.Extensions;
 
 public static class EpisodeExtensions
 {
-    private static bool FilterEpisodes(Range? range, int number)
+    private static bool FilterEpisodes(Ranges? range, int number)
     {
         if (range == null) return true;
         
@@ -24,6 +23,6 @@ public static class EpisodeExtensions
         return flag;
     }
 
-    public static IAsyncEnumerable<WasariEpisode> FilterEpisodes(this IAsyncEnumerable<WasariEpisode> episodes, Range? episodesRange, Range? seasonsRange) =>
+    public static IAsyncEnumerable<WasariEpisode> FilterEpisodes(this IAsyncEnumerable<WasariEpisode> episodes, Ranges? episodesRange, Ranges? seasonsRange) =>
         episodes.Where(episode => FilterEpisodes(episodesRange, episode.Number) && FilterEpisodes(seasonsRange, episode.SeasonNumber));
 }

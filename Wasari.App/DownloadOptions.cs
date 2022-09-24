@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wasari.App.Abstractions;
-using Range = Wasari.App.Abstractions.Range;
 
 namespace Wasari.App;
 
@@ -14,12 +13,10 @@ public record DownloadOptions
     
     public bool SkipExistingFiles { get; set; }
     
-    public Range? EpisodesRange { get; set; }
+    public Ranges? EpisodesRange { get; set; }
     
-    public Range? SeasonsRange { get; set; }
+    public Ranges? SeasonsRange { get; set; }
 
-    internal Dictionary<string, Type> Modifiers { get; } = new();
-    
     public bool CreateSeriesFolder { get; set; }
     
     public bool CreateSeasonFolder { get; set; }

@@ -13,7 +13,6 @@ using Wasari.Crunchyroll;
 using Wasari.FFmpeg;
 using Wasari.YoutubeDlp;
 using WasariEnvironment;
-using Range = Wasari.App.Abstractions.Range;
 
 namespace Wasari.Cli.Commands;
 
@@ -82,7 +81,7 @@ public class DownloadCommand : ICommand
     
     private ILogger<DownloadCommand> Logger { get; }
 
-    private static Range? ParseRange(string? range)
+    private static Ranges? ParseRange(string? range)
     {
         if (string.IsNullOrEmpty(range))
             return null;
@@ -100,16 +99,16 @@ public class DownloadCommand : ICommand
             var numbers = episodesNumbers.Select(int.Parse).Cast<int?>().ToArray();
             
             if (episodesNumbers.All(i => !string.IsNullOrEmpty(i)))
-                return new Range(numbers.ElementAtOrDefault(0), numbers.ElementAtOrDefault(1));
+                return new Ranges(numbers.ElementAtOrDefault(0), numbers.ElementAtOrDefault(1));
 
             if (string.IsNullOrEmpty(episodesNumbers[0]))
-                return new Range(null, numbers.ElementAtOrDefault(1));
+                return new Ranges(null, numbers.ElementAtOrDefault(1));
 
             if (string.IsNullOrEmpty(episodesNumbers[1]))
-                return new Range(numbers.ElementAtOrDefault(0), null);
+                return new Ranges(numbers.ElementAtOrDefault(0), null);
         }
 
-        if (int.TryParse(range, out var episode)) return new Range(episode, episode);
+        if (int.TryParse(range, out var episode)) return new Ranges(episode, episode);
 
         throw new InvalidOperationException($"Invalid episode range. {range}");
     }
