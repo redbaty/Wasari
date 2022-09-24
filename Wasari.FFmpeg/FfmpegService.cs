@@ -32,6 +32,12 @@ public class FFmpegService
     {
         await using var providerScope = Provider.CreateAsyncScope();
         var inputs = await episode.InputsFactory(providerScope.ServiceProvider);
+
+        if (inputs.Count == 0)
+        {
+            throw new EmptyFFmpegInputsException(episode);
+        }
+        
         var inputsOrdered = inputs.OrderBy(i => i.Type).ToArray();
         foreach (var input in inputsOrdered)
         {
