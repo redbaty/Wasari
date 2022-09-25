@@ -1,8 +1,11 @@
-using CliFx;
+﻿using CliFx;
 using Figgle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Wasari.Anime4k;
 using Wasari.Cli.Commands;
+using Wasari.Cli.Converters;
+using Wasari.FFmpeg;
 using WasariEnvironment;
 
 namespace Wasari.Cli;
@@ -18,6 +21,7 @@ internal static class Program
         serviceCollection.AddScoped<DownloadCommand>();
         serviceCollection.AddSingleton<ShaderConverter>();
         serviceCollection.AddSingleton<ResolutionConverter>();
+        serviceCollection.AddAnime4KShader();
         serviceCollection.Configure<FFmpegResolutionPresets>(c =>
         {
             c.Presets.Add("4k", FFmpegResolution.FourK);
