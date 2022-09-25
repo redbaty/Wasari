@@ -25,9 +25,9 @@ public class EnvironmentService
 
     public EnvironmentFeature? GetFeature(EnvironmentFeatureType type) =>
         Options.Value.Features?.SingleOrDefault(i => i.Type == type);
-    
+
     public EnvironmentFeature GetFeatureOrThrow(EnvironmentFeatureType type) =>
-        GetFeature(type) ?? throw new MissingEnvironmentFeatureException(new []{type});
+        GetFeature(type) ?? throw new MissingEnvironmentFeatureException(new[] { type });
 
     public IEnumerable<EnvironmentFeatureType> GetMissingFeatures(params EnvironmentFeatureType[] features)
     {
@@ -43,7 +43,9 @@ public class EnvironmentService
     }
 
     public bool IsFeatureMissing(EnvironmentFeatureType featureType) => GetMissingFeatures(featureType).Any();
-    
+
+    public bool IsFeatureAvailable(params EnvironmentFeatureType[] features) => features.Any() && features.All(o => !GetMissingFeatures(o).Any());
+
     public bool IsFeatureAvailable(EnvironmentFeatureType featureType) => !GetMissingFeatures(featureType).Any();
 
     public void ThrowIfFeatureNotAvailable(params EnvironmentFeatureType[] features)

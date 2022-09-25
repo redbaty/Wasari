@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.App.Extensions;
+using Wasari.Cli.Converters;
 using Wasari.Crunchyroll;
 using Wasari.FFmpeg;
 using Wasari.YoutubeDlp;
@@ -36,19 +37,19 @@ public class DownloadCommand : ICommand
 
     [CommandOption("password", 'p', Description = "Password", EnvironmentVariable = "WASARI_PASSWORD")]
     public string? Password { get; init; }
-    
+
     [CommandOption("hevc", Description = "Encode final video file in H265/HEVC")]
     public bool UseHevc { get; init; } = true;
-    
+
     [CommandOption("nvenc", Description = "Use NVENC encoding for FFmpeg encoding (Nvidia only)")]
     public bool UseNvenc { get; init; } = true;
-    
+
     [CommandOption("dubs", Description = "Include all available dubs for each episode")]
     public bool IncludeDubs { get; init; } = false;
-    
+
     [CommandOption("sub", Description = "Include all available subs for each episode")]
     public bool IncludeSubs { get; init; } = true;
-    
+
     [CommandOption("skip", Description = "Skip files that already exists")]
     public bool SkipExistingFiles { get; init; } = true;
 
@@ -58,27 +59,33 @@ public class DownloadCommand : ICommand
     [CommandOption("level-parallelism", 'l', Description = "Defines how many downloads are going to run in parallel")]
     [Range(1, 10)]
     public int LevelOfParallelism { get; init; } = 2;
-    
+
     [CommandOption("episodes", 'e', Description = "Episodes range (eg. 1-5 would be episode 1 to 5)")]
     public string? EpisodeRange { get; init; }
 
     [CommandOption("seasons", 's', Description = "Seasons range (eg. 1-3 would be seasons 1 to 5)")]
     public string? SeasonsRange { get; init; }
-    
+
     [CommandOption("no-update", Description = "Do not try to update yt-dlp")]
     public bool NoUpdate { get; init; }
-    
+
     [CommandOption("series-folder", Description = "Creates a sub-directory with the series name")]
     public bool CreateSeriesFolder { get; init; } = true;
-        
+
     [CommandOption("season-folder", Description = "Creates a sub-directory with the season number")]
     public bool CreateSeasonFolder { get; init; } = true;
 
     [CommandOption("verbose", 'v', Description = "Sets the logging level to verbose (Helps with FFmpeg debug)")]
     public bool Verbose { get; init; }
     
-    private EnvironmentService EnvironmentService { get; }
+    [CommandOption("shader", Converter = typeof(ShaderConverter))]
+    public IFFmpegShader[]? Shaders { get; init; }
     
+    [CommandOption("resolution", 'r', Converter = typeof(ResolutionConverter))]
+    public FFmpegResolution Resolution { get; init; }
+
+    private EnvironmentService EnvironmentService { get; }
+
     private ILogger<DownloadCommand> Logger { get; }
 
     private static Ranges? ParseRange(string? range)
@@ -97,7 +104,7 @@ public class DownloadCommand : ICommand
                 throw new InvalidRangeException();
 
             var numbers = episodesNumbers.Select(int.Parse).Cast<int?>().ToArray();
-            
+
             if (episodesNumbers.All(i => !string.IsNullOrEmpty(i)))
                 return new Ranges(numbers.ElementAtOrDefault(0), numbers.ElementAtOrDefault(1));
 
@@ -145,14 +152,14 @@ public class DownloadCommand : ICommand
             else
                 Logger.LogError("Failed to update YT-DLP");
         }
-        
+
         Logger.LogInformation("Output directory is {@OutputDirectory}", OutputDirectory);
 
         if (Verbose)
         {
             Environment.SetEnvironmentVariable("LOG_LEVEL", "0");
         }
-        
+
         var serviceCollection = await new ServiceCollection().AddRootServices();
         serviceCollection.AddFfmpegServices();
         serviceCollection.AddYoutubeDlpServices();
@@ -175,6 +182,8 @@ public class DownloadCommand : ICommand
             o.UseHevc = UseHevc;
             o.UseNvidiaAcceleration = UseNvenc;
             o.UseTemporaryEncodingPath = UseTemporaryEncodingPath;
+            o.Shaders = Shaders;
+            o.Resolution = Resolution;
         });
         serviceCollection.Configure<AuthenticationOptions>(o =>
         {

@@ -1,7 +1,9 @@
 using System.Globalization;
+using System.Text;
 using CliWrap;
 using CliWrap.EventStream;
 using CliWrap.Exceptions;
+using FFMpegCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -28,6 +30,29 @@ public class FFmpegService
 
     private IServiceProvider Provider { get; }
 
+    private static FileInfo CompileShaders(IEnumerable<IFFmpegShader> shaders)
+    {
+        var newFilePath = Path.GetTempFileName();
+        using var fs = File.OpenWrite(newFilePath);
+        using var streamWriter = new StreamWriter(fs);
+
+        foreach (var shader in shaders)
+        {
+            using var shaderStream = shader.GetShaderStream();
+            using var shaderStreamReader = new StreamReader(shaderStream);
+
+            while (shaderStreamReader.ReadLine() is { } line)
+            {
+                streamWriter.WriteLine(line);
+            }
+        }
+
+        streamWriter.Flush();
+        streamWriter.Close();
+
+        return new FileInfo(newFilePath);
+    }
+
     private async IAsyncEnumerable<string> BuildArgumentsForEpisode(IWasariEpisode episode, string filePath)
     {
         await using var providerScope = Provider.CreateAsyncScope();
@@ -37,7 +62,22 @@ public class FFmpegService
         {
             throw new EmptyFFmpegInputsException(episode);
         }
-        
+
+
+        var resolution = Options.Value.Resolution ?? inputs.Where(i => i.Type is InputType.Video or InputType.VideoWithAudio)
+            .Select(i =>
+            {
+                var mediaAnalysis = FFProbe.Analyse(new Uri(i.Url));
+
+                var videoStream = i is IWasariEpisodeInputStreamSelector streamSelector && streamSelector.VideoIndex.HasValue ? mediaAnalysis.VideoStreams.Single(o => o.Index == streamSelector.VideoIndex.Value) : mediaAnalysis.PrimaryVideoStream;
+                return videoStream == null ? null : new FFmpegResolution(videoStream.Width, videoStream.Height);
+            }).Single(i => i != null);
+
+        if (Options.Value.Shaders != null)
+        {
+            yield return "-init_hw_device vulkan";
+        }
+
         var inputsOrdered = inputs.OrderBy(i => i.Type).ToArray();
         foreach (var input in inputsOrdered)
         {
@@ -85,12 +125,40 @@ public class FFmpegService
             {
                 if (!string.IsNullOrEmpty(input.Language))
                 {
-                    var cultureInfo = CultureInfo.GetCultureInfo(input.Language);
+                    var localLanguage = input.Language;
+
+                    if (input.Language.Length == 4 && !input.Language.Contains('-'))
+                    {
+                        localLanguage = $"{input.Language[..2]}-{input.Language[2..]}";
+                    }
+
+                    var cultureInfo = CultureInfo.GetCultureInfo(localLanguage);
                     yield return $"-metadata:s:{(input.Type == InputType.Subtitle ? "s" : "a")}:{index} language=\"{cultureInfo.ThreeLetterISOLanguageName}\"";
                 }
 
                 index++;
             }
+        }
+
+        if (Options.Value.Shaders is { Length: > 0 })
+        {
+            var shaderFile = CompileShaders(Options.Value.Shaders);
+            var shaderPath = shaderFile.FullName;
+            var sb = new StringBuilder("-filter_complex \"hwupload,libplacebo=");
+
+            if (resolution != null)
+            {
+                sb.Append($"w={resolution.Width}:h={resolution.Height}:");
+            }
+
+            if (OperatingSystem.IsWindows())
+            {
+                shaderPath = shaderPath.Replace(@"\", @"\\\").Replace(":", @"\:");
+            }
+
+            sb.Append($"custom_shader_path='{shaderPath}',hwdownload,format=yuv420p\"");
+
+            yield return sb.ToString();
         }
 
         if (Options.Value.UseHevc)

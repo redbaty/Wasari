@@ -2,7 +2,7 @@
 
 namespace Wasari.FFmpeg;
 
-public static class FfmpegServiceExtensions
+public static class FFmpegServiceExtensions
 {
     public static void AddFfmpegServices(this IServiceCollection serviceCollection)
     {

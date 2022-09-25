@@ -1,4 +1,4 @@
-﻿using CliFx;
+using CliFx;
 using Figgle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -16,6 +16,12 @@ internal static class Program
         var serviceCollection = await new ServiceCollection()
             .AddRootServices();
         serviceCollection.AddScoped<DownloadCommand>();
+        serviceCollection.AddSingleton<ShaderConverter>();
+        serviceCollection.AddSingleton<ResolutionConverter>();
+        serviceCollection.Configure<FFmpegResolutionPresets>(c =>
+        {
+            c.Presets.Add("4k", FFmpegResolution.FourK);
+        });
         var serviceProvider = serviceCollection.BuildServiceProvider();
 
         var environmentOptions = serviceProvider.GetService<IOptions<EnvironmentOptions>>();
