@@ -3,7 +3,7 @@ name: docker
 on:
   push:
     branches:
-      - 'main'
+      - 'next'
 
 jobs:
   docker:
@@ -27,5 +27,5 @@ jobs:
         with:
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: redbaty/wasari:latest,redbaty/wasari:b-${{ github.run_number }}
-          file: Wasari/Dockerfile
+          tags: redbaty/wasari:next,redbaty/wasari:next-b-${{ github.run_number }}
+          file: Wasari.Cli/Dockerfile
