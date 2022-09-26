@@ -144,7 +144,7 @@ public class FFmpegService
         {
             var shaderFile = CompileShaders(Options.Value.Shaders);
             var shaderPath = shaderFile.FullName;
-            var sb = new StringBuilder("-filter_complex \"hwupload,libplacebo=");
+            var sb = new StringBuilder("-filter_complex \"format=yuv420p,hwupload,libplacebo=");
 
             if (resolution != null)
             {
