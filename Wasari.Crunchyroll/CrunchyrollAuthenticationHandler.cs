@@ -15,7 +15,7 @@ namespace Wasari.Crunchyroll;
 
 internal class CrunchyrollAuthenticationHandler : DelegatingHandler
 {
-    private const string WasariAuthToken = "WASARI_AUTH_TOKEN";
+    private static readonly JwtSecurityTokenHandler JwtSecurityTokenHandler = new();
 
     public CrunchyrollAuthenticationHandler(IOptions<CrunchyrollAuthenticationOptions> options, HttpClient authHttpClient, IOptions<AuthenticationOptions> authenticationOptions, ILogger<CrunchyrollAuthenticationHandler> logger)
     {
@@ -64,23 +64,26 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(Options.Value.Token) && Environment.GetEnvironmentVariable(WasariAuthToken) is { } envToken && !string.IsNullOrEmpty(envToken))
+        if (!string.IsNullOrEmpty(Options.Value.Token))
         {
-            var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-            var jwtSecurityToken = jwtSecurityTokenHandler.ReadJwtToken(envToken);
+            try
+            {
+                var jwtSecurityToken = JwtSecurityTokenHandler.ReadJwtToken(Options.Value.Token);
+                var localTime = jwtSecurityToken.ValidTo.ToLocalTime();
 
-            if (jwtSecurityToken.ValidTo.ToLocalTime() < DateTime.Now)
-            {
-                Logger.LogWarning("Skipping 'WASARI_AUTH_TOKEN' since it has expired");
+                if (localTime < DateTime.Now)
+                {
+                    Logger.LogWarning("Skipping 'WASARI_AUTH_TOKEN' since it has expired");
+                }
             }
-            else
+            catch (Exception e)
             {
-                Options.Value.Token = envToken;
-                Logger.LogInformation("Authenticated to crunchyroll using environment token");
+                Logger.LogError(e, "Failed parsing crunchyroll token, resetting");
+                Options.Value.Token = null;
             }
         }
-
-        if (string.IsNullOrEmpty(Options.Value.Token))
+        
+        if(string.IsNullOrEmpty(Options.Value.Token))
         {
             if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Username) && !string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
             {
@@ -100,7 +103,6 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             Options.Value.Token = null;
-            Environment.SetEnvironmentVariable(WasariAuthToken, null);
         }
 
         return response;

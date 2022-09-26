@@ -31,6 +31,10 @@ namespace Wasari.Crunchyroll
             serviceCollection.AddHttpClient<CrunchyrollApiService>(c => c.BaseAddress = crunchyBaseAddres)
                 .AddHttpMessageHandler<CrunchyrollAuthenticationHandler>()
                 .AddPolicyHandler(GetRetryPolicy());
+            serviceCollection.Configure<CrunchyrollAuthenticationOptions>(c =>
+            {
+                c.Token = Environment.GetEnvironmentVariable("WASARI_AUTH_TOKEN");
+            });
             serviceCollection.AddHostDownloader<CrunchyrollDownloadService>("beta.crunchyroll.com");
         }
     }
