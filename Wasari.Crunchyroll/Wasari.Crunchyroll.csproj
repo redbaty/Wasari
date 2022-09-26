@@ -5,18 +5,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FFMpegCore" Version="4.8.0"/>
-        <PackageReference Include="Flurl" Version="3.0.6"/>
-        <PackageReference Include="JsonExtensions" Version="1.2.0"/>
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0"/>
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.23.1"/>
-        <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
-        <PackageReference Include="System.Text.Json" Version="6.0.6"/>
+        <PackageReference Include="FFMpegCore" Version="4.8.0" />
+        <PackageReference Include="Flurl" Version="3.0.6" />
+        <PackageReference Include="JsonExtensions" Version="1.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="6.0.9" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.23.1" />
+        <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+        <PackageReference Include="System.Text.Json" Version="6.0.6" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Wasari.App\Wasari.App.csproj"/>
+        <ProjectReference Include="..\Wasari.App\Wasari.App.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -14,6 +15,8 @@ namespace Wasari.Crunchyroll;
 
 internal class CrunchyrollAuthenticationHandler : DelegatingHandler
 {
+    private const string WasariAuthToken = "WASARI_AUTH_TOKEN";
+
     public CrunchyrollAuthenticationHandler(IOptions<CrunchyrollAuthenticationOptions> options, HttpClient authHttpClient, IOptions<AuthenticationOptions> authenticationOptions, ILogger<CrunchyrollAuthenticationHandler> logger)
     {
         Options = options;
@@ -23,9 +26,9 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
     }
 
     private IOptions<CrunchyrollAuthenticationOptions> Options { get; }
-        
+
     private IOptions<AuthenticationOptions> AuthenticationOptions { get; }
-    
+
     private ILogger<CrunchyrollAuthenticationHandler> Logger { get; }
 
     private HttpClient AuthHttpClient { get; }
@@ -40,7 +43,7 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
         var jsonDocument = await JsonDocument.ParseAsync(responseStream);
         return jsonDocument.RootElement.GetProperty("access_token").GetString();
     }
-    
+
     private async Task<string> CreateAccessToken(string username, string password)
     {
         using var formUrlEncodedContent = new FormUrlEncodedContent(new[]
@@ -48,7 +51,7 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
             new KeyValuePair<string, string>("grant_type", "password"),
             new KeyValuePair<string, string>("username", username),
             new KeyValuePair<string, string>("password", password),
-            new KeyValuePair<string, string>("scope", "offline_access"),
+            new KeyValuePair<string, string>("scope", "offline_access")
         });
 
         using var authResponse = await AuthHttpClient.PostAsync("auth/v1/token", formUrlEncodedContent);
@@ -61,7 +64,7 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(Options.Value.Token) && Environment.GetEnvironmentVariable("WASARI_AUTH_TOKEN") is { } envToken && !string.IsNullOrEmpty(envToken))
+        if (string.IsNullOrEmpty(Options.Value.Token) && Environment.GetEnvironmentVariable(WasariAuthToken) is { } envToken && !string.IsNullOrEmpty(envToken))
         {
             var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
             var jwtSecurityToken = jwtSecurityTokenHandler.ReadJwtToken(envToken);
@@ -76,7 +79,7 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
                 Logger.LogInformation("Authenticated to crunchyroll using environment token");
             }
         }
-        
+
         if (string.IsNullOrEmpty(Options.Value.Token))
         {
             if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Username) && !string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
@@ -92,6 +95,14 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
         }
 
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Options.Value.Token);
-        return await base.SendAsync(request, cancellationToken);
+        var response = await base.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            Options.Value.Token = null;
+            Environment.SetEnvironmentVariable(WasariAuthToken, null);
+        }
+
+        return response;
     }
 }
