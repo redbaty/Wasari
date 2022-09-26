@@ -10,9 +10,9 @@ internal static class ServicesExtensions
     {
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.ControlledBy(new EnvironmentVariableLoggingLevelSwitch("%LOG_LEVEL%"))
-            .WriteTo.Console()
+            .WriteTo.Console(outputTemplate: "[{Timestamp:u} {Level:u3}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
-        
+
         await serviceCollection.AddEnvironmentServices();
         serviceCollection.AddLogging(c => c.AddSerilog());
         return serviceCollection;
