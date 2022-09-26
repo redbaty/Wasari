@@ -63,9 +63,10 @@ namespace Wasari.Crunchyroll
         public string[] Subtitles { get; init; }
 
         [JsonPropertyName("audio_locale")]
+        [JsonConverter(typeof(NullIfEmptyConverter))]
         public string AudioLocale { get; set; }
 
-        public string Locale => string.IsNullOrEmpty(AudioLocale) ? ApiEpisodeStreams?.AudioLocale : AudioLocale;
+        public string Locale => ApiEpisodeStreams?.AudioLocale ?? AudioLocale;
         
         public ApiEpisodeStreams ApiEpisodeStreams { get; private set; }
 
