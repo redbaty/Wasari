@@ -14,13 +14,14 @@ namespace Wasari.Crunchyroll
             return HttpPolicyExtensions
                 .HandleTransientHttpError()
                 .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
-                .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
+                .WaitAndRetryAsync(1, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
                     retryAttempt)));
         }
         
         public static void AddCrunchyrollServices(this IServiceCollection serviceCollection)
         {
             var crunchyBaseAddres = new Uri("https://beta-api.crunchyroll.com/");
+            serviceCollection.UseMinimalHttpLogger();
             serviceCollection.AddHttpClient<CrunchyrollAuthenticationHandler>(c =>
             {
                 c.BaseAddress = crunchyBaseAddres;
