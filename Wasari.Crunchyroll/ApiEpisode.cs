@@ -40,11 +40,7 @@ namespace Wasari.Crunchyroll
         
         [JsonPropertyName("season_id")]
         public string SeasonId { get; init; }
-        
-        [JsonPropertyName("images")]
-        [JsonConverter(typeof(ThumbnailsConverter))]
-        public string[] ThumbnailIds { get; init; }
-        
+
         [JsonPropertyName("__links__")]
         [JsonConverter(typeof(LinksConverter))]
         public string[] Links { get; init; }
