@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TomLonghurst.EnumerableAsyncProcessor.Builders;
 using Wasari.App.Abstractions;
@@ -49,7 +49,7 @@ public class GenericDownloadService : IDownloadService
 
         if (Options.Value.CreateSeriesFolder)
         {
-            outputDirectory = Path.Combine(outputDirectory, episode.SeriesName);
+            outputDirectory = Path.Combine(outputDirectory, episode.SeriesName.AsSafePath());
 
             if (!Directory.Exists(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
