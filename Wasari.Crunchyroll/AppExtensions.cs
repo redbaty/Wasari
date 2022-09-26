@@ -13,7 +13,7 @@ namespace Wasari.Crunchyroll
         {
             return HttpPolicyExtensions
                 .HandleTransientHttpError()
-                .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+                .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 .WaitAndRetryAsync(1, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
                     retryAttempt)));
         }
@@ -29,8 +29,8 @@ namespace Wasari.Crunchyroll
                     "Basic a3ZvcGlzdXZ6Yy0teG96Y21kMXk6R21JSTExenVPVnRnTjdlSWZrSlpibzVuLTRHTlZ0cU8=");
             });
             serviceCollection.AddHttpClient<CrunchyrollApiService>(c => c.BaseAddress = crunchyBaseAddres)
-                .AddHttpMessageHandler<CrunchyrollAuthenticationHandler>()
-                .AddPolicyHandler(GetRetryPolicy());
+                .AddPolicyHandler(GetRetryPolicy())
+                .AddHttpMessageHandler<CrunchyrollAuthenticationHandler>();
             serviceCollection.Configure<CrunchyrollAuthenticationOptions>(c =>
             {
                 c.Token = Environment.GetEnvironmentVariable("WASARI_AUTH_TOKEN");
