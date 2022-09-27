@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using CliWrap;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -23,6 +23,9 @@ public class YoutubeDlpService
 
     private IEnumerable<string> BuildArgumentsForEpisode(string[] urls)
     {
+        if (Options.Value.IgnoreTls)
+            yield return "--no-check-certificates";
+
         yield return "-J";
 
         if (!string.IsNullOrEmpty(Options.Value.Format))

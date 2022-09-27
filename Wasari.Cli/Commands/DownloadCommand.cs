@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Exceptions;
@@ -83,6 +83,9 @@ public class DownloadCommand : ICommand
     
     [CommandOption("resolution", 'r', Converter = typeof(ResolutionConverter))]
     public FFmpegResolution Resolution { get; init; }
+
+    [CommandOption("ignore-tls")]
+    public bool IgnoreTls { get; init; }
 
     private EnvironmentService EnvironmentService { get; }
 
@@ -189,6 +192,11 @@ public class DownloadCommand : ICommand
         {
             o.Username = Username;
             o.Password = Password;
+        });
+        serviceCollection.Configure<YoutubeDlpOptions>(c =>
+        {
+            c.Format = Format;
+            c.IgnoreTls = IgnoreTls;
         });
 
         await using var serviceProvider = serviceCollection.BuildServiceProvider();
