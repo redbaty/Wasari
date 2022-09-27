@@ -2,7 +2,7 @@
 
 public interface IWasariEpisode : IWasariBasicInfo
 {
-    int Number { get; }
+    int? Number { get; }
     
     TimeSpan? Duration { get; }
     

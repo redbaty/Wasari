@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Exceptions;
@@ -205,6 +205,6 @@ public class DownloadCommand : ICommand
         await using var serviceProvider = serviceCollection.BuildServiceProvider();
 
         var downloadService = serviceProvider.GetRequiredService<DownloadServiceSolver>();
-        await downloadService.DownloadEpisodes(Url.ToString(), LevelOfParallelism);
+        await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism);
     }
 }

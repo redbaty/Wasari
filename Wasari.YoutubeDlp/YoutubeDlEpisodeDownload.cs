@@ -4,11 +4,12 @@ namespace Wasari.YoutubeDlp;
 
 public record YoutubeDlEpisodeDownload(
     [property: JsonPropertyName("url")]
-    string Url,
+    string? Url,
     [property: JsonPropertyName("vcodec")]
     string? Vcodec,
     [property: JsonPropertyName("acodec")]
-    string Acodec,
+    string? Acodec,
     [property: JsonPropertyName("language")]
-    string Language
-);
+    string Language,
+    [property: JsonPropertyName("requested_formats")]
+    IReadOnlyList<YoutubeDlEpisodeDownloadFormat> Formats);

@@ -4,9 +4,9 @@ namespace Wasari.App.Extensions;
 
 public static class EpisodeExtensions
 {
-    private static bool FilterEpisodes(Ranges? range, int number)
+    private static bool FilterEpisodes(Ranges? range, int? number)
     {
-        if (range == null) return true;
+        if (range == null || number == null) return true;
         
         var flag = true;
         

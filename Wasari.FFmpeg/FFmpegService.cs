@@ -69,7 +69,7 @@ public class FFmpegService
             {
                 var mediaAnalysis = FFProbe.Analyse(new Uri(i.Url));
 
-                var videoStream = i is IWasariEpisodeInputStreamSelector streamSelector && streamSelector.VideoIndex.HasValue ? mediaAnalysis.VideoStreams.Single(o => o.Index == streamSelector.VideoIndex.Value) : mediaAnalysis.PrimaryVideoStream;
+                var videoStream = i is IWasariEpisodeInputStreamSelector { VideoIndex: { } } streamSelector ? mediaAnalysis.VideoStreams.Single(o => o.Index == streamSelector.VideoIndex.Value) : mediaAnalysis.PrimaryVideoStream;
                 return videoStream == null ? null : new FFmpegResolution(videoStream.Width, videoStream.Height);
             }).Single(i => i != null);
 

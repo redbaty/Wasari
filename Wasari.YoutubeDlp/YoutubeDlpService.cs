@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using CliWrap;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -36,7 +36,7 @@ public class YoutubeDlpService
 
         if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
             yield return $"-p \"{AuthenticationOptions.Value.Password}\"";
-        
+
         foreach (var url in urls)
         {
             yield return $"\"{url}\"";
@@ -44,8 +44,8 @@ public class YoutubeDlpService
     }
 
     public IAsyncEnumerable<WasariEpisode> GetPlaylist(string url) => GetPlaylist(url, Array.Empty<string>());
-    
-    public IAsyncEnumerable<WasariEpisode> GetPlaylist(string url, params string[] additionalArguments)
+
+    private IAsyncEnumerable<WasariEpisode> GetPlaylist(string url, params string[] additionalArguments)
     {
         return ExecuteYtdlp<YoutubeDlEpisode>(url, additionalArguments).Select(episode =>
         {
@@ -53,14 +53,34 @@ public class YoutubeDlpService
                 .SelectMany(i => i.Value
                     .Select(o => new WasariEpisodeInput(o.Url, i.Key, InputType.Subtitle)));
 
-            var inputs = episode.RequestedDownloads
-                .Select(i => new WasariEpisodeInput(i.Url, i.Language, string.IsNullOrEmpty(i.Vcodec) ? InputType.Audio : InputType.Video))
-                .Concat(subtitleInputs)
-                .Cast<IWasariEpisodeInput>()
-                .ToArray();
+            var inputs = episode.RequestedDownloads?
+                             .SelectMany(i => GetInputs(i))
+                             .Concat(subtitleInputs)
+                             .Cast<IWasariEpisodeInput>()
+                             .ToArray()
+                         ?? throw new InvalidOperationException("Failed to determine input URL");
 
-            return new WasariEpisode(episode.Title, episode.SeriesName, episode.SeasonNumber, episode.Number, episode.AbsoluteNumber, _ => Task.FromResult<ICollection<IWasariEpisodeInput>>(inputs), TimeSpan.FromSeconds(episode.Duration));
+            return new WasariEpisode(episode.EpisodeName ?? episode.Title, episode.SeriesName, episode.SeasonNumber, episode.Number, episode.AbsoluteNumber, _ => Task.FromResult<ICollection<IWasariEpisodeInput>>(inputs), TimeSpan.FromSeconds(episode.Duration));
         });
+    }
+
+    private static IEnumerable<WasariEpisodeInput> GetInputs(YoutubeDlEpisodeDownload episode)
+    {
+        if (!string.IsNullOrEmpty(episode.Url))
+        {
+            yield return new WasariEpisodeInput(episode.Url, episode.Language, string.IsNullOrEmpty(episode.Vcodec) ? InputType.Audio : InputType.Video);
+        }
+        else if (string.IsNullOrEmpty(episode.Url) && episode.Formats is { Count: > 0 })
+        {
+            foreach (var format in episode.Formats)
+            {
+                yield return new WasariEpisodeInput(format.Url ?? throw new InvalidOperationException("Failed to determine input URL"), episode.Language, string.IsNullOrEmpty(format.Vcodec) ? InputType.Audio : InputType.Video);
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException("Failed to determine input URL");
+        }
     }
 
     private Command CreateCommand()

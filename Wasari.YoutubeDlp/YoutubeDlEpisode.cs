@@ -4,21 +4,25 @@ namespace Wasari.YoutubeDlp;
 
 public record YoutubeDlEpisode(
     [property: JsonPropertyName("episode")]
-    string Title,
+    string? EpisodeName,
+    [property: JsonPropertyName("title")]
+    string? Title,
     [property: JsonPropertyName("episode_number")]
-    int Number,
+    int? Number,
     [property: JsonPropertyName("duration")]
     double Duration,
     [property: JsonPropertyName("language")]
     string Language,
     [property: JsonPropertyName("season_number")]
-    int SeasonNumber,
+    int? SeasonNumber,
     [property: JsonPropertyName("season_id")]
     string SeasonId,
     [property: JsonPropertyName("series")]
     string SeriesName,
     [property: JsonPropertyName("requested_downloads")]
-    IReadOnlyList<YoutubeDlEpisodeDownload> RequestedDownloads,
+    IReadOnlyList<YoutubeDlEpisodeDownload>? RequestedDownloads,
+    [property: JsonPropertyName("webpage_url")]
+    string? WebpageUrl,
     [property: JsonPropertyName("subtitles")]
     Dictionary<string, YoutubeDlSubtitle[]> Subtitles,
     [property: JsonPropertyName("extractor_key")]

@@ -3,7 +3,7 @@ using Wasari.App.Abstractions;
 
 namespace Wasari.App;
 
-public class DownloadServiceSolver : IDownloadService
+public class DownloadServiceSolver
 {
     public DownloadServiceSolver(IOptions<DownloadOptions> options, IServiceProvider serviceProvider)
     {
@@ -14,11 +14,9 @@ public class DownloadServiceSolver : IDownloadService
     private IOptions<DownloadOptions> Options { get; }
     
     private IServiceProvider ServiceProvider { get; }
-    
-    public Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism)
+
+    public IDownloadService GetService(Uri uri)
     {
-        var uri = new Uri(url);
-        var downloadService = Options.Value.GetDownloader(uri.Host, ServiceProvider);
-        return downloadService.DownloadEpisodes(url, levelOfParallelism);
+        return Options.Value.GetDownloader(uri.Host, ServiceProvider);
     }
 }

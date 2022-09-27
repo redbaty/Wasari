@@ -2,9 +2,9 @@
 
 public interface IWasariBasicInfo
 {
-    string Title { get; }
+    string? Title { get; }
     
-    int SeasonNumber { get; }
+    int? SeasonNumber { get; }
     
     int? AbsoluteNumber { get; }
 }

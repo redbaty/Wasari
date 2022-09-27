@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TomLonghurst.EnumerableAsyncProcessor.Builders;
@@ -47,7 +48,7 @@ public class GenericDownloadService : IDownloadService
     {
         var outputDirectory = Options.Value.OutputDirectory ?? Environment.CurrentDirectory;
 
-        if (Options.Value.CreateSeriesFolder)
+        if (Options.Value.CreateSeriesFolder && !string.IsNullOrEmpty(episode.SeriesName))
         {
             outputDirectory = Path.Combine(outputDirectory, episode.SeriesName.AsSafePath());
 
@@ -55,16 +56,16 @@ public class GenericDownloadService : IDownloadService
                 Directory.CreateDirectory(outputDirectory);
         }
         
-        if (Options.Value.CreateSeasonFolder)
+        if (Options.Value.CreateSeasonFolder && episode.SeasonNumber.HasValue)
         {
             outputDirectory = Path.Combine(outputDirectory, $"Season {episode.SeasonNumber}");
 
             if (!Directory.Exists(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
         }
-        
-        var episodeName = $"S{episode.SeasonNumber:00}E{episode.Number:00}";
-        var fileName = $"{episodeName} - {episode.Title}.mkv".AsSafePath();
+
+        var episodeNameBuilder = BuildEpisodeName(episode);
+        var fileName = episodeNameBuilder.ToString().AsSafePath();
         var filepath = Path.Combine(outputDirectory, fileName);
 
         if (Options.Value.SkipExistingFiles && File.Exists(filepath))
@@ -82,7 +83,7 @@ public class GenericDownloadService : IDownloadService
 
             if (delta > 0.01 || d.Progress >= 1d)
             {
-                Logger.LogInformation("Encoding update {@Episode} {Path} {Percentage:p} {Speed}x", episodeName, filepath, d.Progress, d.Speed);
+                Logger.LogInformation("Encoding update {Path} {Percentage:p} {Speed}x", filepath, d.Progress, d.Speed);
                 lastValue = d.Progress;
             }
         };
@@ -90,5 +91,20 @@ public class GenericDownloadService : IDownloadService
 
         await FFmpegService.DownloadEpisode(episode, filepath, episodeProgress);
         return new DownloadedEpisode(filepath, true, episode);
+    }
+
+    private static StringBuilder BuildEpisodeName(IWasariEpisode episode)
+    {
+        var episodeNameBuilder = new StringBuilder();
+
+        if (episode.SeasonNumber.HasValue) episodeNameBuilder.Append($"S{episode.SeasonNumber:00}");
+
+        if (episode.Number.HasValue) episodeNameBuilder.Append($"E{episode.Number:00}");
+
+        if (episode.Number.HasValue || episode.SeasonNumber.HasValue)
+            episodeNameBuilder.Append(" - ");
+        episodeNameBuilder.Append(episode.Title);
+        episodeNameBuilder.Append(".mkv");
+        return episodeNameBuilder;
     }
 }
