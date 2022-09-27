@@ -83,7 +83,10 @@ public class DownloadCommand : ICommand
     
     [CommandOption("resolution", 'r', Converter = typeof(ResolutionConverter))]
     public FFmpegResolution Resolution { get; init; }
-
+    
+    [CommandOption("format", 'f', Description = "Format passed to yt-dlp")]
+    public string? Format { get; init; }
+    
     [CommandOption("ignore-tls")]
     public bool IgnoreTls { get; init; }
 
