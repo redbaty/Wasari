@@ -7,6 +7,8 @@ namespace Wasari.Crunchyroll
 {
     public record ApiEpisode
     {
+        private readonly bool _isDubbed;
+
         [JsonPropertyName("__href__")]
         public string Href { get; init; }
         
@@ -49,10 +51,14 @@ namespace Wasari.Crunchyroll
 
         [JsonPropertyName("is_clip")]
         public bool IsClip { get; init; }
-        
+
         [JsonPropertyName("is_dubbed")]
-        public bool IsDubbed { get; init; }
-        
+        public bool IsDubbed
+        {
+            get => _isDubbed && Locale != "ja-JP";
+            init => _isDubbed = value;
+        }
+
         [JsonPropertyName("is_subbed")]
         public bool IsSubbed { get; init; }
         
