@@ -5,11 +5,14 @@ namespace Wasari.App.Extensions;
 
 public static class ApplicationExtensions
 {
-    public static IServiceCollection AddHostDownloader<T>(this IServiceCollection serviceCollection, string host) where T : class, IDownloadService
+    public static IServiceCollection AddHostDownloader<T>(this IServiceCollection serviceCollection, params string[] hosts) where T : class, IDownloadService
     {
         serviceCollection.Configure<DownloadOptions>(c =>
         {
-            c.AddHostDownloader<T>(host);
+            foreach (var host in hosts)
+            {
+                c.AddHostDownloader<T>(host);
+            }
         });
         serviceCollection.AddScoped<T>();
         return serviceCollection;

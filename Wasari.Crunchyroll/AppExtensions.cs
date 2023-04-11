@@ -35,7 +35,7 @@ namespace Wasari.Crunchyroll
             {
                 c.Token = Environment.GetEnvironmentVariable("WASARI_AUTH_TOKEN");
             });
-            serviceCollection.AddHostDownloader<CrunchyrollDownloadService>("beta.crunchyroll.com");
+            serviceCollection.AddHostDownloader<CrunchyrollDownloadService>("crunchyroll.com", "beta.crunchyroll.com", "www.crunchyroll.com");
         }
     }
 }
