@@ -10,98 +10,16 @@ using Microsoft.Extensions.Options;
 using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.FFmpeg;
-using Wasari.Tvdb.Api.Client;
 using Wasari.YoutubeDlp;
 
 namespace Wasari.Crunchyroll;
-
-internal static class EpisodeExtensions
-{
-    public static async IAsyncEnumerable<ApiEpisode> EnrichWithWasariApi(this IAsyncEnumerable<ApiEpisode> episodes, IServiceProvider serviceProvider, IOptions<DownloadOptions> downloadOptions)
-    {
-        var wasariTvdbApi = downloadOptions.Value.TryEnrichEpisodes ? serviceProvider.GetService<IWasariTvdbApi>() : null;
-
-        if (wasariTvdbApi != null)
-        {
-            var logger = serviceProvider.GetRequiredService<ILogger<IWasariTvdbApi>>();
-            logger.LogInformation("Trying to enrich episodes with Wasari.Tvdb");
-
-            var episodesArray = await episodes.ToArrayAsync();
-
-            var seriesName = episodesArray.Select(o => o.SeriesTitle)
-                .Distinct()
-                .ToArray();
-
-            if (seriesName.Length == 1)
-            {
-                var wasariApiEpisodes = await wasariTvdbApi.GetEpisodesAsync(seriesName.Single())
-                    .ContinueWith(t =>
-                    {
-                        if (t.IsCompletedSuccessfully)
-                        {
-                            return t.Result;
-                        }
-
-                        logger.LogError(t.Exception, "Error while getting episodes from Wasari.Tvdb");
-                        return null;
-                    });
-
-                if (wasariApiEpisodes != null)
-                {
-                    var episodesLookup = wasariApiEpisodes
-                        .Where(i => !i.IsMovie)
-                        .ToLookup(i => i.Name);
-
-                    foreach (var episode in episodesArray)
-                    {
-                        var wasariEpisode = episodesLookup[episode.Title].SingleOrDefault();
-
-                        if (wasariEpisode == null)
-                        {
-                            wasariEpisode = wasariApiEpisodes
-                                .Where(i => !i.IsMovie)
-                                .SingleOrDefault(o => o.Name.StartsWith(episode.Title, StringComparison.InvariantCultureIgnoreCase));
-
-                            if (wasariEpisode == null)
-                            {
-                                logger.LogWarning("Skipping episode {EpisodeTitle} because it could not be found in Wasari.Tvdb", episode.Title);
-                            }
-                        }
-
-                        if (wasariEpisode != null)
-                            yield return episode with
-                            {
-                                SeasonNumber = wasariEpisode?.SeasonNumber ?? episode.SeasonNumber,
-                                EpisodeNumber = wasariEpisode?.Number ?? episode.EpisodeNumber
-                            };
-                    }
-
-                    yield break;
-                }
-            }
-
-            foreach (var episode in episodesArray)
-            {
-                yield return episode;
-            }
-
-            yield break;
-        }
-
-
-        await foreach (var episode in episodes)
-        {
-            yield return episode;
-        }
-    }
-}
 
 internal class CrunchyrollDownloadService : GenericDownloadService
 {
     private CrunchyrollApiService CrunchyrollApiService { get; }
 
     private IOptions<DownloadOptions> DownloadOptions { get; }
-    
+
     private IOptions<AuthenticationOptions> AuthenticationOptions { get; }
 
     private IServiceProvider ServiceProvider { get; }
