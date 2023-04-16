@@ -113,7 +113,7 @@ public class DownloadCommand : ICommand
             if (episodesNumbers.Length != 2 || episodesNumbers.All(string.IsNullOrEmpty))
                 throw new InvalidRangeException();
 
-            var numbers = episodesNumbers.Select(int.Parse).Cast<int?>().ToArray();
+            var numbers = episodesNumbers.Select(i => int.TryParse(i, out var n) ? n : (int?)null).ToArray();
 
             if (episodesNumbers.All(i => !string.IsNullOrEmpty(i)))
                 return new Ranges(numbers.ElementAtOrDefault(0), numbers.ElementAtOrDefault(1));
