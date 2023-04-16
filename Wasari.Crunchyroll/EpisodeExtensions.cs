@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -9,8 +10,10 @@ using Wasari.Tvdb.Api.Client;
 
 namespace Wasari.Crunchyroll;
 
-internal static class EpisodeExtensions
+internal static partial class EpisodeExtensions
 {
+    private static string NormalizeUsingRegex(this string str) => string.Join(string.Empty, EpisodeTitleNormalizeRegex().Matches(str).Select(o => o.Value));
+
     public static async IAsyncEnumerable<ApiEpisode> EnrichWithWasariApi(this IAsyncEnumerable<ApiEpisode> episodes, IServiceProvider serviceProvider, IOptions<DownloadOptions> downloadOptions)
     {
         var wasariTvdbApi = downloadOptions.Value.TryEnrichEpisodes ? serviceProvider.GetService<IWasariTvdbApi>() : null;
@@ -64,7 +67,7 @@ internal static class EpisodeExtensions
                             {
                                 wasariEpisode = wasariApiEpisodes
                                     .Where(i => !i.IsMovie)
-                                    .SingleOrDefault(o => o.Name.StartsWith(episode.Title, StringComparison.InvariantCultureIgnoreCase));
+                                    .SingleOrDefault(o => o.Name.NormalizeUsingRegex().StartsWith(episode.Title.NormalizeUsingRegex(), StringComparison.InvariantCultureIgnoreCase));
 
                                 if (wasariEpisode == null)
                                 {
@@ -99,4 +102,7 @@ internal static class EpisodeExtensions
             yield return episode;
         }
     }
+
+    [GeneratedRegex("[a-zA-Z0-9 ]+")]
+    private static partial Regex EpisodeTitleNormalizeRegex();
 }
