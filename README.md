@@ -6,7 +6,7 @@
 </p>
 <p align="center">  
   <a style="text-decoration:none" href="https://github.com/redbaty/Wasari/actions/workflows/dotnet-core.yml">
-    <img src="https://img.shields.io/github/workflow/status/redbaty/wasari/.NET%20Core?style=flat-square" alt="Build Status" />
+    <img src="https://img.shields.io/github/workflow/status/redbaty/wasari/dotnet-core.yml?branch=next" alt="Build Status" />
   </a>
   <a style="text-decoration:none" href="https://github.com/redbaty/Wasari/releases">
     <img src="https://img.shields.io/github/release/redbaty/wasari.svg?label=Latest%20version&style=flat-square" alt="Latest version" />
