@@ -21,6 +21,8 @@ public record DownloadOptions
     
     public bool CreateSeasonFolder { get; set; }
 
+    public bool TryEnrichEpisodes { get; set; } = true;
+
     private Dictionary<string, Type> HostDownloadService { get; } = new();
 
     public DownloadOptions AddHostDownloader<T>(string host) where T : IDownloadService

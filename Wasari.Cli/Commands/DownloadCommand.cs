@@ -12,6 +12,7 @@ using Wasari.App.Extensions;
 using Wasari.Cli.Converters;
 using Wasari.Crunchyroll;
 using Wasari.FFmpeg;
+using Wasari.Tvdb.Api.Client;
 using Wasari.YoutubeDlp;
 using WasariEnvironment;
 
@@ -89,6 +90,9 @@ public class DownloadCommand : ICommand
     
     [CommandOption("ignore-tls")]
     public bool IgnoreTls { get; init; }
+
+    [CommandOption("enrich-episodes", Description = "If true, will try to enrich episodes with metadata from TVDB (Fixes season and episode numbers)")]
+    public bool EnrichEpisodes { get; init; } = true;
 
     private EnvironmentService EnvironmentService { get; }
 
@@ -172,6 +176,7 @@ public class DownloadCommand : ICommand
         serviceCollection.AddDownloadServices();
         serviceCollection.AddCrunchyrollServices();
         serviceCollection.AddMemoryCache();
+        serviceCollection.AddWasariTvdbApi();
         serviceCollection.Configure<DownloadOptions>(o =>
         {
             o.OutputDirectory = OutputDirectory;
@@ -182,6 +187,7 @@ public class DownloadCommand : ICommand
             o.SeasonsRange = ParseRange(SeasonsRange);
             o.CreateSeriesFolder = CreateSeriesFolder;
             o.CreateSeasonFolder = CreateSeasonFolder;
+            o.TryEnrichEpisodes = EnrichEpisodes;
         });
         serviceCollection.Configure<FFmpegOptions>(o =>
         {

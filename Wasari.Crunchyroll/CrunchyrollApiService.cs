@@ -57,14 +57,14 @@ namespace Wasari.Crunchyroll
                 .SetQueryParam("Key-Pair-Id", signature.KeyPairId)
                 .SetQueryParam("locale", "en-US");
         }
-
+        
         public IAsyncEnumerable<ApiEpisode> GetAllEpisodes(string seriesId)
         {
             return GetSeasons(seriesId)
                 .SelectMany(season => GetEpisodes(season.Id));
         }
 
-        public async IAsyncEnumerable<ApiEpisode> GetEpisodes(string seasonId)
+        private async IAsyncEnumerable<ApiEpisode> GetEpisodes(string seasonId)
         {
             var url = await BuildUrlFromSignature("episodes");
             url = url.SetQueryParam("season_id", seasonId);
@@ -94,12 +94,12 @@ namespace Wasari.Crunchyroll
             url = url.SetQueryParam("series_id", seriesId);
 
             var responseJson = await HttpClient.GetJsonAsync(url);
-           
+
             var seasons = responseJson.GetProperty("items").EnumerateArray()
                 .Select(i => i.Deserialize<ApiSeason>())
                 .Where(i => i != null)
                 .ToArray();
-            
+
             var lastNumber = seasons.Length > 0 ? seasons.Min(o => o.Number) : 1;
 
             foreach (var apiSeason in seasons)
@@ -107,11 +107,11 @@ namespace Wasari.Crunchyroll
                 if (apiSeason != null)
                 {
                     apiSeason.Number = lastNumber;
-                    
+
                     if (apiSeason.Number > 0 && !apiSeason.IsDubbed)
                         lastNumber++;
                 }
-                
+
                 yield return apiSeason;
             }
         }

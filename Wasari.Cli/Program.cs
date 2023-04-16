@@ -6,6 +6,7 @@ using Wasari.Anime4k;
 using Wasari.Cli.Commands;
 using Wasari.Cli.Converters;
 using Wasari.FFmpeg;
+using Wasari.Tvdb.Api.Client;
 using WasariEnvironment;
 
 namespace Wasari.Cli;
