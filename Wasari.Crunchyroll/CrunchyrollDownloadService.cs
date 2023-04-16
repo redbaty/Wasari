@@ -25,7 +25,7 @@ internal static class EpisodeExtensions
         {
             var logger = serviceProvider.GetRequiredService<ILogger<IWasariTvdbApi>>();
             logger.LogInformation("Trying to enrich episodes with Wasari.Tvdb");
-            
+
             var episodesArray = await episodes.ToArrayAsync();
 
             var seriesName = episodesArray.Select(o => o.SeriesTitle)
@@ -101,17 +101,20 @@ internal class CrunchyrollDownloadService : GenericDownloadService
     private CrunchyrollApiService CrunchyrollApiService { get; }
 
     private IOptions<DownloadOptions> DownloadOptions { get; }
+    
+    private IOptions<AuthenticationOptions> AuthenticationOptions { get; }
 
     private IServiceProvider ServiceProvider { get; }
 
     public CrunchyrollDownloadService(ILogger<CrunchyrollDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, CrunchyrollApiService crunchyrollApiService, IOptions<DownloadOptions> downloadOptions,
-        IServiceProvider serviceProvider) : base(logger, fFmpegService,
+        IServiceProvider serviceProvider, IOptions<AuthenticationOptions> authenticationOptions) : base(logger, fFmpegService,
         options,
         youtubeDlpService)
     {
         CrunchyrollApiService = crunchyrollApiService;
         DownloadOptions = downloadOptions;
         ServiceProvider = serviceProvider;
+        AuthenticationOptions = authenticationOptions;
     }
 
     public override async Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism)
@@ -128,6 +131,9 @@ internal class CrunchyrollDownloadService : GenericDownloadService
                 .GroupBy(i => new { i.EpisodeNumber, i.SeasonNumber, i.SeriesTitle })
                 .SelectAwait(async groupedEpisodes =>
                 {
+                    if (!AuthenticationOptions.Value.HasCredentials && await groupedEpisodes.AnyAsync(o => o.IsPremium))
+                        throw new PremiumEpisodeException(groupedEpisodes.Key.EpisodeNumber!.Value, groupedEpisodes.Key.SeasonNumber);
+
                     var nonDubbedEpisode = await groupedEpisodes.SingleAsync(o => !o.IsDubbed);
 
                     return new WasariEpisode(nonDubbedEpisode.Title, nonDubbedEpisode.SeriesTitle, groupedEpisodes.Key.SeasonNumber, groupedEpisodes.Key.EpisodeNumber!.Value, null, async (provider) =>

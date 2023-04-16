@@ -85,7 +85,7 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
         
         if(string.IsNullOrEmpty(Options.Value.Token))
         {
-            if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Username) && !string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
+            if (AuthenticationOptions.Value.HasCredentials)
             {
                 Options.Value.Token = await CreateAccessToken(AuthenticationOptions.Value.Username, AuthenticationOptions.Value.Password);
                 Logger.LogInformation("Authenticated to crunchyroll using username/password");
