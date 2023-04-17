@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasari.App;
+using Wasari.Tvdb.Abstractions;
 using Wasari.Tvdb.Api.Client;
 
 namespace Wasari.Crunchyroll;
@@ -61,18 +62,11 @@ internal static partial class EpisodeExtensions
 
                         foreach (var episode in episodesArray)
                         {
-                            var wasariEpisode = episodesLookup[episode.Title].SingleOrDefault();
+                            var wasariEpisode = episodesLookup[episode.Title].SingleOrDefault() ?? FindEpisodeByNormalizedName(wasariApiEpisodes, episode) ?? FindEpisodeByNormalizedWordMatch(wasariApiEpisodes, episode);
 
                             if (wasariEpisode == null)
                             {
-                                wasariEpisode = wasariApiEpisodes
-                                    .Where(i => !i.IsMovie)
-                                    .SingleOrDefault(o => o.Name.NormalizeUsingRegex().StartsWith(episode.Title.NormalizeUsingRegex(), StringComparison.InvariantCultureIgnoreCase));
-
-                                if (wasariEpisode == null)
-                                {
-                                    logger.LogWarning("Skipping episode {EpisodeTitle} because it could not be found in Wasari.Tvdb", episode.Title);
-                                }
+                                logger.LogWarning("Skipping episode {EpisodeTitle} because it could not be found in Wasari.Tvdb", episode.Title);
                             }
 
                             if (wasariEpisode != null)
@@ -101,6 +95,35 @@ internal static partial class EpisodeExtensions
         {
             yield return episode;
         }
+    }
+
+    private static Episode FindEpisodeByNormalizedName(IEnumerable<Episode> wasariApiEpisodes, ApiEpisode episode)
+    {
+        var episodeName = episode.Title.NormalizeUsingRegex();
+
+        return wasariApiEpisodes
+            .Where(i => !i.IsMovie)
+            .SingleOrDefault(o => o.Name.NormalizeUsingRegex() == episodeName);
+    }
+
+    private static Episode FindEpisodeByNormalizedWordMatch(IEnumerable<Episode> wasariApiEpisodes, ApiEpisode episode)
+    {
+        var episodeName = episode.Title.NormalizeUsingRegex();
+        var split = episodeName.Split(' ')
+            .Select(i => i.ToLowerInvariant())
+            .ToHashSet();
+
+        return wasariApiEpisodes
+            .Where(i => !i.IsMovie)
+            .SingleOrDefault(o =>
+            {
+                var normalizeUsingRegex = o.Name.NormalizeUsingRegex();
+                var x = normalizeUsingRegex.Split(' ')
+                    .Select(i => i.ToLowerInvariant())
+                    .ToHashSet();
+
+                return x.Count == split.Count && x.All(split.Contains);
+            });
     }
 
     [GeneratedRegex("[a-zA-Z0-9 ]+")]
