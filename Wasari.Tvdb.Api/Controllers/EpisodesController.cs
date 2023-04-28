@@ -15,6 +15,7 @@ public class EpisodesController : ControllerBase
     private TvdbEpisodesService TvdbEpisodesService { get; }
 
     [HttpGet]
+    [ResponseCache(Duration = 60 * 15, VaryByQueryKeys = new[] { "query" })]
     public ValueTask<IResult> GetEpisodes(string query)
     {
         return TvdbEpisodesService.GetEpisodes(query);
