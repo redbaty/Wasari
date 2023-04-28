@@ -58,6 +58,7 @@ internal static partial class EpisodeExtensions
                     {
                         var episodesLookup = wasariApiEpisodes
                             .Where(i => !i.IsMovie)
+                            .Distinct()
                             .ToLookup(i => i.Name);
 
                         foreach (var episode in episodesArray)
