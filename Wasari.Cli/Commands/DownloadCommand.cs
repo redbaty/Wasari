@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Exceptions;
@@ -83,7 +83,7 @@ public class DownloadCommand : ICommand
     public IFFmpegShader[]? Shaders { get; init; }
     
     [CommandOption("resolution", 'r', Converter = typeof(ResolutionConverter))]
-    public FFmpegResolution Resolution { get; init; }
+    public FFmpegResolution? Resolution { get; init; }
     
     [CommandOption("format", 'f', Description = "Format passed to yt-dlp")]
     public string? Format { get; init; }
