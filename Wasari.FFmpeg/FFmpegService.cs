@@ -55,6 +55,8 @@ public class FFmpegService
 
     private async IAsyncEnumerable<string> BuildArgumentsForEpisode(IWasariEpisode episode, string filePath)
     {
+        yield return $"-threads {Options.Value.Threads}";
+        
         await using var providerScope = Provider.CreateAsyncScope();
         var inputs = await episode.InputsFactory(providerScope.ServiceProvider);
 
@@ -62,14 +64,13 @@ public class FFmpegService
         {
             throw new EmptyFFmpegInputsException(episode);
         }
-
-
+        
         var resolution = Options.Value.Resolution ?? inputs.Where(i => i.Type is InputType.Video or InputType.VideoWithAudio)
             .Select(i =>
             {
                 var mediaAnalysis = FFProbe.Analyse(new Uri(i.Url));
 
-                var videoStream = i is IWasariEpisodeInputStreamSelector { VideoIndex: { } } streamSelector ? mediaAnalysis.VideoStreams.Single(o => o.Index == streamSelector.VideoIndex.Value) : mediaAnalysis.PrimaryVideoStream;
+                var videoStream = i is IWasariEpisodeInputStreamSelector { VideoIndex: not null } streamSelector ? mediaAnalysis.VideoStreams.Single(o => o.Index == streamSelector.VideoIndex.Value) : mediaAnalysis.PrimaryVideoStream;
                 return videoStream == null ? null : new FFmpegResolution(videoStream.Width, videoStream.Height);
             }).Single(i => i != null);
 

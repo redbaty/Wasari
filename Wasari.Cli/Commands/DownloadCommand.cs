@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using CliFx;
 using CliFx.Attributes;
 using CliFx.Exceptions;
@@ -93,6 +93,9 @@ public class DownloadCommand : ICommand
 
     [CommandOption("enrich-episodes", Description = "If true, will try to enrich episodes with metadata from TVDB (Fixes season and episode numbers)")]
     public bool EnrichEpisodes { get; init; } = true;
+    
+    [CommandOption("ffmpeg-threads", Description = "Number of threads to use for FFmpeg")]
+    public int FfmpegThreads { get; init; } = 8;
 
     private EnvironmentService EnvironmentService { get; }
 
@@ -196,6 +199,7 @@ public class DownloadCommand : ICommand
             o.UseTemporaryEncodingPath = UseTemporaryEncodingPath;
             o.Shaders = Shaders;
             o.Resolution = Resolution;
+            o.Threads = FfmpegThreads;
         });
         serviceCollection.Configure<AuthenticationOptions>(o =>
         {
