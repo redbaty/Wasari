@@ -67,7 +67,8 @@ internal static partial class EpisodeExtensions
 
                             if (wasariEpisode == null)
                             {
-                                logger.LogWarning("Skipping episode {EpisodeTitle} because it could not be found in Wasari.Tvdb", episode.Title);
+                                logger.LogWarning("Failed to match episode {EpisodeTitle} with Wasari.Tvdb", episode.Title);
+                                yield return episode;
                             }
 
                             if (wasariEpisode != null)
