@@ -10,6 +10,7 @@ using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.App.Extensions;
 using Wasari.Cli.Converters;
+using Wasari.Cli.Services;
 using Wasari.Crunchyroll;
 using Wasari.FFmpeg;
 using Wasari.Tvdb.Api.Client;
@@ -78,27 +79,30 @@ public class DownloadCommand : ICommand
 
     [CommandOption("verbose", 'v', Description = "Sets the logging level to verbose (Helps with FFmpeg debug)")]
     public bool Verbose { get; init; }
-    
+
     [CommandOption("shader", Converter = typeof(ShaderConverter))]
     public IFFmpegShader[]? Shaders { get; init; }
-    
+
     [CommandOption("resolution", 'r', Converter = typeof(ResolutionConverter))]
     public FFmpegResolution? Resolution { get; init; }
-    
+
     [CommandOption("format", 'f', Description = "Format passed to yt-dlp")]
     public string? Format { get; init; }
-    
+
     [CommandOption("ignore-tls")]
     public bool IgnoreTls { get; init; }
 
     [CommandOption("enrich-episodes", Description = "If true, will try to enrich episodes with metadata from TVDB (Fixes season and episode numbers)")]
     public bool EnrichEpisodes { get; init; } = true;
-    
+
     [CommandOption("ffmpeg-threads", Description = "Number of threads to use for FFmpeg")]
     public int? FfmpegThreads { get; init; }
-    
+
     [CommandOption("skip-unique-episode-check", 'S', Description = "If true, will skip the check for unique episodes")]
     public bool SkipUniqueEpisodeCheck { get; init; }
+
+    [CommandOption("webhook-url", Description = "Webhook URL to send notifications to", EnvironmentVariable = "WASARI_WEBHOOK_URL")]
+    public Uri? WebhookUrl { get; init; }
 
     private EnvironmentService EnvironmentService { get; }
 
@@ -216,9 +220,17 @@ public class DownloadCommand : ICommand
             c.IgnoreTls = IgnoreTls;
         });
 
+        if (WebhookUrl != null)
+            serviceCollection.AddHttpClient<NotificationService>(c => { c.BaseAddress = WebhookUrl; });
+
         await using var serviceProvider = serviceCollection.BuildServiceProvider();
 
         var downloadService = serviceProvider.GetRequiredService<DownloadServiceSolver>();
-        await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism);
+        var downloadedEpisodes = await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism);
+
+        if (serviceProvider.GetService<NotificationService>() is { } notificationService)
+        {
+            await notificationService.SendNotifcationForDownloadedEpisodeAsync(downloadedEpisodes);
+        }
     }
 }
