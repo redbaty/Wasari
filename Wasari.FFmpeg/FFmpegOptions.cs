@@ -12,5 +12,5 @@ public record FFmpegOptions
 
     public bool UseTemporaryEncodingPath { get; set; }
     
-    public int Threads { get; set; } = 8;
+    public int? Threads { get; set; }
 }

@@ -95,7 +95,7 @@ public class DownloadCommand : ICommand
     public bool EnrichEpisodes { get; init; } = true;
     
     [CommandOption("ffmpeg-threads", Description = "Number of threads to use for FFmpeg")]
-    public int FfmpegThreads { get; init; } = 8;
+    public int? FfmpegThreads { get; init; }
 
     private EnvironmentService EnvironmentService { get; }
 

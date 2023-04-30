@@ -55,8 +55,9 @@ public class FFmpegService
 
     private async IAsyncEnumerable<string> BuildArgumentsForEpisode(IWasariEpisode episode, string filePath)
     {
-        yield return $"-threads {Options.Value.Threads}";
-        
+        if (Options.Value.Threads.HasValue)
+            yield return $"-threads {Options.Value.Threads}";
+
         await using var providerScope = Provider.CreateAsyncScope();
         var inputs = await episode.InputsFactory(providerScope.ServiceProvider);
 
@@ -64,7 +65,7 @@ public class FFmpegService
         {
             throw new EmptyFFmpegInputsException(episode);
         }
-        
+
         var resolution = Options.Value.Resolution ?? inputs.Where(i => i.Type is InputType.Video or InputType.VideoWithAudio)
             .Select(i =>
             {
