@@ -96,6 +96,9 @@ public class DownloadCommand : ICommand
     
     [CommandOption("ffmpeg-threads", Description = "Number of threads to use for FFmpeg")]
     public int? FfmpegThreads { get; init; }
+    
+    [CommandOption("skip-unique-episode-check", 'S', Description = "If true, will skip the check for unique episodes")]
+    public bool SkipUniqueEpisodeCheck { get; init; }
 
     private EnvironmentService EnvironmentService { get; }
 
@@ -191,6 +194,7 @@ public class DownloadCommand : ICommand
             o.CreateSeriesFolder = CreateSeriesFolder;
             o.CreateSeasonFolder = CreateSeasonFolder;
             o.TryEnrichEpisodes = EnrichEpisodes;
+            o.SkipUniqueEpisodeCheck = SkipUniqueEpisodeCheck;
         });
         serviceCollection.Configure<FFmpegOptions>(o =>
         {

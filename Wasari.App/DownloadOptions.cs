@@ -22,6 +22,8 @@ public record DownloadOptions
     public bool CreateSeasonFolder { get; set; }
 
     public bool TryEnrichEpisodes { get; set; } = true;
+    
+    public bool SkipUniqueEpisodeCheck { get; set; }
 
     private Dictionary<string, Type> HostDownloadService { get; } = new();
 

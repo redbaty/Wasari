@@ -33,7 +33,9 @@ public class GenericDownloadService : IDownloadService
 
     protected async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<WasariEpisode> episodes, int levelOfParallelism)
     {
-        var episodesArray = await episodes
+        var ep = Options.Value.SkipUniqueEpisodeCheck ? episodes : episodes
+            .EnsureUniqueEpisodes();
+        var episodesArray = await ep
             .FilterEpisodes(Options.Value.EpisodesRange, Options.Value.SeasonsRange)
             .ToArrayAsync();
         
