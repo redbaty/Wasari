@@ -26,6 +26,6 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: redbaty/wasari:latest,redbaty/wasari:b-${{ github.run_number }}
           file: Wasari/Dockerfile
