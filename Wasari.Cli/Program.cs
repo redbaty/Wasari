@@ -40,7 +40,7 @@ internal static class Program
             .SetTitle("Wasari")
             .SetDescription("Downloads anime episodes from various sources")
             .AddCommand<DownloadCommand>()
-            .UseTypeActivator(serviceProvider.GetService)
+            .UseTypeActivator(serviceProvider.GetRequiredService)
             .Build()
             .RunAsync();
     }
