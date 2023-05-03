@@ -1,4 +1,5 @@
-﻿using CliFx;
+﻿using System.Reflection;
+using CliFx;
 using Figgle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -6,7 +7,6 @@ using Wasari.Anime4k;
 using Wasari.Cli.Commands;
 using Wasari.Cli.Converters;
 using Wasari.FFmpeg;
-using Wasari.Tvdb.Api.Client;
 using WasariEnvironment;
 
 namespace Wasari.Cli;
@@ -16,6 +16,7 @@ internal static class Program
     private static async Task<int> Main()
     {
         await Console.Error.WriteLineAsync(FiggleFonts.Standard.Render("Wasari"));
+        await Console.Error.WriteLineAsync($"Current version: {Assembly.GetExecutingAssembly().GetName().Version}");
         
         var serviceCollection = await new ServiceCollection()
             .AddRootServices();
