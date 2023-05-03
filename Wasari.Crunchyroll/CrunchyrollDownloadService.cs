@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using FFMpegCore;
+using FFMpegCore.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -103,14 +104,18 @@ internal class CrunchyrollDownloadService : GenericDownloadService
     {
         await episode.LoadStreams(crunchyrollApiService);
 
-        if (episode.ApiEpisodeStreams?.Streams == null || episode.ApiEpisodeStreams.Streams.Length <= 0)
+        if (episode.ApiEpisodeStreams?.Streams is not { Length: > 0 })
         {
             Logger.LogWarning("Episode found with no stream options: {@Episode}", episode);
             yield break;
         }
 
         var stream = episode.ApiEpisodeStreams.Streams.Single(o => o.Type == "adaptive_hls" && string.IsNullOrEmpty(o.Locale));
-        var mediaInfo = await FFProbe.AnalyseAsync(new Uri(stream.Url));
+        var mediaInfo = await FFProbe.AnalyseAsync(new Uri(stream.Url), new FFOptions
+        {
+            LogLevel = FFMpegLogLevel.Error,
+            UseCache = false
+        });
         var bestVideo = mediaInfo.VideoStreams.OrderBy(vStream => vStream.Height + vStream.Width).Last();
 
         yield return new WasariEpisodeInputWithStream(stream.Url, episode.Locale, !episode.IsDubbed ? InputType.VideoWithAudio : InputType.Audio, mediaInfo.PrimaryAudioStream?.Index, !episode.IsDubbed ? bestVideo.Index : null);
