@@ -52,9 +52,31 @@ internal class CrunchyrollDownloadService : GenericDownloadService
                     if (!AuthenticationOptions.Value.HasCredentials && await groupedEpisodes.AnyAsync(o => o.IsPremium))
                         throw new PremiumEpisodeException(groupedEpisodes.Key.EpisodeNumber!.Value, groupedEpisodes.Key.SeasonNumber);
 
-                    var nonDubbedEpisode = await groupedEpisodes.SingleAsync(o => !o.IsDubbed);
+                    var hasNonDubbedEpisodes = await groupedEpisodes.AnyAsync(i => !i.IsDubbed);
 
-                    return new WasariEpisode(nonDubbedEpisode.Title, nonDubbedEpisode.SeriesTitle, groupedEpisodes.Key.SeasonNumber, groupedEpisodes.Key.EpisodeNumber!.Value, null, async (provider) =>
+                    var commonEpisodeData = hasNonDubbedEpisodes
+                        ? await groupedEpisodes
+                            .Where(i => !i.IsDubbed)
+                            .Select(i => new
+                            {
+                                i.SeriesTitle,
+                                i.Title,
+                                i.DurationMs
+                            })
+                            .Distinct()
+                            .SingleAsync()
+                        : await groupedEpisodes
+                            .GroupBy(i => new { i.SeriesTitle, i.Title })
+                            .SelectAwait(async i => new
+                            {
+                                i.Key.SeriesTitle,
+                                i.Key.Title,
+                                DurationMs = await i.MaxAsync(o => o.DurationMs)
+                            })
+                            .Distinct()
+                            .SingleAsync();
+
+                    return new WasariEpisode(commonEpisodeData.Title, commonEpisodeData.SeriesTitle, groupedEpisodes.Key.SeasonNumber, groupedEpisodes.Key.EpisodeNumber!.Value, null, async (provider) =>
                     {
                         var crunchyrollApiService = provider.GetRequiredService<CrunchyrollApiService>();
 
@@ -68,7 +90,7 @@ internal class CrunchyrollDownloadService : GenericDownloadService
                                 .Select(o => new WasariEpisodeInput(o.Url, o.Locale, InputType.Subtitle)))
                             .Cast<IWasariEpisodeInput>()
                             .ToArrayAsync();
-                    }, TimeSpan.FromMilliseconds(nonDubbedEpisode.DurationMs));
+                    }, TimeSpan.FromMilliseconds(commonEpisodeData.DurationMs));
                 });
 
             return await base.DownloadEpisodes(episodes, levelOfParallelism);

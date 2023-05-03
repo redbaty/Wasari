@@ -27,7 +27,7 @@ internal static partial class EpisodeExtensions
             var episodesArray = await episodes.ToArrayAsync();
 
             var moreThanOneEpisodeWithSameTitle = episodesArray
-                .GroupBy(i => i.Title)
+                .GroupBy(i => new {i.Title, i.AudioLocale})
                 .Any(i => i.Count() > 1);
 
             if (moreThanOneEpisodeWithSameTitle)
@@ -36,13 +36,9 @@ internal static partial class EpisodeExtensions
             }
             else
             {
-                var seriesName = episodesArray.Select(o => o.SeriesTitle)
-                    .Distinct()
-                    .ToArray();
-
-                if (seriesName.Length == 1)
+                foreach (var gEpisodes in episodesArray.GroupBy(i => new {i.SeriesTitle, i.AudioLocale}))
                 {
-                    var wasariApiEpisodes = await wasariTvdbApi.GetEpisodesAsync(seriesName.Single())
+                    var wasariApiEpisodes = await wasariTvdbApi.GetEpisodesAsync(gEpisodes.Key.SeriesTitle)
                         .ContinueWith(t =>
                         {
                             if (t.IsCompletedSuccessfully)
