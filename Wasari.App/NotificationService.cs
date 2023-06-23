@@ -2,7 +2,7 @@
 using System.Text;
 using Wasari.App.Abstractions;
 
-namespace Wasari.Cli.Services;
+namespace Wasari.App;
 
 public class NotificationService
 {
