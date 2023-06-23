@@ -36,7 +36,7 @@ internal class CrunchyrollDownloadService : GenericDownloadService
         AuthenticationOptions = authenticationOptions;
     }
 
-    public override async Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism)
+    public override async Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, Ranges episodesRange, Ranges seasonsRange)
     {
         var match = Regex.Match(url, @"series\/(?<seriesId>\w+)|watch\/(?<episodeId>\w+)\/");
 
@@ -94,10 +94,10 @@ internal class CrunchyrollDownloadService : GenericDownloadService
                     }, TimeSpan.FromMilliseconds(commonEpisodeData.DurationMs));
                 });
 
-            return await base.DownloadEpisodes(episodes, levelOfParallelism);
+            return await base.DownloadEpisodes(episodes, levelOfParallelism, episodesRange, seasonsRange);
         }
 
-        return await base.DownloadEpisodes(url, levelOfParallelism);
+        return await base.DownloadEpisodes(url, levelOfParallelism, episodesRange, seasonsRange);
     }
 
     private async IAsyncEnumerable<IWasariEpisodeInput> ProcessEpisode(ApiEpisode episode, CrunchyrollApiService crunchyrollApiService)

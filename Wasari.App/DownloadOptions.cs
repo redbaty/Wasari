@@ -12,10 +12,6 @@ public record DownloadOptions
     public bool IncludeSubs { get; set; }
     
     public bool SkipExistingFiles { get; set; }
-    
-    public Ranges? EpisodesRange { get; set; }
-    
-    public Ranges? SeasonsRange { get; set; }
 
     public bool CreateSeriesFolder { get; set; }
     

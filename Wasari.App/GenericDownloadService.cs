@@ -27,16 +27,16 @@ public class GenericDownloadService : IDownloadService
 
     private YoutubeDlpService YoutubeDlpService { get; }
 
-    public virtual Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism) => DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
+    public virtual Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, Ranges? episodesRange, Ranges? seasonsRange) => DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
         .OrderBy(i => i.SeasonNumber)
-        .ThenBy(i => i.Number), levelOfParallelism);
+        .ThenBy(i => i.Number), levelOfParallelism, episodesRange, seasonsRange);
 
-    protected async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<WasariEpisode> episodes, int levelOfParallelism)
+    protected async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<WasariEpisode> episodes, int levelOfParallelism, Ranges? episodesRange, Ranges? seasonsRange)
     {
         var ep = Options.Value.SkipUniqueEpisodeCheck ? episodes : episodes
             .EnsureUniqueEpisodes();
         var episodesArray = await ep
-            .FilterEpisodes(Options.Value.EpisodesRange, Options.Value.SeasonsRange)
+            .FilterEpisodes(episodesRange, seasonsRange)
             .ToArrayAsync();
         
         Logger.LogInformation("{@DownloadCount} episodes gathered to download", episodesArray.Length);
