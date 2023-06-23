@@ -176,7 +176,7 @@ public class FFmpegService
         }
         else
         {
-            yield return "-crf 20";
+            yield return "-c:v copy";
         }
 
         yield return "-y";
