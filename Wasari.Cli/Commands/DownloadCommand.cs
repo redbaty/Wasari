@@ -10,7 +10,6 @@ using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.App.Extensions;
 using Wasari.Cli.Converters;
-using Wasari.Cli.Services;
 using Wasari.Crunchyroll;
 using Wasari.FFmpeg;
 using Wasari.Tvdb.Api.Client;
@@ -193,8 +192,6 @@ public class DownloadCommand : ICommand
             o.IncludeDubs = IncludeDubs;
             o.IncludeSubs = IncludeSubs;
             o.SkipExistingFiles = SkipExistingFiles;
-            o.EpisodesRange = ParseRange(EpisodeRange);
-            o.SeasonsRange = ParseRange(SeasonsRange);
             o.CreateSeriesFolder = CreateSeriesFolder;
             o.CreateSeasonFolder = CreateSeasonFolder;
             o.TryEnrichEpisodes = EnrichEpisodes;
@@ -226,7 +223,9 @@ public class DownloadCommand : ICommand
         await using var serviceProvider = serviceCollection.BuildServiceProvider();
 
         var downloadService = serviceProvider.GetRequiredService<DownloadServiceSolver>();
-        var downloadedEpisodes = await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism);
+        var episodesRange = ParseRange(EpisodeRange);
+        var seasonsRange = ParseRange(SeasonsRange);
+        var downloadedEpisodes = await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism, episodesRange, seasonsRange);
 
         if (serviceProvider.GetService<NotificationService>() is { } notificationService)
         {
