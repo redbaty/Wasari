@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using Wasari.Daemon.Models;
+using Wasari.Daemon.Validators;
 using Wolverine;
 
 namespace Wasari.Daemon.Controllers;
@@ -16,10 +18,14 @@ public class MediaController : ControllerBase
     private IMessageBus Bus { get; }
     
     [HttpPost("download")]
-    public async Task<IActionResult> Download([FromBody] DownloadRequest request)
+    public async Task<IActionResult> Download([FromBody] DownloadRequest request, [FromServices] IValidator<DownloadRequest> validator)
     {
-        if (!request.Url.IsAbsoluteUri)
-            return BadRequest();
+        var validationResult = await validator.ValidateAsync(request);
+        
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(validationResult.Errors);
+        }
         
         await Bus.SendAsync(request);
         return Accepted();
