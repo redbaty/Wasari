@@ -188,7 +188,7 @@ public class DownloadCommand : ICommand
         serviceCollection.AddWasariTvdbApi();
         serviceCollection.Configure<DownloadOptions>(o =>
         {
-            o.OutputDirectory = OutputDirectory;
+            o.DefaultOutputDirectory = OutputDirectory;
             o.IncludeDubs = IncludeDubs;
             o.IncludeSubs = IncludeSubs;
             o.SkipExistingFiles = SkipExistingFiles;
@@ -225,7 +225,7 @@ public class DownloadCommand : ICommand
         var downloadService = serviceProvider.GetRequiredService<DownloadServiceSolver>();
         var episodesRange = ParseRange(EpisodeRange);
         var seasonsRange = ParseRange(SeasonsRange);
-        var downloadedEpisodes = await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism, episodesRange, seasonsRange);
+        var downloadedEpisodes = await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism, new DownloadEpisodeOptions(seasonsRange, episodesRange, null));
 
         if (serviceProvider.GetService<NotificationService>() is { } notificationService)
         {

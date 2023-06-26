@@ -2,5 +2,5 @@
 
 public interface IDownloadService
 {
-    Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, Ranges? episodesRange, Ranges? seasonsRange);
+    Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, DownloadEpisodeOptions options);
 }

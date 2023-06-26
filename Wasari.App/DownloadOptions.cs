@@ -5,7 +5,7 @@ namespace Wasari.App;
 
 public record DownloadOptions
 {
-    public string? OutputDirectory { get; set; }
+    public string? DefaultOutputDirectory { get; set; }
     
     public bool IncludeDubs { get; set; }
     

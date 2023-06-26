@@ -27,30 +27,30 @@ public class GenericDownloadService : IDownloadService
 
     private YoutubeDlpService YoutubeDlpService { get; }
 
-    public virtual Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, Ranges? episodesRange, Ranges? seasonsRange) => DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
+    public virtual Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, DownloadEpisodeOptions options) => DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
         .OrderBy(i => i.SeasonNumber)
-        .ThenBy(i => i.Number), levelOfParallelism, episodesRange, seasonsRange);
+        .ThenBy(i => i.Number), levelOfParallelism, options);
 
-    protected async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<WasariEpisode> episodes, int levelOfParallelism, Ranges? episodesRange, Ranges? seasonsRange)
+    protected async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<WasariEpisode> episodes, int levelOfParallelism, DownloadEpisodeOptions options)
     {
         var ep = Options.Value.SkipUniqueEpisodeCheck ? episodes : episodes
             .EnsureUniqueEpisodes();
         var episodesArray = await ep
-            .FilterEpisodes(episodesRange, seasonsRange)
+            .FilterEpisodes(options.EpisodesRange, options.SeasonsRange)
             .ToArrayAsync();
         
         Logger.LogInformation("{@DownloadCount} episodes gathered to download", episodesArray.Length);
 
         return await AsyncProcessorBuilder.WithItems(episodesArray)
-            .SelectAsync(DownloadEpisode)
+            .SelectAsync(i => DownloadEpisode(i, options))
             .ProcessInParallel(levelOfParallelism);
     }
 
-    private async Task<DownloadedEpisode> DownloadEpisode(WasariEpisode episode)
+    private async Task<DownloadedEpisode> DownloadEpisode(WasariEpisode episode, DownloadEpisodeOptions downloadEpisodeOptions)
     {
-        var outputDirectory = Options.Value.OutputDirectory ?? Environment.CurrentDirectory;
+        var outputDirectory = downloadEpisodeOptions.OutputDirectoryOverride ?? Options.Value.DefaultOutputDirectory ?? Environment.CurrentDirectory;
 
-        if (Options.Value.CreateSeriesFolder && !string.IsNullOrEmpty(episode.SeriesName))
+        if (string.IsNullOrEmpty(downloadEpisodeOptions.OutputDirectoryOverride) && Options.Value.CreateSeriesFolder && !string.IsNullOrEmpty(episode.SeriesName))
         {
             outputDirectory = Path.Combine(outputDirectory, episode.SeriesName.AsSafePath());
 
@@ -58,7 +58,7 @@ public class GenericDownloadService : IDownloadService
                 Directory.CreateDirectory(outputDirectory);
         }
         
-        if (Options.Value.CreateSeasonFolder && episode.SeasonNumber.HasValue)
+        if (string.IsNullOrEmpty(downloadEpisodeOptions.OutputDirectoryOverride) && Options.Value.CreateSeasonFolder && episode.SeasonNumber.HasValue)
         {
             outputDirectory = Path.Combine(outputDirectory, $"Season {episode.SeasonNumber}");
 

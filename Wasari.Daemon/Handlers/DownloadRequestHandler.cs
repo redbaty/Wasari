@@ -13,7 +13,7 @@ public class DownloadRequestHandler
         var downloadService = downloadServiceSolver.GetService(request.Url);
         var episodesRange = new Ranges(request.EpisodeNumber, request.EpisodeNumber);
         var seasonsRange = new Ranges(request.SeasonNumber, request.SeasonNumber);
-        var episodes = await downloadService.DownloadEpisodes(request.Url.ToString(), 1, episodesRange, seasonsRange);
+        var episodes = await downloadService.DownloadEpisodes(request.Url.ToString(), 1, new DownloadEpisodeOptions(episodesRange, seasonsRange, request.OutputDirectoryOverride));
         
         foreach (var downloadedEpisode in episodes.Where(i => i.Success))
         {
