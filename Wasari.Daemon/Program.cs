@@ -98,13 +98,12 @@ if (webhookUrl != null)
 builder.Host.UseResourceSetupOnStartup();
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     await app.ResetWolverine();
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 
+app.UseSwagger();
+app.UseSwaggerUI();
 app.MapControllers();
 await app.RunOaktonCommands(args);
