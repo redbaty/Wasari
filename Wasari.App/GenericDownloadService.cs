@@ -58,7 +58,7 @@ public class GenericDownloadService : IDownloadService
                 Directory.CreateDirectory(outputDirectory);
         }
         
-        if (string.IsNullOrEmpty(downloadEpisodeOptions.OutputDirectoryOverride) && Options.Value.CreateSeasonFolder && episode.SeasonNumber.HasValue)
+        if (Options.Value.CreateSeasonFolder && episode.SeasonNumber.HasValue)
         {
             outputDirectory = Path.Combine(outputDirectory, $"Season {episode.SeasonNumber}");
 
