@@ -6,9 +6,11 @@ using Wasari.App.Extensions;
 using Wasari.Crunchyroll;
 using Wasari.Daemon.Extensions;
 using Wasari.Daemon.Handlers;
+using Wasari.Daemon.HostedServices;
 using Wasari.Daemon.Models;
 using Wasari.FFmpeg;
 using Wasari.YoutubeDlp;
+using WasariEnvironment;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -21,6 +23,8 @@ var postgresCs = Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRIN
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.ApplyOaktonExtensions();
+await builder.Services.AddEnvironmentServices();
+builder.Services.AddHostedService<EnvironmentCheckerService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -28,7 +32,7 @@ builder.Services.AddDownloadServices();
 
 builder.Services.Configure<DownloadOptions>(o =>
 {
-    o.OutputDirectory = outputDirectory;
+    o.DefaultOutputDirectory = outputDirectory;
     o.IncludeDubs = false;
     o.IncludeSubs = true;
     o.SkipExistingFiles = true;
