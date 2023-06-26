@@ -1,4 +1,4 @@
-name: Build Docker Image - NEXT
+name: docker-wasari-cli-next
 
 on:
   push:
