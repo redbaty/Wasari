@@ -13,6 +13,7 @@ using Wasari.YoutubeDlp;
 using WasariEnvironment;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
+using Wolverine.FluentValidation;
 using Wolverine.Postgresql;
 
 var outputDirectory = Environment.GetEnvironmentVariable("OUTPUT_DIRECTORY") ?? throw new InvalidOperationException("OUTPUT_DIRECTORY environment variable is not set");
@@ -80,6 +81,7 @@ builder.Host.UseWolverine(opts =>
 
     opts.Policies.UseDurableInboxOnAllListeners();
     opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
+    opts.UseFluentValidation();
 });
 
 builder.Host.UseResourceSetupOnStartup();
