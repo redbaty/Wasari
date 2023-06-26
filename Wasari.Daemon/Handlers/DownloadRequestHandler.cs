@@ -8,26 +8,29 @@ namespace Wasari.Daemon.Handlers;
 
 public class DownloadRequestHandler
 {
-    public async ValueTask Handle(DownloadRequest request, ILogger<DownloadRequestHandler> logger, DownloadServiceSolver downloadServiceSolver, IServiceProvider serviceProvider, IOptions<NotificationOptions> notificationOptions)
+    public async ValueTask Handle(DownloadRequest request, ILogger<DownloadRequestHandler> logger, DownloadServiceSolver downloadServiceSolver, IServiceProvider serviceProvider, IOptions<NotificationOptions> notificationOptions, IOptions<DownloadOptions> downloadOptions)
     {
         logger.LogInformation("Starting download of {Url}", request.Url);
-        
+
         var downloadService = downloadServiceSolver.GetService(request.Url);
         var episodesRange = new Ranges(request.EpisodeNumber, request.EpisodeNumber);
         var seasonsRange = new Ranges(request.SeasonNumber, request.SeasonNumber);
-        var episodes = await downloadService.DownloadEpisodes(request.Url.ToString(), 1, new DownloadEpisodeOptions(episodesRange, seasonsRange, request.OutputDirectoryOverride));
         
+        var outputDirectoryOverride = string.IsNullOrEmpty(request.SeriesNameOverride) ? null : string.IsNullOrEmpty(downloadOptions.Value.DefaultOutputDirectory) ? null : Path.Combine(downloadOptions.Value.DefaultOutputDirectory, request.SeriesNameOverride);
+        var episodes = await downloadService.DownloadEpisodes(request.Url.ToString(), 1,
+            new DownloadEpisodeOptions(episodesRange, seasonsRange, outputDirectoryOverride));
+
         foreach (var downloadedEpisode in episodes.Where(i => i.Success))
         {
             logger.LogInformation("Downloaded {Episode}", downloadedEpisode);
         }
-        
+
         foreach (var downloadedEpisode in episodes.Where(i => !i.Success))
         {
             logger.LogError("Failed to download {Episode}", downloadedEpisode);
         }
-        
-        if (notificationOptions.Value.Enabled && serviceProvider.GetService<NotificationService>() is {} notificationService)
+
+        if (notificationOptions.Value.Enabled && serviceProvider.GetService<NotificationService>() is { } notificationService)
         {
             await notificationService.SendNotifcationForDownloadedEpisodeAsync(episodes);
         }

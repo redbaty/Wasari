@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Wasari.Daemon.Models;
-using Wasari.Daemon.Validators;
 using Wolverine;
 
 namespace Wasari.Daemon.Controllers;
