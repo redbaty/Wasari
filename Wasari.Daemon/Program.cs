@@ -8,6 +8,7 @@ using Wasari.Daemon.Extensions;
 using Wasari.Daemon.Handlers;
 using Wasari.Daemon.HostedServices;
 using Wasari.Daemon.Models;
+using Wasari.Daemon.Options;
 using Wasari.FFmpeg;
 using Wasari.YoutubeDlp;
 using WasariEnvironment;
@@ -20,6 +21,7 @@ var outputDirectory = Environment.GetEnvironmentVariable("OUTPUT_DIRECTORY") ?? 
 var username = Environment.GetEnvironmentVariable("USERNAME") ?? throw new InvalidOperationException("USERNAME environment variable is not set");
 var password = Environment.GetEnvironmentVariable("PASSWORD") ?? throw new InvalidOperationException("PASSWORD environment variable is not set");
 var postgresCs = Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING") ?? throw new InvalidOperationException("POSTGRESQL_CONNECTION_STRING environment variable is not set");
+var webhookUrl = Environment.GetEnvironmentVariable("WEBHOOK_URL");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,7 +76,7 @@ builder.Host.UseWolverine(opts =>
 
     opts.Discovery.DisableConventionalDiscovery();
     opts.Discovery.IncludeType<DownloadRequestHandler>();
-    
+
     opts.PersistMessagesWithPostgresql(postgresCs);
     opts.UseEntityFrameworkCoreTransactions();
     opts.Policies.AutoApplyTransactions();
@@ -83,6 +85,15 @@ builder.Host.UseWolverine(opts =>
     opts.Policies.UseDurableOutboxOnAllSendingEndpoints();
     opts.UseFluentValidation();
 });
+
+if (webhookUrl != null)
+{
+    builder.Services.AddHttpClient<NotificationService>(c => { c.BaseAddress = new Uri(webhookUrl); });
+    builder.Services.Configure<NotificationOptions>(o =>
+    {
+        o.Enabled = true;
+    });
+}
 
 builder.Host.UseResourceSetupOnStartup();
 var app = builder.Build();

@@ -1,12 +1,14 @@
-﻿using Wasari.App;
+﻿using Microsoft.Extensions.Options;
+using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.Daemon.Models;
+using Wasari.Daemon.Options;
 
 namespace Wasari.Daemon.Handlers;
 
 public class DownloadRequestHandler
 {
-    public async ValueTask Handle(DownloadRequest request, ILogger<DownloadRequestHandler> logger, DownloadServiceSolver downloadServiceSolver)
+    public async ValueTask Handle(DownloadRequest request, ILogger<DownloadRequestHandler> logger, DownloadServiceSolver downloadServiceSolver, IServiceProvider serviceProvider, IOptions<NotificationOptions> notificationOptions)
     {
         logger.LogInformation("Starting download of {Url}", request.Url);
         
@@ -23,6 +25,11 @@ public class DownloadRequestHandler
         foreach (var downloadedEpisode in episodes.Where(i => !i.Success))
         {
             logger.LogError("Failed to download {Episode}", downloadedEpisode);
+        }
+        
+        if (notificationOptions.Value.Enabled && serviceProvider.GetService<NotificationService>() is {} notificationService)
+        {
+            await notificationService.SendNotifcationForDownloadedEpisodeAsync(episodes);
         }
     }
 }
