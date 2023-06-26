@@ -12,15 +12,19 @@ public class NotificationService
     }
 
     private HttpClient HttpClient { get; }
-    
+
     public async ValueTask SendNotifcationForDownloadedEpisodeAsync(IEnumerable<DownloadedEpisode> downloadedEpisode)
     {
         var message = downloadedEpisode
-            .GroupBy(i => i.Episode.SeriesName)
+            .GroupBy(i => new { i.Episode.SeriesName, i.Success })
             .Select(i =>
             {
                 var sb = new StringBuilder();
-                sb.AppendLine($"Episodes has been downloaded for series: {i.Key}");
+
+                if (i.Key.Success)
+                    sb.AppendLine($"Episodes has been downloaded for series: {i.Key.SeriesName}");
+                else
+                    sb.AppendLine($"Failed to download episodes for series: {i.Key.SeriesName}");
 
                 foreach (var episode in i)
                 {
@@ -33,7 +37,7 @@ public class NotificationService
         await SendNotificationAsync(message);
     }
 
-    public async ValueTask SendNotificationAsync(string message)
+    private async ValueTask SendNotificationAsync(string message)
     {
         await HttpClient.PostAsJsonAsync(string.Empty, new
         {
