@@ -71,7 +71,7 @@ builder.Host.UseWolverine(opts =>
     opts.Durability.StaleNodeTimeout = TimeSpan.FromSeconds(10);
 
     opts.LocalQueueFor<DownloadRequest>()
-        .MaximumParallelMessages(3)
+        .Sequential()
         .UseDurableInbox();
 
     opts.Discovery.DisableConventionalDiscovery();
