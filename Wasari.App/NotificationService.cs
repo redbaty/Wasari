@@ -33,8 +33,11 @@ public class NotificationService
 
                 return sb.ToString();
             })
+            .DefaultIfEmpty()
             .Aggregate((x, y) => $"{x}{Environment.NewLine}{y}");
-        await SendNotificationAsync(message);
+
+        if (!string.IsNullOrEmpty(message))
+            await SendNotificationAsync(message);
     }
 
     private async ValueTask SendNotificationAsync(string message)
