@@ -33,12 +33,14 @@ public class GenericDownloadService : IDownloadService
 
     protected async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<WasariEpisode> episodes, int levelOfParallelism, DownloadEpisodeOptions options)
     {
-        var ep = Options.Value.SkipUniqueEpisodeCheck ? episodes : episodes
-            .EnsureUniqueEpisodes();
+        var ep = Options.Value.SkipUniqueEpisodeCheck
+            ? episodes
+            : episodes
+                .EnsureUniqueEpisodes();
         var episodesArray = await ep
             .FilterEpisodes(options.EpisodesRange, options.SeasonsRange)
             .ToArrayAsync();
-        
+
         Logger.LogInformation("{@DownloadCount} episodes gathered to download", episodesArray.Length);
 
         return await AsyncProcessorBuilder.WithItems(episodesArray)
@@ -57,7 +59,7 @@ public class GenericDownloadService : IDownloadService
             if (!Directory.Exists(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
         }
-        
+
         if (Options.Value.CreateSeasonFolder && episode.SeasonNumber.HasValue)
         {
             outputDirectory = Path.Combine(outputDirectory, $"Season {episode.SeasonNumber}");
@@ -73,7 +75,7 @@ public class GenericDownloadService : IDownloadService
         if (Options.Value.SkipExistingFiles && File.Exists(filepath))
         {
             Logger.LogWarning("Skipping episode since it already exists: {Path}", filepath);
-            return new DownloadedEpisode(filepath, false, episode);
+            return new DownloadedEpisode(filepath, DownloadedEpisodeStatus.AlreadyExists, episode);
         }
 
         var episodeProgress = new Progress<FFmpegProgressUpdate>();
@@ -91,8 +93,15 @@ public class GenericDownloadService : IDownloadService
         };
 
 
-        await FFmpegService.DownloadEpisode(episode, filepath, episodeProgress);
-        return new DownloadedEpisode(filepath, true, episode);
+        var sucess = await FFmpegService.DownloadEpisode(episode, filepath, episodeProgress).ContinueWith(t =>
+        {
+            if (t.IsCompletedSuccessfully)
+                return true;
+
+            Logger.LogError(t.Exception, "Failed to download episode {Path}", filepath);
+            return false;
+        });
+        return new DownloadedEpisode(filepath, sucess ? DownloadedEpisodeStatus.Downloaded : DownloadedEpisodeStatus.Failed, episode);
     }
 
     private static StringBuilder BuildEpisodeName(IWasariEpisode episode)

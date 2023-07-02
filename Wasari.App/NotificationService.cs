@@ -16,15 +16,20 @@ public class NotificationService
     public async ValueTask SendNotifcationForDownloadedEpisodeAsync(IEnumerable<DownloadedEpisode> downloadedEpisode)
     {
         var message = downloadedEpisode
-            .GroupBy(i => new { i.Episode.SeriesName, i.Success })
+            .GroupBy(i => new { i.Episode.SeriesName, Status = i.Status })
             .Select(i =>
             {
                 var sb = new StringBuilder();
 
-                if (i.Key.Success)
-                    sb.AppendLine($"Episodes has been downloaded for series: {i.Key.SeriesName}");
-                else
-                    sb.AppendLine($"Failed to download episodes for series: {i.Key.SeriesName}");
+                switch (i.Key.Status)
+                {
+                    case DownloadedEpisodeStatus.Downloaded:
+                        sb.AppendLine($"Episodes has been downloaded for series: {i.Key.SeriesName}");
+                        break;
+                    case DownloadedEpisodeStatus.Failed:
+                        sb.AppendLine($"Failed to download episodes for series: {i.Key.SeriesName}");
+                        break;
+                }
 
                 foreach (var episode in i)
                 {

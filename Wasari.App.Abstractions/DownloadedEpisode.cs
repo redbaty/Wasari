@@ -1,3 +1,10 @@
 namespace Wasari.App.Abstractions;
 
-public record DownloadedEpisode(string? FilePath, bool Success, IWasariEpisode Episode);
+public enum DownloadedEpisodeStatus
+{
+    Downloaded,
+    AlreadyExists,
+    Failed
+}
+
+public record DownloadedEpisode(string? FilePath, DownloadedEpisodeStatus Status, IWasariEpisode Episode);
