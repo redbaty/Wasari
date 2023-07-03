@@ -12,7 +12,7 @@ public class DownloadRequestValidator : AbstractValidator<DownloadRequest>
             .NotEmpty()
             .Must(i => i.IsAbsoluteUri)
             .WithMessage("Url must be an absolute uri");
-        RuleFor(i => i.EpisodeNumber).GreaterThan(0);
+        RuleFor(i => i.EpisodeNumber).GreaterThanOrEqualTo(0);
         RuleFor(i => i.SeasonNumber).GreaterThan(0);
     }
 }
