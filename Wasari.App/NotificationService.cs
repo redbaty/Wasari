@@ -16,6 +16,7 @@ public class NotificationService
     public async ValueTask SendNotifcationForDownloadedEpisodeAsync(IEnumerable<DownloadedEpisode> downloadedEpisode)
     {
         var message = downloadedEpisode
+            .Where(i => i.Status != DownloadedEpisodeStatus.AlreadyExists)
             .GroupBy(i => new { i.Episode.SeriesName, Status = i.Status })
             .Select(i =>
             {
