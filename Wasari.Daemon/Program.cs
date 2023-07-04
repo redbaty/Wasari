@@ -10,6 +10,7 @@ using Wasari.Daemon.HostedServices;
 using Wasari.Daemon.Models;
 using Wasari.Daemon.Options;
 using Wasari.FFmpeg;
+using Wasari.Tvdb.Api.Client;
 using Wasari.YoutubeDlp;
 using WasariEnvironment;
 using Wolverine;
@@ -65,6 +66,7 @@ builder.Services.Configure<YoutubeDlpOptions>(c =>
 });
 builder.Services.AddCrunchyrollServices();
 builder.Services.AddMemoryCache();
+builder.Services.AddWasariTvdbApi();
 
 builder.Host.UseWolverine(opts =>
 {
