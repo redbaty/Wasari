@@ -1,5 +1,6 @@
 using Oakton;
 using Oakton.Resources;
+using StackExchange.Redis;
 using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.App.Extensions;
@@ -68,14 +69,31 @@ builder.Services.AddCrunchyrollServices();
 builder.Services.AddMemoryCache();
 builder.Services.AddWasariTvdbApi();
 
+var redisConnectionString = Environment.GetEnvironmentVariable("REDIS");
+var redisEnabled = !string.IsNullOrEmpty(redisConnectionString);
+
+if (redisEnabled)
+    builder.Services.AddSingleton(_ => ConnectionMultiplexer.Connect(redisConnectionString));
+
+var maxConcurrentDownloads = Environment.GetEnvironmentVariable("MAX_CONCURRENT_DOWNLOADS");
+var intMaxConcurrentDownloads = int.TryParse(maxConcurrentDownloads, out var parsedMaxConcurrentDownloads) ? parsedMaxConcurrentDownloads : (int?) null;
+
 builder.Host.UseWolverine(opts =>
 {
     opts.Durability.StaleNodeTimeout = TimeSpan.FromSeconds(10);
 
-    opts.LocalQueueFor<DownloadRequest>()
-        .Sequential()
+    var localQueueConfiguration = opts.LocalQueueFor<DownloadRequest>()
         .UseDurableInbox();
-
+    
+    if (redisEnabled)
+    {
+        localQueueConfiguration.MaximumParallelMessages(intMaxConcurrentDownloads ?? 3);
+    }
+    else
+    {
+        localQueueConfiguration.Sequential();
+    }
+    
     opts.Discovery.DisableConventionalDiscovery();
     opts.Discovery.IncludeType<DownloadRequestHandler>();
 
@@ -89,13 +107,13 @@ builder.Host.UseWolverine(opts =>
 });
 
 if (webhookUrl != null)
-{
     builder.Services.AddHttpClient<NotificationService>(c => { c.BaseAddress = new Uri(webhookUrl); });
-    builder.Services.Configure<NotificationOptions>(o =>
-    {
-        o.Enabled = true;
-    });
-}
+
+builder.Services.Configure<DaemonOptions>(o =>
+{
+    o.NotificationEnabled = webhookUrl != null;
+    o.RedisLockEnabled = redisEnabled;
+});
 
 builder.Host.UseResourceSetupOnStartup();
 var app = builder.Build();

@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Medallion.Threading.Redis;
+using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.Daemon.Models;
@@ -13,8 +15,30 @@ public class DownloadRequestHandler
         ILogger<DownloadRequestHandler> logger,
         DownloadServiceSolver downloadServiceSolver,
         IServiceProvider serviceProvider,
-        IOptions<NotificationOptions> notificationOptions,
+        IOptions<DaemonOptions> daemonOptions,
         IOptions<DownloadOptions> downloadOptions)
+    {
+        if (daemonOptions.Value.RedisLockEnabled)
+        {
+            var connectionMultiplexer = serviceProvider.GetRequiredService<ConnectionMultiplexer>();
+            var @lock = new RedisDistributedLock($"S{request.SeasonNumber:00}E{request.EpisodeNumber:00}_{request.Url}", connectionMultiplexer.GetDatabase());
+
+            await using var handle = await @lock.TryAcquireAsync(TimeSpan.FromMinutes(30));
+            if (handle == null)
+            {
+                logger.LogWarning("Download of {Url} is already in progress", request.Url);
+                return;
+            }
+
+            await DownloadEpisode(request, logger, downloadServiceSolver, serviceProvider, daemonOptions, downloadOptions);
+        }
+        else
+        {
+            await DownloadEpisode(request, logger, downloadServiceSolver, serviceProvider, daemonOptions, downloadOptions);
+        }
+    }
+
+    private static async ValueTask DownloadEpisode(DownloadRequest request, ILogger logger, DownloadServiceSolver downloadServiceSolver, IServiceProvider serviceProvider, IOptions<DaemonOptions> daemonOptions, IOptions<DownloadOptions> downloadOptions)
     {
         logger.LogInformation("Starting download of {Url}", request.Url);
 
@@ -43,8 +67,8 @@ public class DownloadRequestHandler
                     throw new ArgumentOutOfRangeException();
             }
         }
-        
-        if (notificationOptions.Value.Enabled && serviceProvider.GetService<NotificationService>() is { } notificationService)
+
+        if (daemonOptions.Value.NotificationEnabled && serviceProvider.GetService<NotificationService>() is { } notificationService)
         {
             await notificationService.SendNotifcationForDownloadedEpisodeAsync(episodes);
         }
