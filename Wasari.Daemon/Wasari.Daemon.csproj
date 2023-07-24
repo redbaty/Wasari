@@ -15,7 +15,7 @@
         <PackageReference Include="WolverineFx" Version="1.2.0" />
         <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="1.2.0" />
         <PackageReference Include="WolverineFx.FluentValidation" Version="1.2.0" />
-        <PackageReference Include="WolverineFx.Postgresql" Version="1.2.0" />
+        <PackageReference Include="WolverineFx.Postgresql" Version="1.2.1" />
     </ItemGroup>
 
     <ItemGroup>
