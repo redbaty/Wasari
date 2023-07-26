@@ -38,6 +38,7 @@ internal static class Program
         }
 
         return await new CliApplicationBuilder()
+            .SetExecutableName("Wasari.Cli")
             .SetTitle("Wasari")
             .SetDescription("Downloads anime episodes from various sources")
             .AddCommand<DownloadCommand>()
