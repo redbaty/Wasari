@@ -15,7 +15,7 @@
 
 ## Introduction
 
-Wasari hopes to make it easy to download anime shows from popular streaming services.
+Wasari is a tool for downloading anime from various sources, and transcoding them to a format that is supported by most media players.
 
 ## Features
 * :tv: Crunchyroll Support
@@ -24,26 +24,24 @@ Wasari hopes to make it easy to download anime shows from popular streaming serv
 * :arrow_down: Download queue
 * :bullettrain_side: HEVC Transcoding (With NVIDIA Hardware Acceleration support)
 
-## :information_source: Usage
+## :information_source: Getting Started
 
 ### :warning: Prerequisite
 * FFmpeg ([Master build](https://github.com/BtbN/FFmpeg-Builds/releases) recommended, for full Anime4K support)
 * [YT-DLP](https://github.com/yt-dlp/yt-dlp)
 
-To run Wasari, all you need is a shell:
+Wasari can be used as a CLI tool, or as a Docker container (as an API).
 
-`.\Wasari crunchy <Series-URL> -o <Output-Directory>`
+To use the CLI tool, you can download the latest release from the [releases page](https://github.com/redbaty/Wasari/releases) and run it using the following command:
+
+`.\Wasari.Cli <Series-URL> -o <Output-Directory>`
 
 You can check the full supported arguments list using the `--help` argument.
+
+To use the Docker container, you can pull the latest image from [Docker Hub](https://hub.docker.com/r/redbaty/wasari-daemon), expose the port `80` and you can call the API through the endpoint `/media/download`, you can use Swagger UI to test the API (it is available at the `/swagger` endpoint).
 
 ## :+1: Credits
 
 * [FFmpeg](https://git.ffmpeg.org/ffmpeg.git) - For video decoding/transcoding
-* [YT-DLP](https://github.com/yt-dlp/yt-dlp) - For legacy crunchyroll downloading, and m3u8 streams from crunchyroll API
+* [YT-DLP](https://github.com/yt-dlp/yt-dlp) - For video downloading
 * [CliFx](https://github.com/Tyrrrz/CliFx) - For arguments parsing
-
-## :construction: Roadmap
-
-- [ ] Funimation support
-- [ ] Nyaa.si support
-- [ ] Better Season/Episode tagging
