@@ -59,7 +59,7 @@ internal static partial class EpisodeExtensions
 
                         foreach (var episode in episodesArray)
                         {
-                            var wasariEpisode = episodesLookup[episode.Title].SingleOrDefault() ?? FindEpisodeByNormalizedName(wasariApiEpisodes, episode) ?? FindEpisodeByNormalizedWordMatch(wasariApiEpisodes, episode);
+                            var wasariEpisode = episodesLookup[episode.Title].SingleOrDefault() ?? episodesLookup[episode.Title.Trim()].SingleOrDefault() ?? FindEpisodeByNormalizedName(wasariApiEpisodes, episode) ?? FindEpisodeByNormalizedWordMatch(wasariApiEpisodes, episode);
 
                             if (wasariEpisode == null)
                             {
