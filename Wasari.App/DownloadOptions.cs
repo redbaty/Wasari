@@ -18,6 +18,8 @@ public record DownloadOptions
     public bool CreateSeasonFolder { get; set; }
 
     public bool TryEnrichEpisodes { get; set; } = true;
+
+    public bool OnlyDownloadEnrichedEpisodes { get; set; } = true;
     
     public bool SkipUniqueEpisodeCheck { get; set; }
 

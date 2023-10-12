@@ -6,5 +6,5 @@ namespace Wasari.Tvdb.Api.Client;
 public interface IWasariTvdbApi
 {
     [Get("/episodes")]
-    public Task<IReadOnlyList<Episode>> GetEpisodesAsync(string query);
+    public Task<IReadOnlyList<WasariTvdbEpisode>> GetEpisodesAsync(string query);
 }
