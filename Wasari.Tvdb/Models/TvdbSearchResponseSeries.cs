@@ -4,7 +4,7 @@ namespace Wasari.Tvdb.Models;
 
 public record TvdbSearchResponseSeries(
     [property: JsonPropertyName("objectID")] string ObjectId,
-    [property: JsonPropertyName("aliases")] IReadOnlyList<string> Aliases,
+    [property: JsonPropertyName("aliases")] IReadOnlyList<string>? Aliases,
     [property: JsonPropertyName("country")] string Country,
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("image_url")] string ImageUrl,
