@@ -40,15 +40,31 @@ public class TvdbEpisodesService
             });
 
         var series = tvdbSearchResponseSeries.Single();
+
         var seriesWithEpisodes = await TvdbApi.GetSeriesAsync(series.TvdbId);
+
+        var currentEpiosdeNumber = 1;
 
         return Results.Ok(seriesWithEpisodes.Data.Episodes
             .Where(i => !string.IsNullOrEmpty(i.Name))
-            .Select(i => new WasariTvdbEpisode(i.Name, i.SeasonNumber, i.Number, i.IsMovie switch
+            .OrderBy(i => i.SeasonNumber)
+            .ThenBy(i => i.Number)
+            .Select(ep =>
             {
-                0 => false,
-                1 => true,
-                _ => throw new ArgumentException("IsMovie flag is not 0 or 1")
-            }, i is { SeasonNumber: not null, Number: not null } ? $"S{i.SeasonNumber:00}E{i.Number:00}" : null)));
+                var episode = new WasariTvdbEpisode(ep.Id, ep.Name, ep.SeasonNumber, ep.Number, ep.IsMovie switch
+                    {
+                        0 => false,
+                        1 => true,
+                        _ => throw new ArgumentException("IsMovie flag is not 0 or 1")
+                    }, ep is { SeasonNumber: not null, Number: not null } ? $"S{ep.SeasonNumber:00}E{ep.Number:00}" : null,
+                    series.Id,
+                    ep.SeasonNumber > 0 ? currentEpiosdeNumber : null);
+                
+                if(ep.SeasonNumber > 0)
+                    currentEpiosdeNumber++;
+                
+                return episode;
+            })
+        );
     }
 }

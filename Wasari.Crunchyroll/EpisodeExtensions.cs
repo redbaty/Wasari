@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using F23.StringSimilarity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,6 +14,8 @@ namespace Wasari.Crunchyroll;
 
 public static partial class EpisodeExtensions
 {
+    private static readonly NormalizedLevenshtein Levenshtein = new NormalizedLevenshtein();
+
     [GeneratedRegex("[a-zA-Z0-9 ]+")]
     private static partial Regex EpisodeTitleNormalizeRegex();
 
@@ -156,28 +159,17 @@ public static partial class EpisodeExtensions
         var episodeName = episode.Title
             .ToLowerInvariant()
             .NormalizeUsingRegex();
-
-        var unmatchedEpisodeTitleWords = episodeName.Split(' ');
-
-        var possibleEpisodes = wasariApiEpisodes.Where(o => !o.Matched)
-            .Select(wasariEpisode =>
+        
+        var possibleEpisodes = wasariApiEpisodes
+            .Where(o => !o.Matched)
+            .Select(i => new
             {
-                var wasariEpisodeTitleWords = wasariEpisode.Name
+                Episode = i,
+                Distance = Levenshtein.Distance(i.Name
                     .ToLowerInvariant()
-                    .NormalizeUsingRegex()
-                    .Split(' ');
-
-                var matchedCount = unmatchedEpisodeTitleWords.Intersect(wasariEpisodeTitleWords).Count();
-                return new
-                {
-                    Episode = wasariEpisode,
-                    EpisodeTitle = wasariEpisode.Name,
-                    UnmatchedEpisodeTitle = episode.Title,
-                    MatchesTitleWords = matchedCount,
-                    MatchPercentage = (double)matchedCount / wasariEpisodeTitleWords.Length
-                };
+                    .NormalizeUsingRegex(), episodeName)
             })
-            .OrderByDescending(i => i.MatchPercentage)
+            .OrderBy(i => i.Distance)
             .Take(2)
             .ToList();
 
@@ -188,10 +180,17 @@ public static partial class EpisodeExtensions
                 .SingleOrDefault();
         }
 
-        var delta = possibleEpisodes[0].MatchPercentage - possibleEpisodes[1].MatchPercentage;
-        if (delta > 0.1)
+        var delta =  possibleEpisodes[1].Distance - possibleEpisodes[0].Distance;
+        if (possibleEpisodes[0].Distance < 0.5 && delta > 0.4)
         {
             return possibleEpisodes[0].Episode;
+        }
+        
+        if(possibleEpisodes
+           .Where(i => i.Episode.SeasonNumber == episode.SeasonNumber && (i.Episode.Number == episode.EpisodeNumber || i.Episode.CalculatedAbsoluteNumber == episode.SequenceNumber))
+           .SingleOrDefaultIfMultiple() is {} ep)
+        {
+            return ep.Episode;
         }
 
         return default;

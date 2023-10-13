@@ -5,6 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="F23.StringSimilarity" Version="5.1.0" />
         <PackageReference Include="FFMpegCore" Version="5.1.0" />
         <PackageReference Include="Flurl" Version="3.0.7" />
         <PackageReference Include="JsonExtensions" Version="1.2.0" />

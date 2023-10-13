@@ -47,15 +47,15 @@ public class EpisodeMatchesTest
     )]
     [DataRow(
         "GRZXQJJ8Y" // The Ancient Magus' Bride
-        , 4
+        , 6
     )]
     [DataRow(
         "GYEXQKJG6" // Dr. STONE
-        , 1
+        , 2
     )]
     [DataRow(
         "GRDV0019R" // Jujustu Kaisen
-        , 2
+        , 0
     )]
     [DataRow(
         "G4PH0WXVJ" // SPY x FAMILY
@@ -73,10 +73,10 @@ public class EpisodeMatchesTest
 
         Assert.AreEqual(episodes.Length, enrichedEpisodes.Length);
 
-        var allEpisodesWereEnriched = enrichedEpisodes
+        var allEpisodesWereNotEnriched = enrichedEpisodes
             .Where(i => !i.WasEnriched)
             .ToList();
 
-        Assert.AreEqual(expectedNonEnrichedCount, allEpisodesWereEnriched.Count, "Not all expected episodes were enriched");
+        Assert.AreEqual(expectedNonEnrichedCount, allEpisodesWereNotEnriched.Count, "Not all expected episodes were enriched");
     }
 }

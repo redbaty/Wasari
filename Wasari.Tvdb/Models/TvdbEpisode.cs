@@ -3,7 +3,7 @@
 namespace Wasari.Tvdb.Models;
 
 public record TvdbEpisode(
-    [property: JsonPropertyName("id")] int? Id,
+    [property: JsonPropertyName("id")] int Id,
     [property: JsonPropertyName("seriesId")] int? SeriesId,
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("aired")] string Aired,
