@@ -7,12 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <None Remove="main.glsl" />
-      <EmbeddedResource Include="main.glsl" />
+        <None Remove="main.glsl"/>
+        <EmbeddedResource Include="main.glsl"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Wasari.FFmpeg\Wasari.FFmpeg.csproj" />
+        <ProjectReference Include="..\Wasari.FFmpeg\Wasari.FFmpeg.csproj"/>
     </ItemGroup>
 
 </Project>

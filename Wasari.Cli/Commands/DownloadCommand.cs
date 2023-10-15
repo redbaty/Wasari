@@ -93,7 +93,7 @@ public class DownloadCommand : ICommand
 
     [CommandOption("enrich-episodes", Description = "If true, will try to enrich episodes with metadata from TVDB (Fixes season and episode numbers)")]
     public bool EnrichEpisodes { get; init; } = true;
-    
+
     [CommandOption("only-enriched-episodes", Description = "If true, will only download episodes that were enriched with metadata from TVDB")]
     public bool OnlyDownloadEnrichedEpisodes { get; set; } = true;
 
@@ -110,60 +110,12 @@ public class DownloadCommand : ICommand
 
     private ILogger<DownloadCommand> Logger { get; }
 
-    private static Ranges? ParseRange(string? range)
-    {
-        if (string.IsNullOrEmpty(range))
-            return null;
-
-        if (range.Any(i => !char.IsDigit(i) && i != '-'))
-            throw new InvalidRangeException();
-
-        if (range.Contains('-'))
-        {
-            var episodesNumbers = range.Split('-');
-
-            if (episodesNumbers.Length != 2 || episodesNumbers.All(string.IsNullOrEmpty))
-                throw new InvalidRangeException();
-
-            var numbers = episodesNumbers.Select(i => int.TryParse(i, out var n) ? n : (int?)null).ToArray();
-
-            if (episodesNumbers.All(i => !string.IsNullOrEmpty(i)))
-                return new Ranges(numbers.ElementAtOrDefault(0), numbers.ElementAtOrDefault(1));
-
-            if (string.IsNullOrEmpty(episodesNumbers[0]))
-                return new Ranges(null, numbers.ElementAtOrDefault(1));
-
-            if (string.IsNullOrEmpty(episodesNumbers[1]))
-                return new Ranges(numbers.ElementAtOrDefault(0), null);
-        }
-
-        if (int.TryParse(range, out var episode)) return new Ranges(episode, episode);
-
-        throw new InvalidOperationException($"Invalid episode range. {range}");
-    }
-
-    private static Task<CommandResult> TryYtdlpUpdate()
-    {
-        var command = CliWrap.Cli.Wrap("yt-dlp")
-            .WithArguments("-U")
-            .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.Error.WriteLine))
-            .WithStandardErrorPipe(PipeTarget.ToDelegate(Console.Error.WriteLine))
-            .WithValidation(CommandResultValidation.None);
-        return command.ExecuteAsync();
-    }
-
     public async ValueTask ExecuteAsync(IConsole console)
     {
-        if (Url == null)
-        {
-            throw new CommandException("SeriesURL is required");
-        }
+        if (Url == null) throw new CommandException("SeriesURL is required");
 
         var missingEnvironmentFeatures = EnvironmentService.GetMissingFeatures(EnvironmentFeatureType.Ffmpeg, EnvironmentFeatureType.YtDlp).ToArray();
-        if (missingEnvironmentFeatures.Length > 0)
-        {
-            throw new CommandException($"One or more environment features are missing. ({missingEnvironmentFeatures.Select(i => i.ToString()).Aggregate((x, y) => $"{x},{y}")})");
-        }
+        if (missingEnvironmentFeatures.Length > 0) throw new CommandException($"One or more environment features are missing. ({missingEnvironmentFeatures.Select(i => i.ToString()).Aggregate((x, y) => $"{x},{y}")})");
 
         if (!NoUpdate)
         {
@@ -177,10 +129,7 @@ public class DownloadCommand : ICommand
 
         Logger.LogInformation("Output directory is {@OutputDirectory}", OutputDirectory);
 
-        if (Verbose)
-        {
-            Environment.SetEnvironmentVariable("LOG_LEVEL", "0");
-        }
+        if (Verbose) Environment.SetEnvironmentVariable("LOG_LEVEL", "0");
 
         var serviceCollection = await new ServiceCollection().AddRootServices();
         serviceCollection.AddFfmpegServices();
@@ -231,9 +180,48 @@ public class DownloadCommand : ICommand
         var seasonsRange = ParseRange(SeasonsRange);
         var downloadedEpisodes = await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism, new DownloadEpisodeOptions(seasonsRange, episodesRange, null));
 
-        if (serviceProvider.GetService<NotificationService>() is { } notificationService)
+        if (serviceProvider.GetService<NotificationService>() is { } notificationService) await notificationService.SendNotifcationForDownloadedEpisodeAsync(downloadedEpisodes);
+    }
+
+    private static Ranges? ParseRange(string? range)
+    {
+        if (string.IsNullOrEmpty(range))
+            return null;
+
+        if (range.Any(i => !char.IsDigit(i) && i != '-'))
+            throw new InvalidRangeException();
+
+        if (range.Contains('-'))
         {
-            await notificationService.SendNotifcationForDownloadedEpisodeAsync(downloadedEpisodes);
+            var episodesNumbers = range.Split('-');
+
+            if (episodesNumbers.Length != 2 || episodesNumbers.All(string.IsNullOrEmpty))
+                throw new InvalidRangeException();
+
+            var numbers = episodesNumbers.Select(i => int.TryParse(i, out var n) ? n : (int?)null).ToArray();
+
+            if (episodesNumbers.All(i => !string.IsNullOrEmpty(i)))
+                return new Ranges(numbers.ElementAtOrDefault(0), numbers.ElementAtOrDefault(1));
+
+            if (string.IsNullOrEmpty(episodesNumbers[0]))
+                return new Ranges(null, numbers.ElementAtOrDefault(1));
+
+            if (string.IsNullOrEmpty(episodesNumbers[1]))
+                return new Ranges(numbers.ElementAtOrDefault(0), null);
         }
+
+        if (int.TryParse(range, out var episode)) return new Ranges(episode, episode);
+
+        throw new InvalidOperationException($"Invalid episode range. {range}");
+    }
+
+    private static Task<CommandResult> TryYtdlpUpdate()
+    {
+        var command = CliWrap.Cli.Wrap("yt-dlp")
+            .WithArguments("-U")
+            .WithStandardOutputPipe(PipeTarget.ToDelegate(Console.Error.WriteLine))
+            .WithStandardErrorPipe(PipeTarget.ToDelegate(Console.Error.WriteLine))
+            .WithValidation(CommandResultValidation.None);
+        return command.ExecuteAsync();
     }
 }

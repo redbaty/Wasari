@@ -9,21 +9,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CliFx" Version="2.3.4" />
-      <PackageReference Include="Figgle" Version="0.5.1" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
-      <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
-      <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+        <PackageReference Include="CliFx" Version="2.3.4"/>
+        <PackageReference Include="Figgle" Version="0.5.1"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0"/>
+        <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Wasari.Anime4k\Wasari.Anime4k.csproj" />
-      <ProjectReference Include="..\Wasari.App\Wasari.App.csproj" />
-      <ProjectReference Include="..\Wasari.Crunchyroll\Wasari.Crunchyroll.csproj" />
-      <ProjectReference Include="..\Wasari.Environment\Wasari.Environment.csproj" />
-      <ProjectReference Include="..\Wasari.FFmpeg\Wasari.FFmpeg.csproj" />
-      <ProjectReference Include="..\Wasari.YoutubeDlp\Wasari.YoutubeDlp.csproj" />
+        <ProjectReference Include="..\Wasari.Anime4k\Wasari.Anime4k.csproj"/>
+        <ProjectReference Include="..\Wasari.App\Wasari.App.csproj"/>
+        <ProjectReference Include="..\Wasari.Crunchyroll\Wasari.Crunchyroll.csproj"/>
+        <ProjectReference Include="..\Wasari.Environment\Wasari.Environment.csproj"/>
+        <ProjectReference Include="..\Wasari.FFmpeg\Wasari.FFmpeg.csproj"/>
+        <ProjectReference Include="..\Wasari.YoutubeDlp\Wasari.YoutubeDlp.csproj"/>
     </ItemGroup>
 
 

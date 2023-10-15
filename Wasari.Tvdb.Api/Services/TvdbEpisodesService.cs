@@ -1,5 +1,4 @@
 ﻿using Wasari.Tvdb.Abstractions;
-using Wasari.Tvdb.Api.Extensions;
 
 namespace Wasari.Tvdb.Api.Services;
 
@@ -28,12 +27,12 @@ public class TvdbEpisodesService
             series ??= tvdbSearchResponseSeries
                 .Where(i => i.Aliases != null && i.Aliases.Any(x => string.Equals(x, query, StringComparison.InvariantCultureIgnoreCase)))
                 .SingleOrDefaultIfMultiple();
-            
+
             series ??= tvdbSearchResponseSeries
                 .Where(i => i.Translations != null && i.Translations.Any(x => string.Equals(x.Value, query, StringComparison.InvariantCultureIgnoreCase)))
                 .SingleOrDefaultIfMultiple();
         }
-        
+
         if (series == null)
             return Results.BadRequest(new
             {
@@ -41,7 +40,7 @@ public class TvdbEpisodesService
                 Title = "Invalid query",
                 Detail = tvdbSearchResponseSeries.Count > 0 ? "Multiple series found" : "No series found"
             });
-        
+
         var seriesWithEpisodes = await TvdbApi.GetSeriesAsync(series.TvdbId);
 
         var currentEpiosdeNumber = 1;

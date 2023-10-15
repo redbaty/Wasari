@@ -76,7 +76,7 @@ if (redisEnabled)
     builder.Services.AddSingleton(_ => ConnectionMultiplexer.Connect(redisConnectionString));
 
 var maxConcurrentDownloads = Environment.GetEnvironmentVariable("MAX_CONCURRENT_DOWNLOADS");
-var intMaxConcurrentDownloads = int.TryParse(maxConcurrentDownloads, out var parsedMaxConcurrentDownloads) ? parsedMaxConcurrentDownloads : (int?) null;
+var intMaxConcurrentDownloads = int.TryParse(maxConcurrentDownloads, out var parsedMaxConcurrentDownloads) ? parsedMaxConcurrentDownloads : (int?)null;
 
 builder.Host.UseWolverine(opts =>
 {
@@ -84,16 +84,12 @@ builder.Host.UseWolverine(opts =>
 
     var localQueueConfiguration = opts.LocalQueueFor<DownloadRequest>()
         .UseDurableInbox();
-    
+
     if (redisEnabled)
-    {
         localQueueConfiguration.MaximumParallelMessages(intMaxConcurrentDownloads ?? 3);
-    }
     else
-    {
         localQueueConfiguration.Sequential();
-    }
-    
+
     opts.Discovery.DisableConventionalDiscovery();
     opts.Discovery.IncludeType<DownloadRequestHandler>();
 
@@ -118,10 +114,7 @@ builder.Services.Configure<DaemonOptions>(o =>
 builder.Host.UseResourceSetupOnStartup();
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    await app.ResetWolverine();
-}
+if (app.Environment.IsDevelopment()) await app.ResetWolverine();
 
 app.UseSwagger();
 app.UseSwaggerUI();

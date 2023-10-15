@@ -8,24 +8,24 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DistributedLock.Redis" Version="1.0.2" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.12" />
+        <PackageReference Include="DistributedLock.Redis" Version="1.0.2"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.12"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
-        <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="WolverineFx" Version="1.8.3" />
-        <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="1.8.3" />
-        <PackageReference Include="WolverineFx.FluentValidation" Version="1.8.3" />
-        <PackageReference Include="WolverineFx.Postgresql" Version="1.8.3" />
+        <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
+        <PackageReference Include="WolverineFx" Version="1.8.3"/>
+        <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="1.8.3"/>
+        <PackageReference Include="WolverineFx.FluentValidation" Version="1.8.3"/>
+        <PackageReference Include="WolverineFx.Postgresql" Version="1.8.3"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Wasari.App\Wasari.App.csproj" />
-        <ProjectReference Include="..\Wasari.Crunchyroll\Wasari.Crunchyroll.csproj" />
+        <ProjectReference Include="..\Wasari.App\Wasari.App.csproj"/>
+        <ProjectReference Include="..\Wasari.Crunchyroll\Wasari.Crunchyroll.csproj"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 </Project>

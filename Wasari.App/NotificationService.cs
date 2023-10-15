@@ -32,10 +32,7 @@ public class NotificationService
                         break;
                 }
 
-                foreach (var episode in i)
-                {
-                    sb.AppendLine($"{episode.Episode.Prefix} - {episode.Episode.Title}");
-                }
+                foreach (var episode in i) sb.AppendLine($"{episode.Episode.Prefix} - {episode.Episode.Title}");
 
                 return sb.ToString();
             })

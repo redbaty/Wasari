@@ -8,19 +8,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.12" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.12"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Wasari.Tvdb.Abstractions\Wasari.Tvdb.Abstractions.csproj" />
-      <ProjectReference Include="..\Wasari.Tvdb\Wasari.Tvdb.csproj" />
+        <ProjectReference Include="..\Wasari.Tvdb.Abstractions\Wasari.Tvdb.Abstractions.csproj"/>
+        <ProjectReference Include="..\Wasari.Tvdb\Wasari.Tvdb.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
 </Project>
