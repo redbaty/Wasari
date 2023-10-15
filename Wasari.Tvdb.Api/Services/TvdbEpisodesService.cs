@@ -17,30 +17,33 @@ public class TvdbEpisodesService
         var searchResult = await TvdbApi.SearchAsync(query);
         var tvdbSearchResponseSeries = searchResult.Data;
 
+        var series = tvdbSearchResponseSeries.SingleOrDefaultIfMultiple();
+
         if (tvdbSearchResponseSeries.Count > 1)
         {
             var normalizedQuery = query.NormalizeUsingRegex();
 
-            var matchByAlias = tvdbSearchResponseSeries
+            series ??= tvdbSearchResponseSeries
+                .Where(i => string.Equals(i.Name.NormalizeUsingRegex(), normalizedQuery, StringComparison.InvariantCultureIgnoreCase))
+                .SingleOrDefaultIfMultiple();
+
+            series ??= tvdbSearchResponseSeries
                 .Where(i => i.Aliases != null && i.Aliases.Any(x => string.Equals(x, normalizedQuery, StringComparison.InvariantCultureIgnoreCase)))
-                .ToArray();
-
-            if (matchByAlias.Length == 1)
-            {
-                tvdbSearchResponseSeries = matchByAlias;
-            }
+                .SingleOrDefaultIfMultiple();
+            
+            series ??= tvdbSearchResponseSeries
+                .Where(i => i.Translations != null && i.Translations.Any(x => string.Equals(x.Value, normalizedQuery, StringComparison.InvariantCultureIgnoreCase)))
+                .SingleOrDefaultIfMultiple();
         }
-
-        if (tvdbSearchResponseSeries.Count != 1)
+        
+        if (series == null)
             return Results.BadRequest(new
             {
                 Status = StatusCodes.Status400BadRequest,
                 Title = "Invalid query",
                 Detail = "Query must return exactly one result"
             });
-
-        var series = tvdbSearchResponseSeries.Single();
-
+        
         var seriesWithEpisodes = await TvdbApi.GetSeriesAsync(series.TvdbId);
 
         var currentEpiosdeNumber = 1;
@@ -59,10 +62,10 @@ public class TvdbEpisodesService
                     }, ep is { SeasonNumber: not null, Number: not null } ? $"S{ep.SeasonNumber:00}E{ep.Number:00}" : null,
                     series.Id,
                     ep.SeasonNumber > 0 ? currentEpiosdeNumber : null);
-                
-                if(ep.SeasonNumber > 0)
+
+                if (ep.SeasonNumber > 0)
                     currentEpiosdeNumber++;
-                
+
                 return episode;
             })
         );

@@ -53,7 +53,8 @@ public static partial class EpisodeExtensions
                          .Except(episodesWithMoreThanOneEpisodeWithSameTitle)
                          .GroupBy(i => new { i.SeriesTitle, i.AudioLocale }))
             {
-                var wasariApiEpisodes = await wasariTvdbApi.GetEpisodesAsync(gEpisodes.Key.SeriesTitle)
+                var wasariApiEpisodes = await wasariTvdbApi
+                    .GetEpisodesAsync(gEpisodes.Key.SeriesTitle)
                     .ContinueWith(t =>
                     {
                         if (t.IsCompletedSuccessfully)
