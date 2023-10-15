@@ -1,20 +1,14 @@
 name: docker-wasari-daemon
 
 on:
-  push:
-    branches:
-      - 'main'
-    paths-ignore:
-      - '**/README.md'
-      - 'assets/**'
-      - 'Wasari.Tvdb*/**'
-
-extends:
-  - tests.yml
+  workflow_run:
+    workflows: ["tests"]
+    branches: [main]
+    types: 
+      - completed
 
 jobs:
-  docker:
-    needs: tests    
+  docker:   
     runs-on: ubuntu-latest
     steps:
       -
