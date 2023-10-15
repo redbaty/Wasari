@@ -21,18 +21,16 @@ public class TvdbEpisodesService
 
         if (tvdbSearchResponseSeries.Count > 1)
         {
-            var normalizedQuery = query.NormalizeUsingRegex();
-
             series ??= tvdbSearchResponseSeries
-                .Where(i => string.Equals(i.Name.NormalizeUsingRegex(), normalizedQuery, StringComparison.InvariantCultureIgnoreCase))
+                .Where(i => string.Equals(i.Name, query, StringComparison.InvariantCultureIgnoreCase))
                 .SingleOrDefaultIfMultiple();
 
             series ??= tvdbSearchResponseSeries
-                .Where(i => i.Aliases != null && i.Aliases.Any(x => string.Equals(x, normalizedQuery, StringComparison.InvariantCultureIgnoreCase)))
+                .Where(i => i.Aliases != null && i.Aliases.Any(x => string.Equals(x, query, StringComparison.InvariantCultureIgnoreCase)))
                 .SingleOrDefaultIfMultiple();
             
             series ??= tvdbSearchResponseSeries
-                .Where(i => i.Translations != null && i.Translations.Any(x => string.Equals(x.Value, normalizedQuery, StringComparison.InvariantCultureIgnoreCase)))
+                .Where(i => i.Translations != null && i.Translations.Any(x => string.Equals(x.Value, query, StringComparison.InvariantCultureIgnoreCase)))
                 .SingleOrDefaultIfMultiple();
         }
         
