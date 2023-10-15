@@ -28,9 +28,7 @@ public static class EnvironmentFeatureFinder
                 {
                     if (t.Exception?.InnerException is Win32Exception win32Exception &&
                         win32Exception.Message.EndsWith("The system cannot find the file specified."))
-                    {
                         return null;
-                    }
 
                     throw t.Exception ??
                           throw new InvalidOperationException(
@@ -43,25 +41,17 @@ public static class EnvironmentFeatureFinder
 
         if (string.IsNullOrEmpty(executionResult))
             return null;
-        else
-            executionResult = executionResult.Trim();
+        executionResult = executionResult.Trim();
 
         Version? mainVersion = null;
         EnvironmentFeatureModule[]? modules = null;
 
         if (!string.IsNullOrEmpty(versionRegex))
-        {
             if (executionResult.GetValueFromRegex<string>(versionRegex, out var version) &&
                 Version.TryParse(version, out var localVersion))
-            {
                 mainVersion = localVersion;
-            }
-        }
 
-        if (modulesParser != null)
-        {
-            modules = modulesParser.Invoke(executionResult);
-        }
+        if (modulesParser != null) modules = modulesParser.Invoke(executionResult);
 
         return new EnvironmentFeature(type, mainVersion, modules, executable);
     }
@@ -100,7 +90,7 @@ public static class EnvironmentFeatureFinder
 
             var name = match.Groups["Name"].Value;
             var versions = new[]
-                {Version.Parse(match.Groups["Version1"].Value), Version.Parse(match.Groups["Version2"].Value)};
+                { Version.Parse(match.Groups["Version1"].Value), Version.Parse(match.Groups["Version2"].Value) };
 
             yield return new EnvironmentFeatureModule(name, versions.Max());
         }
@@ -118,7 +108,7 @@ public static class EnvironmentFeatureFinder
             { } ffmpegFeature)
         {
             yield return ffmpegFeature;
-         
+
             if (await IsLibPlaceboAvailable(ffmpegFeature))
                 yield return new EnvironmentFeature(EnvironmentFeatureType.FfmpegLibPlacebo, null, null, string.Empty);
         }

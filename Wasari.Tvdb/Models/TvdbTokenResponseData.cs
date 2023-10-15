@@ -3,5 +3,6 @@
 namespace Wasari.Tvdb.Models;
 
 internal record TvdbTokenResponseData(
-    [property: JsonPropertyName("token")] string Token
+    [property: JsonPropertyName("token")]
+    string Token
 );

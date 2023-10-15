@@ -20,16 +20,10 @@ public class ResolutionConverter : BindingConverter<FFmpegResolution?>
             return null;
 
         var match = Regex.Match(rawValue, @"(?<Width>\d+)[*|x|X](?<Height>\d+)");
-        if (match.Success)
-        {
-            return new FFmpegResolution(int.Parse(match.Groups["Width"].Value), int.Parse(match.Groups["Height"].Value));
-        }
-        
-        if (Options.Value.Presets.TryGetValue(rawValue, out var resolution))
-        {
-            return resolution;
-        }
-        
+        if (match.Success) return new FFmpegResolution(int.Parse(match.Groups["Width"].Value), int.Parse(match.Groups["Height"].Value));
+
+        if (Options.Value.Presets.TryGetValue(rawValue, out var resolution)) return resolution;
+
         throw new Exception("Invalid resolution provided");
     }
 }

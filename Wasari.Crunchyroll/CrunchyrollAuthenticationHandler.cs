@@ -65,25 +65,20 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(Options.Value.Token))
-        {
             try
             {
                 var jwtSecurityToken = JwtSecurityTokenHandler.ReadJwtToken(Options.Value.Token);
                 var localTime = jwtSecurityToken.ValidTo.ToLocalTime();
 
-                if (localTime < DateTime.Now)
-                {
-                    Logger.LogWarning("Skipping 'WASARI_AUTH_TOKEN' since it has expired");
-                }
+                if (localTime < DateTime.Now) Logger.LogWarning("Skipping 'WASARI_AUTH_TOKEN' since it has expired");
             }
             catch (Exception e)
             {
                 Logger.LogError(e, "Failed parsing crunchyroll token, resetting");
                 Options.Value.Token = null;
             }
-        }
-        
-        if(string.IsNullOrEmpty(Options.Value.Token))
+
+        if (string.IsNullOrEmpty(Options.Value.Token))
         {
             if (AuthenticationOptions.Value.HasCredentials)
             {
@@ -100,10 +95,7 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Options.Value.Token);
         var response = await base.SendAsync(request, cancellationToken);
 
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            Options.Value.Token = null;
-        }
+        if (response.StatusCode == HttpStatusCode.Unauthorized) Options.Value.Token = null;
 
         return response;
     }

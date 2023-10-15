@@ -1,13 +1,12 @@
-﻿namespace Wasari.Crunchyroll
+﻿namespace Wasari.Crunchyroll;
+
+internal class ApiSignature
 {
-    internal class ApiSignature
-    {
-        public string Bucket { get; init; }
+    public string Bucket { get; init; }
 
-        public string Policy { get; init; }
+    public string Policy { get; init; }
 
-        public string Signature { get; init; }
+    public string Signature { get; init; }
 
-        public string KeyPairId { get; init; }
-    }
+    public string KeyPairId { get; init; }
 }

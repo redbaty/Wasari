@@ -3,7 +3,8 @@
 public static class LinqExtensions
 {
     /// <summary>
-    /// Returns the only element of a sequence, or a default value if the sequence is empty or contains more than one element.
+    ///     Returns the only element of a sequence, or a default value if the sequence is empty or contains more than one
+    ///     element.
     /// </summary>
     public static TSource? SingleOrDefaultIfMultiple<TSource>(this IEnumerable<TSource> source)
     {

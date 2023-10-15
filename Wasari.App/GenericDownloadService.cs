@@ -27,9 +27,12 @@ public class GenericDownloadService : IDownloadService
 
     private YoutubeDlpService YoutubeDlpService { get; }
 
-    public virtual Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, DownloadEpisodeOptions options) => DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
-        .OrderBy(i => i.SeasonNumber)
-        .ThenBy(i => i.Number), levelOfParallelism, options);
+    public virtual Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, DownloadEpisodeOptions options)
+    {
+        return DownloadEpisodes(YoutubeDlpService.GetPlaylist(url)
+            .OrderBy(i => i.SeasonNumber)
+            .ThenBy(i => i.Number), levelOfParallelism, options);
+    }
 
     protected async Task<DownloadedEpisode[]> DownloadEpisodes(IAsyncEnumerable<WasariEpisode> episodes, int levelOfParallelism, DownloadEpisodeOptions options)
     {

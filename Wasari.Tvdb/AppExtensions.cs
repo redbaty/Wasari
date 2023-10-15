@@ -16,7 +16,7 @@ public static class AppExtensions
             return uri;
         return new Uri(uriString);
     }
-    
+
     private static Uri EnsureNoTrailingSlash(this Uri uri)
     {
         var uriString = uri.ToString();
@@ -24,7 +24,7 @@ public static class AppExtensions
             uriString = uriString[..^1];
         else
             return uri;
-        
+
         return new Uri(uriString);
     }
 
@@ -32,9 +32,9 @@ public static class AppExtensions
     {
         var policy = HttpPolicyExtensions
             .HandleTransientHttpError()
-            .OrResult(response => (int)response.StatusCode == 401) 
+            .OrResult(response => (int)response.StatusCode == 401)
             .RetryAsync(3);
-        
+
         var baseAddress = Environment.GetEnvironmentVariable("TVDB_API_URL") is { } baseUrl
             ? new Uri(baseUrl)
             : new Uri("https://api4.thetvdb.com/v4");

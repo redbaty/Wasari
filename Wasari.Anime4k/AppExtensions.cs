@@ -7,9 +7,6 @@ public static class AppExtensions
 {
     public static void AddAnime4KShader(this IServiceCollection serviceCollection)
     {
-        serviceCollection.Configure<FFmpegShaderPresets>(c =>
-        {
-            c.ShadersFactory.Add("anime4k", _ => new Anime4KShader());
-        });
+        serviceCollection.Configure<FFmpegShaderPresets>(c => { c.ShadersFactory.Add("anime4k", _ => new Anime4KShader()); });
     }
 }

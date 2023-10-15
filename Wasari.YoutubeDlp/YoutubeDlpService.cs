@@ -37,13 +37,13 @@ public class YoutubeDlpService
         if (!string.IsNullOrEmpty(AuthenticationOptions.Value.Password))
             yield return $"-p \"{AuthenticationOptions.Value.Password}\"";
 
-        foreach (var url in urls)
-        {
-            yield return $"\"{url}\"";
-        }
+        foreach (var url in urls) yield return $"\"{url}\"";
     }
 
-    public IAsyncEnumerable<WasariEpisode> GetPlaylist(string url) => GetPlaylist(url, Array.Empty<string>());
+    public IAsyncEnumerable<WasariEpisode> GetPlaylist(string url)
+    {
+        return GetPlaylist(url, Array.Empty<string>());
+    }
 
     private IAsyncEnumerable<WasariEpisode> GetPlaylist(string url, params string[] additionalArguments)
     {
@@ -67,20 +67,12 @@ public class YoutubeDlpService
     private static IEnumerable<WasariEpisodeInput> GetInputs(YoutubeDlEpisodeDownload episode)
     {
         if (!string.IsNullOrEmpty(episode.Url))
-        {
             yield return new WasariEpisodeInput(episode.Url, episode.Language, string.IsNullOrEmpty(episode.Vcodec) ? InputType.Audio : InputType.Video);
-        }
         else if (string.IsNullOrEmpty(episode.Url) && episode.Formats is { Count: > 0 })
-        {
             foreach (var format in episode.Formats)
-            {
                 yield return new WasariEpisodeInput(format.Url ?? throw new InvalidOperationException("Failed to determine input URL"), episode.Language, string.IsNullOrEmpty(format.Vcodec) ? InputType.Audio : InputType.Video);
-            }
-        }
         else
-        {
             throw new InvalidOperationException("Failed to determine input URL");
-        }
     }
 
     private Command CreateCommand()
@@ -110,10 +102,7 @@ public class YoutubeDlpService
                 yield return jsonDocument.RootElement.Deserialize<T>() ?? throw new InvalidOperationException("Failed to deserialize yt-dlp");
                 break;
             case "playlist":
-                foreach (var jsonElement in jsonDocument.RootElement.GetProperty("entries").EnumerateArray())
-                {
-                    yield return jsonElement.Deserialize<T>() ?? throw new InvalidOperationException("Failed to deserialize yt-dlp");
-                }
+                foreach (var jsonElement in jsonDocument.RootElement.GetProperty("entries").EnumerateArray()) yield return jsonElement.Deserialize<T>() ?? throw new InvalidOperationException("Failed to deserialize yt-dlp");
 
                 break;
             default:

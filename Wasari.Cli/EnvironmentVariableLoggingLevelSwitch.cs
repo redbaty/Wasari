@@ -7,9 +7,6 @@ internal class EnvironmentVariableLoggingLevelSwitch : LoggingLevelSwitch
 {
     public EnvironmentVariableLoggingLevelSwitch(string environmentVariable)
     {
-        if (Enum.TryParse<LogEventLevel>(Environment.ExpandEnvironmentVariables(environmentVariable), true, out var level))
-        {
-            MinimumLevel = level;
-        }
+        if (Enum.TryParse<LogEventLevel>(Environment.ExpandEnvironmentVariables(environmentVariable), true, out var level)) MinimumLevel = level;
     }
 }

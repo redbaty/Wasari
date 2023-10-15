@@ -28,9 +28,9 @@ public class EnvironmentCheckerService : IHostedService
 
         if (ffmpeg is not null)
             Logger.LogInformation("Using FFmpeg version {Version}", ffmpeg.Value.Version);
-        
+
         var ytDlp = EnvironmentService.GetFeature(EnvironmentFeatureType.YtDlp);
-        
+
         if (ytDlp is not null)
             Logger.LogInformation("Using yt-dlp version {Version}", ytDlp.Value.Version);
 

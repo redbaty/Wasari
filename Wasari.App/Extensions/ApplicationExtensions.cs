@@ -11,10 +11,7 @@ public static class ApplicationExtensions
     {
         serviceCollection.Configure<DownloadOptions>(c =>
         {
-            foreach (var host in hosts)
-            {
-                c.AddHostDownloader<T>(host);
-            }
+            foreach (var host in hosts) c.AddHostDownloader<T>(host);
         });
         serviceCollection.AddScoped<T>();
         return serviceCollection;

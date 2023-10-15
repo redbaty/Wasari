@@ -17,14 +17,6 @@ namespace Wasari.Crunchyroll;
 
 internal class CrunchyrollDownloadService : GenericDownloadService
 {
-    private CrunchyrollApiService CrunchyrollApiService { get; }
-
-    private IOptions<DownloadOptions> DownloadOptions { get; }
-
-    private IOptions<AuthenticationOptions> AuthenticationOptions { get; }
-
-    private IServiceProvider ServiceProvider { get; }
-
     public CrunchyrollDownloadService(ILogger<CrunchyrollDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, CrunchyrollApiService crunchyrollApiService, IOptions<DownloadOptions> downloadOptions,
         IServiceProvider serviceProvider, IOptions<AuthenticationOptions> authenticationOptions) : base(logger, fFmpegService,
         options,
@@ -35,6 +27,14 @@ internal class CrunchyrollDownloadService : GenericDownloadService
         ServiceProvider = serviceProvider;
         AuthenticationOptions = authenticationOptions;
     }
+
+    private CrunchyrollApiService CrunchyrollApiService { get; }
+
+    private IOptions<DownloadOptions> DownloadOptions { get; }
+
+    private IOptions<AuthenticationOptions> AuthenticationOptions { get; }
+
+    private IServiceProvider ServiceProvider { get; }
 
     public override async Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, DownloadEpisodeOptions options)
     {
@@ -77,7 +77,7 @@ internal class CrunchyrollDownloadService : GenericDownloadService
                             .Distinct()
                             .SingleAsync();
 
-                    return new WasariEpisode(commonEpisodeData.Title, commonEpisodeData.SeriesTitle, groupedEpisodes.Key.SeasonNumber, groupedEpisodes.Key.EpisodeNumber!.Value, null, async (provider) =>
+                    return new WasariEpisode(commonEpisodeData.Title, commonEpisodeData.SeriesTitle, groupedEpisodes.Key.SeasonNumber, groupedEpisodes.Key.EpisodeNumber!.Value, null, async provider =>
                     {
                         var crunchyrollApiService = provider.GetRequiredService<CrunchyrollApiService>();
 

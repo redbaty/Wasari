@@ -12,7 +12,7 @@ public class DownloadServiceSolver
     }
 
     private IOptions<DownloadOptions> Options { get; }
-    
+
     private IServiceProvider ServiceProvider { get; }
 
     public IDownloadService GetService(Uri uri)

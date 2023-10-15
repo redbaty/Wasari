@@ -41,10 +41,7 @@ public class FFmpegService
             using var shaderStream = shader.GetShaderStream();
             using var shaderStreamReader = new StreamReader(shaderStream);
 
-            while (shaderStreamReader.ReadLine() is { } line)
-            {
-                streamWriter.WriteLine(line);
-            }
+            while (shaderStreamReader.ReadLine() is { } line) streamWriter.WriteLine(line);
         }
 
         streamWriter.Flush();
@@ -61,10 +58,7 @@ public class FFmpegService
         await using var providerScope = Provider.CreateAsyncScope();
         var inputs = await episode.InputsFactory(providerScope.ServiceProvider);
 
-        if (inputs.Count == 0)
-        {
-            throw new EmptyFFmpegInputsException(episode);
-        }
+        if (inputs.Count == 0) throw new EmptyFFmpegInputsException(episode);
 
         var resolution = Options.Value.Resolution ?? inputs.Where(i => i.Type is InputType.Video or InputType.VideoWithAudio)
             .Select(i =>
@@ -75,16 +69,10 @@ public class FFmpegService
                 return videoStream == null ? null : new FFmpegResolution(videoStream.Width, videoStream.Height);
             }).Single(i => i != null);
 
-        if (Options.Value.Shaders != null)
-        {
-            yield return "-init_hw_device vulkan";
-        }
+        if (Options.Value.Shaders != null) yield return "-init_hw_device vulkan";
 
         var inputsOrdered = inputs.OrderBy(i => i.Type).ToArray();
-        foreach (var input in inputsOrdered)
-        {
-            yield return $"-i \"{input.Url}\"";
-        }
+        foreach (var input in inputsOrdered) yield return $"-i \"{input.Url}\"";
 
         for (var i = 0; i < inputsOrdered.Length; i++)
         {
@@ -92,15 +80,9 @@ public class FFmpegService
 
             if (input is IWasariEpisodeInputStreamSelector wasariEpisodeInput)
             {
-                if (wasariEpisodeInput.AudioIndex.HasValue)
-                {
-                    yield return $"-map {i}:{wasariEpisodeInput.AudioIndex.Value}";
-                }
+                if (wasariEpisodeInput.AudioIndex.HasValue) yield return $"-map {i}:{wasariEpisodeInput.AudioIndex.Value}";
 
-                if (wasariEpisodeInput.VideoIndex.HasValue)
-                {
-                    yield return $"-map {i}:{wasariEpisodeInput.VideoIndex.Value}";
-                }
+                if (wasariEpisodeInput.VideoIndex.HasValue) yield return $"-map {i}:{wasariEpisodeInput.VideoIndex.Value}";
             }
             else if (input.Type is InputType.Video or InputType.Subtitle)
             {
@@ -108,7 +90,9 @@ public class FFmpegService
                 yield return $"-map -{i}:d";
             }
             else
+            {
                 yield return $"-map:a {i}";
+            }
         }
 
 
@@ -129,10 +113,7 @@ public class FFmpegService
                 {
                     var localLanguage = input.Language;
 
-                    if (input.Language.Length == 4 && !input.Language.Contains('-'))
-                    {
-                        localLanguage = $"{input.Language[..2]}-{input.Language[2..]}";
-                    }
+                    if (input.Language.Length == 4 && !input.Language.Contains('-')) localLanguage = $"{input.Language[..2]}-{input.Language[2..]}";
 
                     var cultureInfo = CultureInfo.GetCultureInfo(localLanguage);
                     yield return $"-metadata:s:{(input.Type == InputType.Subtitle ? "s" : "a")}:{index} language=\"{cultureInfo.ThreeLetterISOLanguageName}\"";
@@ -148,15 +129,9 @@ public class FFmpegService
             var shaderPath = shaderFile.FullName;
             var sb = new StringBuilder("-filter_complex \"format=yuv420p,hwupload,libplacebo=");
 
-            if (resolution != null)
-            {
-                sb.Append($"w={resolution.Width}:h={resolution.Height}:");
-            }
+            if (resolution != null) sb.Append($"w={resolution.Width}:h={resolution.Height}:");
 
-            if (OperatingSystem.IsWindows())
-            {
-                shaderPath = shaderPath.Replace(@"\", @"\\\").Replace(":", @"\:");
-            }
+            if (OperatingSystem.IsWindows()) shaderPath = shaderPath.Replace(@"\", @"\\\").Replace(":", @"\:");
 
             sb.Append($"custom_shader_path='{shaderPath}',hwdownload,format=yuv420p\"");
 
@@ -166,13 +141,9 @@ public class FFmpegService
         if (Options.Value.UseHevc)
         {
             if (Options.Value.UseNvidiaAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu))
-            {
                 yield return "-c:v hevc_nvenc -rc vbr -cq 24 -qmin 24 -qmax 24 -profile:v main10 -pix_fmt p010le";
-            }
             else
-            {
                 yield return "-crf 20 -pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10";
-            }
         }
         else
         {
@@ -206,15 +177,9 @@ public class FFmpegService
             .WithValidation(CommandResultValidation.None)
             .WithArguments(arguments, false);
 
-        await foreach (var commandEvent in ffmpegCommand.ListenAsync())
-        {
-            ProcessEvent(episode, progress, commandEvent, ffmpegCommand);
-        }
+        await foreach (var commandEvent in ffmpegCommand.ListenAsync()) ProcessEvent(episode, progress, commandEvent, ffmpegCommand);
 
-        if (tempFileName != null)
-        {
-            File.Move(tempFileName, filePath);
-        }
+        if (tempFileName != null) File.Move(tempFileName, filePath);
     }
 
     private void ProcessEvent<T>(T episode, IProgress<FFmpegProgressUpdate>? progress, CommandEvent commandEvent, ICommandConfiguration ffmpegCommand) where T : IWasariEpisode
@@ -225,10 +190,7 @@ public class FFmpegService
             {
                 progress?.Report(new FFmpegProgressUpdate(1, 1));
 
-                if (exitedCommandEvent.ExitCode != 0)
-                {
-                    throw new CommandExecutionException(ffmpegCommand, exitedCommandEvent.ExitCode, "Failed to run FFmpeg command");
-                }
+                if (exitedCommandEvent.ExitCode != 0) throw new CommandExecutionException(ffmpegCommand, exitedCommandEvent.ExitCode, "Failed to run FFmpeg command");
 
                 break;
             }

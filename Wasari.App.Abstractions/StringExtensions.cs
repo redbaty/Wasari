@@ -12,13 +12,11 @@ public static class StringExtensions
             var canParseFromRegex = GetValuesFromRegex(input, regex, out var value);
 
             if (canParseFromRegex && value != null)
-            {
                 if (typeof(T) == typeof(string[]))
                 {
                     @out = (T)Convert.ChangeType(value.ToArray(), typeof(T));
                     return true;
                 }
-            }
         }
         else
         {
@@ -61,10 +59,8 @@ public static class StringExtensions
         if (!string.IsNullOrEmpty(input))
         {
             foreach (Match match in Regex.Matches(input, regex))
-            {
                 if (match.Success)
                     @out.Add(match.Value);
-            }
 
             return true;
         }

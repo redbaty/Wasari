@@ -15,18 +15,15 @@ public class ShaderConverter : BindingConverter<IFFmpegShader>
     }
 
     private IOptions<FFmpegShaderPresets> ShaderPresets { get; }
-    
+
     private IServiceProvider ServiceProvider { get; }
-    
+
     private EnvironmentService EnvironmentService { get; }
 
     public override IFFmpegShader Convert(string? rawValue)
     {
-        if (!EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu, EnvironmentFeatureType.FfmpegLibPlacebo))
-        {
-            throw new Exception("Using shaders requires an GPU and FFmpeg with libplacebo");
-        }
-        
+        if (!EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu, EnvironmentFeatureType.FfmpegLibPlacebo)) throw new Exception("Using shaders requires an GPU and FFmpeg with libplacebo");
+
         if (!string.IsNullOrEmpty(rawValue))
         {
             if (File.Exists(rawValue))
@@ -35,8 +32,8 @@ public class ShaderConverter : BindingConverter<IFFmpegShader>
             if (ShaderPresets.Value.ShadersFactory.TryGetValue(rawValue, out var shaderFactory))
                 return shaderFactory(ServiceProvider);
         }
-        
-        
+
+
         throw new Exception("Shader is neither a file nor a registered preset");
     }
 }

@@ -17,17 +17,19 @@ public class EnvironmentService
             yield break;
 
         foreach (var environmentFeature in features)
-        {
             if (Options.Value.Features.Select(i => i.Type).Contains(environmentFeature))
                 yield return environmentFeature;
-        }
     }
 
-    public EnvironmentFeature? GetFeature(EnvironmentFeatureType type) =>
-        Options.Value.Features?.SingleOrDefault(i => i.Type == type);
+    public EnvironmentFeature? GetFeature(EnvironmentFeatureType type)
+    {
+        return Options.Value.Features?.SingleOrDefault(i => i.Type == type);
+    }
 
-    public EnvironmentFeature GetFeatureOrThrow(EnvironmentFeatureType type) =>
-        GetFeature(type) ?? throw new MissingEnvironmentFeatureException(new[] { type });
+    public EnvironmentFeature GetFeatureOrThrow(EnvironmentFeatureType type)
+    {
+        return GetFeature(type) ?? throw new MissingEnvironmentFeatureException(new[] { type });
+    }
 
     public IEnumerable<EnvironmentFeatureType> GetMissingFeatures(params EnvironmentFeatureType[] features)
     {
@@ -42,11 +44,20 @@ public class EnvironmentService
         return featureModule?.Version;
     }
 
-    public bool IsFeatureMissing(EnvironmentFeatureType featureType) => GetMissingFeatures(featureType).Any();
+    public bool IsFeatureMissing(EnvironmentFeatureType featureType)
+    {
+        return GetMissingFeatures(featureType).Any();
+    }
 
-    public bool IsFeatureAvailable(params EnvironmentFeatureType[] features) => features.Any() && features.All(o => !GetMissingFeatures(o).Any());
+    public bool IsFeatureAvailable(params EnvironmentFeatureType[] features)
+    {
+        return features.Any() && features.All(o => !GetMissingFeatures(o).Any());
+    }
 
-    public bool IsFeatureAvailable(EnvironmentFeatureType featureType) => !GetMissingFeatures(featureType).Any();
+    public bool IsFeatureAvailable(EnvironmentFeatureType featureType)
+    {
+        return !GetMissingFeatures(featureType).Any();
+    }
 
     public void ThrowIfFeatureNotAvailable(params EnvironmentFeatureType[] features)
     {

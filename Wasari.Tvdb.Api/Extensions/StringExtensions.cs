@@ -7,5 +7,8 @@ internal static partial class StringExtensions
     [GeneratedRegex("[a-zA-Z0-9 ]+")]
     private static partial Regex EpisodeTitleNormalizeRegex();
 
-    public static string NormalizeUsingRegex(this string str) => string.Join(string.Empty, EpisodeTitleNormalizeRegex().Matches(str).Select(o => o.Value));
+    public static string NormalizeUsingRegex(this string str)
+    {
+        return string.Join(string.Empty, EpisodeTitleNormalizeRegex().Matches(str).Select(o => o.Value));
+    }
 }

@@ -16,8 +16,8 @@ public class MissingEnvironmentVariableException : Exception
 
 public class TvdbTokenHandler : DelegatingHandler
 {
-    private static readonly JwtSecurityTokenHandler JwtSecurityTokenHandler = new();
     private const string TvdbTokenCacheKey = "tvdb_token";
+    private static readonly JwtSecurityTokenHandler JwtSecurityTokenHandler = new();
 
     public TvdbTokenHandler(IMemoryCache memoryCache, HttpClient tvdbClient)
     {
@@ -35,7 +35,7 @@ public class TvdbTokenHandler : DelegatingHandler
         {
             apikey = Environment.GetEnvironmentVariable("TVDB_API_KEY") ?? throw new MissingEnvironmentVariableException("TVDB_API_KEY"),
             pin = Environment.GetEnvironmentVariable("TVDB_API_PIN") ?? "TVDB_API_KEY"
-        }, cancellationToken: cancellationToken);
+        }, cancellationToken);
 
         response.EnsureSuccessStatusCode();
 
@@ -59,10 +59,7 @@ public class TvdbTokenHandler : DelegatingHandler
 
         var httpResponseMessage = await base.SendAsync(request, cancellationToken);
 
-        if (httpResponseMessage.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            MemoryCache.Remove(TvdbTokenCacheKey);
-        }
+        if (httpResponseMessage.StatusCode == HttpStatusCode.Unauthorized) MemoryCache.Remove(TvdbTokenCacheKey);
 
         return httpResponseMessage;
     }

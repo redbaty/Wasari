@@ -3,6 +3,8 @@
 namespace Wasari.Tvdb.Models;
 
 public record TvdbAlias(
-    [property: JsonPropertyName("language")] string Language,
-    [property: JsonPropertyName("name")] string Name
+    [property: JsonPropertyName("language")]
+    string Language,
+    [property: JsonPropertyName("name")]
+    string Name
 );

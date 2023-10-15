@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Wasari.Daemon.Models;
+
 // ReSharper disable UnusedType.Global
 
 namespace Wasari.Daemon.Validators;

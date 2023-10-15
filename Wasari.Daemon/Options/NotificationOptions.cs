@@ -4,7 +4,7 @@ public record DaemonOptions
 {
     private int? _maxConcurrentDownloads;
     public bool NotificationEnabled { get; set; }
-    
+
     public bool RedisLockEnabled { get; set; }
 
     public int? MaxConcurrentDownloads

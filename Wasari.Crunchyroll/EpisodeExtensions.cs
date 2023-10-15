@@ -14,24 +14,25 @@ namespace Wasari.Crunchyroll;
 
 public static partial class EpisodeExtensions
 {
-    private static readonly NormalizedLevenshtein Levenshtein = new NormalizedLevenshtein();
+    private static readonly NormalizedLevenshtein Levenshtein = new();
 
     [GeneratedRegex("[a-zA-Z0-9 ]+")]
     private static partial Regex EpisodeTitleNormalizeRegex();
 
-    private static string NormalizeUsingRegex(this string str) => string.Join(string.Empty, EpisodeTitleNormalizeRegex().Matches(str).Select(o => o.Value));
+    private static string NormalizeUsingRegex(this string str)
+    {
+        return string.Join(string.Empty, EpisodeTitleNormalizeRegex().Matches(str).Select(o => o.Value));
+    }
 
     public static IAsyncEnumerable<ApiEpisode> EnrichWithWasariApi(this IAsyncEnumerable<ApiEpisode> episodes, IServiceProvider serviceProvider, IOptions<DownloadOptions> downloadOptions)
     {
         if (downloadOptions.Value.TryEnrichEpisodes)
-        {
             return EnrichWithWasariApi(episodes, serviceProvider)
                 .Where(i => !downloadOptions.Value.OnlyDownloadEnrichedEpisodes || i.WasEnriched);
-        }   
-        
+
         return episodes;
     }
-    
+
     public static async IAsyncEnumerable<ApiEpisode> EnrichWithWasariApi(this IAsyncEnumerable<ApiEpisode> episodes, IServiceProvider serviceProvider)
     {
         var wasariTvdbApi = serviceProvider.GetService<IWasariTvdbApi>();
@@ -57,10 +58,7 @@ public static partial class EpisodeExtensions
                     .GetEpisodesAsync(gEpisodes.Key.SeriesTitle)
                     .ContinueWith(t =>
                     {
-                        if (t.IsCompletedSuccessfully)
-                        {
-                            return t.Result;
-                        }
+                        if (t.IsCompletedSuccessfully) return t.Result;
 
                         logger.LogError(t.Exception, "Error while getting episodes from Wasari.Tvdb");
                         return null;
@@ -87,19 +85,15 @@ public static partial class EpisodeExtensions
                                             ?? FindEpisodeByNormalizedWordMatch(wasariApiEpisodes, episode);
 
                         if (wasariEpisode == null)
-                        {
                             unmatchedEpisodes.Add(episode);
-                        }
                         else
-                        {
                             yield return CreateMatchedEpisode(ref wasariEpisode, episode);
-                        }
                     }
 
                     foreach (var unmatchedEpisode in unmatchedEpisodes)
                     {
                         var wasariEpisode = FindEpisodeByNormalizedWordProximity(wasariApiEpisodes, unmatchedEpisode);
-                        
+
                         if (wasariEpisode != null)
                         {
                             yield return CreateMatchedEpisode(ref wasariEpisode, unmatchedEpisode);
@@ -113,24 +107,15 @@ public static partial class EpisodeExtensions
                 }
                 else
                 {
-                    foreach (var apiEpisode in gEpisodes)
-                    {
-                        yield return apiEpisode;
-                    }
+                    foreach (var apiEpisode in gEpisodes) yield return apiEpisode;
                 }
             }
 
-            foreach (var apiEpisode in episodesWithMoreThanOneEpisodeWithSameTitle)
-            {
-                yield return apiEpisode;
-            }
+            foreach (var apiEpisode in episodesWithMoreThanOneEpisodeWithSameTitle) yield return apiEpisode;
         }
         else
         {
-            await foreach (var episode in episodes)
-            {
-                yield return episode;
-            }
+            await foreach (var episode in episodes) yield return episode;
         }
     }
 
@@ -160,7 +145,7 @@ public static partial class EpisodeExtensions
         var episodeName = episode.Title
             .ToLowerInvariant()
             .NormalizeUsingRegex();
-        
+
         var possibleEpisodes = wasariApiEpisodes
             .Where(o => !o.Matched)
             .Select(i => new
@@ -175,24 +160,17 @@ public static partial class EpisodeExtensions
             .ToList();
 
         if (possibleEpisodes.Count <= 1)
-        {
             return possibleEpisodes
                 .Select(i => i.Episode)
                 .SingleOrDefault();
-        }
 
-        var delta =  possibleEpisodes[1].Distance - possibleEpisodes[0].Distance;
-        if (possibleEpisodes[0].Distance < 0.5 && delta > 0.4)
-        {
-            return possibleEpisodes[0].Episode;
-        }
-        
-        if(possibleEpisodes
-           .Where(i => i.Episode.SeasonNumber == episode.SeasonNumber && (i.Episode.Number == episode.EpisodeNumber || i.Episode.CalculatedAbsoluteNumber == episode.SequenceNumber))
-           .SingleOrDefaultIfMultiple() is {} ep)
-        {
+        var delta = possibleEpisodes[1].Distance - possibleEpisodes[0].Distance;
+        if (possibleEpisodes[0].Distance < 0.5 && delta > 0.4) return possibleEpisodes[0].Episode;
+
+        if (possibleEpisodes
+                .Where(i => i.Episode.SeasonNumber == episode.SeasonNumber && (i.Episode.Number == episode.EpisodeNumber || i.Episode.CalculatedAbsoluteNumber == episode.SequenceNumber))
+                .SingleOrDefaultIfMultiple() is { } ep)
             return ep.Episode;
-        }
 
         return default;
     }

@@ -17,7 +17,7 @@ public class NotificationService
     {
         var message = downloadedEpisode
             .Where(i => i.Status != DownloadedEpisodeStatus.AlreadyExists)
-            .GroupBy(i => new { i.Episode.SeriesName, Status = i.Status })
+            .GroupBy(i => new { i.Episode.SeriesName, i.Status })
             .Select(i =>
             {
                 var sb = new StringBuilder();

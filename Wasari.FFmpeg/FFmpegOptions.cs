@@ -11,6 +11,6 @@ public record FFmpegOptions
     public bool UseNvidiaAcceleration { get; set; }
 
     public bool UseTemporaryEncodingPath { get; set; }
-    
+
     public int? Threads { get; set; }
 }

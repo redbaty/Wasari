@@ -23,14 +23,12 @@ internal class StreamsConverter : JsonConverter<ApiEpisodeStreamLink[]>
                     var url = childNode["url"]?.GetValue<string>();
 
                     if (!string.IsNullOrEmpty(url))
-                    {
                         links.Add(new ApiEpisodeStreamLink
                         {
                             Url = url,
                             Type = key,
                             Locale = locale
                         });
-                    }
                 }
             }
 
