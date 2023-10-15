@@ -1,9 +1,13 @@
-name: docker-wasari-daemon
+name: docker-wasari-cli
 
 on:
   push:
     branches:
       - 'main'
+    paths-ignore:
+      - '**/README.md'
+      - 'assets/**'
+      - 'Wasari.Tvdb*/**'   
 
 jobs:
   docker:
@@ -27,5 +31,5 @@ jobs:
         with:
           push: true
           platforms: linux/amd64
-          tags: redbaty/wasari-daemon:latest,redbaty/wasari-daemon:b-${{ github.run_number }}
-          file: Wasari.Daemon/Dockerfile
+          tags: redbaty/wasari:latest,redbaty/wasari:b-${{ github.run_number }}
+          file: Wasari.Cli/Dockerfile

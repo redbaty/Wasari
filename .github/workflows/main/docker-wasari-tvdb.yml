@@ -1,0 +1,27 @@
+name: docker-wasari-tvdb-api
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Wasari.Tvdb*/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Wasari.Tvdb.Api/Dockerfile
+          push: true
+          tags: redbaty/wasari-tvdb-api:latest, redbaty/wasari-tvdb-api:${{ github.sha }}

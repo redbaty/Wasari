@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - '**/README.md'
       - 'assets/**'
+      - 'Wasari.Tvdb*/**'
 jobs:
   build:
 
