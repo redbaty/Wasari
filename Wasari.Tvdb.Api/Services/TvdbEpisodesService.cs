@@ -39,7 +39,7 @@ public class TvdbEpisodesService
             {
                 Status = StatusCodes.Status400BadRequest,
                 Title = "Invalid query",
-                Detail = "Query must return exactly one result"
+                Detail = tvdbSearchResponseSeries.Count > 0 ? "Multiple series found" : "No series found"
             });
         
         var seriesWithEpisodes = await TvdbApi.GetSeriesAsync(series.TvdbId);
