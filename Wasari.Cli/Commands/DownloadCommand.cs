@@ -93,6 +93,9 @@ public class DownloadCommand : ICommand
 
     [CommandOption("enrich-episodes", Description = "If true, will try to enrich episodes with metadata from TVDB (Fixes season and episode numbers)")]
     public bool EnrichEpisodes { get; init; } = true;
+    
+    [CommandOption("only-enriched-episodes", Description = "If true, will only download episodes that were enriched with metadata from TVDB")]
+    public bool OnlyDownloadEnrichedEpisodes { get; set; } = true;
 
     [CommandOption("ffmpeg-threads", Description = "Number of threads to use for FFmpeg")]
     public int? FfmpegThreads { get; init; }
@@ -195,6 +198,7 @@ public class DownloadCommand : ICommand
             o.CreateSeriesFolder = CreateSeriesFolder;
             o.CreateSeasonFolder = CreateSeasonFolder;
             o.TryEnrichEpisodes = EnrichEpisodes;
+            o.OnlyDownloadEnrichedEpisodes = EnrichEpisodes && OnlyDownloadEnrichedEpisodes;
             o.SkipUniqueEpisodeCheck = SkipUniqueEpisodeCheck;
         });
         serviceCollection.Configure<FFmpegOptions>(o =>
