@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="DistributedLock.Redis" Version="1.0.2"/>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.12"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.13"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
         <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
         <PackageReference Include="WolverineFx" Version="1.9.0"/>
