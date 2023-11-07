@@ -93,7 +93,7 @@ builder.Host.UseWolverine(opts =>
     opts.Discovery.DisableConventionalDiscovery();
     opts.Discovery.IncludeType<DownloadRequestHandler>();
 
-    opts.PersistMessagesWithPostgresql(postgresCs);
+    opts.PersistMessagesWithPostgresql(postgresCs, Environment.GetEnvironmentVariable("POSTGRESQL_SCHEMA") ?? "public");
     opts.UseEntityFrameworkCoreTransactions();
     opts.Policies.AutoApplyTransactions();
 
