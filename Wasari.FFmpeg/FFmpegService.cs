@@ -179,7 +179,15 @@ public class FFmpegService
 
         await foreach (var commandEvent in ffmpegCommand.ListenAsync()) ProcessEvent(episode, progress, commandEvent, ffmpegCommand);
 
-        if (tempFileName != null) File.Move(tempFileName, filePath);
+        if (tempFileName != null)
+        {
+            var destFileTempName = $"{filePath}.wasari_tmp";
+
+            if (File.Exists(destFileTempName)) File.Delete(destFileTempName);
+
+            File.Move(tempFileName, destFileTempName);
+            File.Move(destFileTempName, filePath);
+        }
     }
 
     private void ProcessEvent<T>(T episode, IProgress<FFmpegProgressUpdate>? progress, CommandEvent commandEvent, ICommandConfiguration ffmpegCommand) where T : IWasariEpisode
