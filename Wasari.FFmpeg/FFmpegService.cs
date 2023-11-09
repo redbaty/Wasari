@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using CliWrap;
 using CliWrap.EventStream;
 using CliWrap.Exceptions;
@@ -182,11 +183,30 @@ public class FFmpegService
 
             if (videoDuration == TimeSpan.Zero && (fileAnalysis.PrimaryVideoStream?.Tags?.TryGetValue("DURATION", out var durationStr) ?? false))
             {
-                videoDuration = TimeSpan.Parse(durationStr);
+                var r = Regex.Match(durationStr, "\\d+\\:\\d+\\:\\d+(?<trail>\\.\\d+)");
+                var originalTrail = r.Groups["trail"].Value;
+                var correctedTrail = originalTrail.TrimEnd('0');
+                durationStr = durationStr.Replace(originalTrail, correctedTrail);
+                
+                if (TimeSpan.TryParse(durationStr, out var newVideoDuratio))
+                {
+                    videoDuration = newVideoDuratio;
+                }
+                else
+                {
+                    Logger.LogWarning("Failed to parse duration string: {DurationStr}", durationStr);
+                    return false;
+                }
             }
-            
-            var subtitleDuration = fileAnalysis.SubtitleStreams.Max(o => o.Duration).Subtract(TimeSpan.FromSeconds(5));
-            return subtitleDuration <= videoDuration;
+
+            if (fileAnalysis.SubtitleStreams.Count > 0)
+            {
+                var subtitleDuration = fileAnalysis.SubtitleStreams.Max(o => o.Duration).Subtract(TimeSpan.FromSeconds(5));
+                return subtitleDuration <= videoDuration;
+            }
+
+            Logger.LogInformation("No subtitle streams found, assuming video stream is valid");
+            return true;
         }
         catch (Exception e)
         {
