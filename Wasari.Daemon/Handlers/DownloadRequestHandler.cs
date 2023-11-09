@@ -5,6 +5,7 @@ using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.Daemon.Models;
 using Wasari.Daemon.Options;
+using Wolverine;
 
 namespace Wasari.Daemon.Handlers;
 
@@ -15,7 +16,8 @@ public class DownloadRequestHandler
         DownloadServiceSolver downloadServiceSolver,
         IServiceProvider serviceProvider,
         IOptions<DaemonOptions> daemonOptions,
-        IOptions<DownloadOptions> downloadOptions)
+        IOptions<DownloadOptions> downloadOptions, 
+        IMessageBus messageBus)
     {
         if (daemonOptions.Value.RedisLockEnabled)
         {
@@ -29,15 +31,15 @@ public class DownloadRequestHandler
                 return;
             }
 
-            await DownloadEpisode(request, logger, downloadServiceSolver, serviceProvider, daemonOptions, downloadOptions);
+            await DownloadEpisode(request, logger, downloadServiceSolver, serviceProvider, daemonOptions, downloadOptions, messageBus);
         }
         else
         {
-            await DownloadEpisode(request, logger, downloadServiceSolver, serviceProvider, daemonOptions, downloadOptions);
+            await DownloadEpisode(request, logger, downloadServiceSolver, serviceProvider, daemonOptions, downloadOptions, messageBus);
         }
     }
 
-    private static async ValueTask DownloadEpisode(DownloadRequest request, ILogger logger, DownloadServiceSolver downloadServiceSolver, IServiceProvider serviceProvider, IOptions<DaemonOptions> daemonOptions, IOptions<DownloadOptions> downloadOptions)
+    private static async ValueTask DownloadEpisode(DownloadRequest request, ILogger logger, DownloadServiceSolver downloadServiceSolver, IServiceProvider serviceProvider, IOptions<DaemonOptions> daemonOptions, IOptions<DownloadOptions> downloadOptions, IMessageBus messageBus)
     {
         logger.LogInformation("Starting download of {Url}", request.Url);
 
@@ -50,10 +52,14 @@ public class DownloadRequestHandler
             new DownloadEpisodeOptions(episodesRange, seasonsRange, outputDirectoryOverride));
 
         foreach (var downloadedEpisode in episodes)
+        {
             switch (downloadedEpisode.Status)
             {
                 case DownloadedEpisodeStatus.Downloaded:
                     logger.LogInformation("Downloaded {Episode}", downloadedEpisode);
+                    
+                    if (downloadedEpisode.FilePath != null) 
+                        await messageBus.PublishAsync(new CheckVideoIntegrityRequest(downloadedEpisode.FilePath, true));
                     break;
                 case DownloadedEpisodeStatus.AlreadyExists:
                     logger.LogWarning("Episode already exists {Episode}", downloadedEpisode);
@@ -64,6 +70,7 @@ public class DownloadRequestHandler
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
 
         if (daemonOptions.Value.NotificationEnabled && serviceProvider.GetService<NotificationService>() is { } notificationService) await notificationService.SendNotifcationForDownloadedEpisodeAsync(episodes);
     }
