@@ -11,6 +11,12 @@ public class CheckVideoIntegrityHandler
 {
     public async ValueTask Handle(CheckVideoIntegrityRequest request, IOptions<DaemonOptions> daemonOptions, IServiceProvider serviceProvider, FFmpegService fFmpegService, ILogger<CheckVideoIntegrityHandler> logger)
     {
+        if (File.Exists(request.Path) == false)
+        {
+            logger.LogWarning("File {Path} does not exist", request.Path);
+            return;
+        }
+        
         var fileIsValid = await fFmpegService.CheckIfVideoStreamIsValid(request.Path);
         logger.LogInformation("File {Path} is {Status}", request.Path, fileIsValid ? "valid" : "invalid");
         
