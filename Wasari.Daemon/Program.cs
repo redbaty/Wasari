@@ -93,6 +93,7 @@ builder.Host.UseWolverine(opts =>
     opts.Discovery.DisableConventionalDiscovery();
     opts.Discovery.IncludeType<DownloadRequestHandler>();
     opts.Discovery.IncludeType<CheckVideoIntegrityHandler>();
+    opts.Discovery.IncludeType<CheckDirectoryVideoIntegrityHandler>();
 
     opts.PersistMessagesWithPostgresql(postgresCs, Environment.GetEnvironmentVariable("POSTGRESQL_SCHEMA") ?? "public");
     opts.UseEntityFrameworkCoreTransactions();
