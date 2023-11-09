@@ -58,7 +58,7 @@ public class DownloadRequestHandler
                 case DownloadedEpisodeStatus.Downloaded:
                     logger.LogInformation("Downloaded {Episode}", downloadedEpisode);
                     
-                    if (downloadedEpisode.FilePath != null) 
+                    if (downloadedEpisode.FilePath != null && daemonOptions.Value.CheckVideoIntegrityAfterDownload) 
                         await messageBus.PublishAsync(new CheckVideoIntegrityRequest(downloadedEpisode.FilePath, true));
                     break;
                 case DownloadedEpisodeStatus.AlreadyExists:

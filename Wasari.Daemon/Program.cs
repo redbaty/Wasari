@@ -111,6 +111,7 @@ builder.Services.Configure<DaemonOptions>(o =>
 {
     o.NotificationEnabled = webhookUrl != null;
     o.RedisLockEnabled = redisEnabled;
+    o.CheckVideoIntegrityAfterDownload = Environment.GetEnvironmentVariable("CHECK_VIDEO_INTEGRITY_AFTER_DOWNLOAD") != "false";
 });
 
 builder.Host.UseResourceSetupOnStartup();
