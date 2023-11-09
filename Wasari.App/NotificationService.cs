@@ -43,7 +43,7 @@ public class NotificationService
             await SendNotificationAsync(message);
     }
 
-    private async ValueTask SendNotificationAsync(string message)
+    public async ValueTask SendNotificationAsync(string message)
     {
         await HttpClient.PostAsJsonAsync(string.Empty, new
         {

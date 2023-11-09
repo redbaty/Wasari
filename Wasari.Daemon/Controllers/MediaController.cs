@@ -26,4 +26,15 @@ public class MediaController : ControllerBase
         await Bus.SendAsync(request);
         return Accepted();
     }
+    
+    [HttpPost("check-video-integrity")]
+    public async Task<IActionResult> CheckVideoIntegrity([FromBody] CheckVideoIntegrityRequest request, [FromServices] IValidator<CheckVideoIntegrityRequest> validator)
+    {
+        var validationResult = await validator.ValidateAsync(request);
+
+        if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
+
+        await Bus.SendAsync(request);
+        return Accepted();
+    }
 }

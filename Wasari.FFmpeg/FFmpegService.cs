@@ -168,6 +168,32 @@ public class FFmpegService
         var tempFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName());
         return Path.Combine(Path.GetTempPath(), $"{tempFileName}.mkv");
     }
+    
+    public async Task<bool> CheckIfVideoStreamIsValid(string filePath)
+    {
+        try
+        {
+            var fileAnalysis = await FFProbe.AnalyseAsync(filePath);
+
+            if (fileAnalysis.ErrorData.Count > 0)
+                return false;
+            
+            var videoDuration = fileAnalysis.VideoStreams.Max(o => o.Duration);
+
+            if (videoDuration == TimeSpan.Zero && (fileAnalysis.PrimaryVideoStream?.Tags?.TryGetValue("DURATION", out var durationStr) ?? false))
+            {
+                videoDuration = TimeSpan.Parse(durationStr);
+            }
+            
+            var subtitleDuration = fileAnalysis.SubtitleStreams.Max(o => o.Duration).Subtract(TimeSpan.FromSeconds(5));
+            return subtitleDuration <= videoDuration;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Failed to check if video stream is valid");
+            return false;
+        }
+    }
 
     public async Task DownloadEpisode<T>(T episode, string filePath, IProgress<FFmpegProgressUpdate>? progress) where T : IWasariEpisode
     {
