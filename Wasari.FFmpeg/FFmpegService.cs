@@ -151,7 +151,7 @@ public partial class FFmpegService
             yield return "-c:v copy";
         }
 
-        yield return "-fflags +shortest -max_interleave_delta 0";
+        yield return "-shortest -fflags shortest -max_interleave_delta 100M";
         yield return "-y";
         yield return $"\"{filePath}\"";
     }
@@ -217,7 +217,7 @@ public partial class FFmpegService
         var ffmpegCommand = CreateCommand()
             .WithValidation(CommandResultValidation.None)
             .WithArguments(arguments, false);
-
+        
         await foreach (var commandEvent in ffmpegCommand.ListenAsync()) ProcessEvent(episode, progress, commandEvent, ffmpegCommand);
 
         if (tempFileName != null)
