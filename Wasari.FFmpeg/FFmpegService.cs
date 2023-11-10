@@ -13,7 +13,7 @@ using WasariEnvironment;
 
 namespace Wasari.FFmpeg;
 
-public class FFmpegService
+public partial class FFmpegService
 {
     public FFmpegService(ILogger<FFmpegService> logger, IOptions<FFmpegOptions> options, EnvironmentService environmentService, IServiceProvider provider)
     {
@@ -169,7 +169,7 @@ public class FFmpegService
         var tempFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName());
         return Path.Combine(Path.GetTempPath(), $"{tempFileName}.mkv");
     }
-    
+
     public async Task<bool> CheckIfVideoStreamIsValid(string filePath)
     {
         try
@@ -178,16 +178,16 @@ public class FFmpegService
 
             if (fileAnalysis.ErrorData.Count > 0)
                 return false;
-            
+
             var videoDuration = fileAnalysis.VideoStreams.Max(o => o.Duration);
 
             if (videoDuration == TimeSpan.Zero && (fileAnalysis.PrimaryVideoStream?.Tags?.TryGetValue("DURATION", out var durationStr) ?? false))
             {
-                var r = Regex.Match(durationStr, "\\d+\\:\\d+\\:\\d+(?<trail>\\.\\d+)");
-                var originalTrail = r.Groups["trail"].Value;
+                var match = DurationRegex().Match(durationStr);
+                var originalTrail = match.Groups["trail"].Value;
                 var correctedTrail = originalTrail.TrimEnd('0');
                 durationStr = durationStr.Replace(originalTrail, correctedTrail);
-                
+
                 if (TimeSpan.TryParse(durationStr, out var newVideoDuratio))
                 {
                     videoDuration = newVideoDuratio;
@@ -199,14 +199,8 @@ public class FFmpegService
                 }
             }
 
-            if (fileAnalysis.SubtitleStreams.Count > 0)
-            {
-                var subtitleDuration = fileAnalysis.SubtitleStreams.Max(o => o.Duration).Subtract(TimeSpan.FromSeconds(5));
-                return subtitleDuration <= videoDuration;
-            }
-
-            Logger.LogInformation("No subtitle streams found, assuming video stream is valid");
-            return true;
+            var delta = fileAnalysis.Duration - videoDuration;
+            return videoDuration >= fileAnalysis.Duration || delta < TimeSpan.FromSeconds(10);
         }
         catch (Exception e)
         {
@@ -277,4 +271,7 @@ public class FFmpegService
             }
         }
     }
+
+    [GeneratedRegex("\\d+\\:\\d+\\:\\d+(?<trail>\\.\\d+)")]
+    private static partial Regex DurationRegex();
 }
