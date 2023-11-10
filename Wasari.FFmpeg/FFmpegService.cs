@@ -85,10 +85,14 @@ public partial class FFmpegService
 
                 if (wasariEpisodeInput.VideoIndex.HasValue) yield return $"-map {i}:{wasariEpisodeInput.VideoIndex.Value}";
             }
-            else if (input.Type is InputType.Video or InputType.Subtitle)
+            else if (input.Type == InputType.Video)
             {
                 yield return $"-map {i}";
                 yield return $"-map -{i}:d";
+            }
+            else if (input.Type == InputType.Subtitle)
+            {
+                yield return $"-map {i}:s";
             }
             else
             {
