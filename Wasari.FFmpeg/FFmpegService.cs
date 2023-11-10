@@ -205,7 +205,14 @@ public partial class FFmpegService
             }
 
             var delta = fileAnalysis.Duration - videoDuration;
-            return videoDuration >= fileAnalysis.Duration || delta < TimeSpan.FromSeconds(10);
+            var isValid = videoDuration >= fileAnalysis.Duration || delta < TimeSpan.FromSeconds(10);
+
+            if (!isValid)
+            {
+                Logger.LogWarning("File was found to be invalid: {FilePath}, the difference between the video duration and the file duration is {Delta}", filePath, delta);
+            }
+            
+            return isValid;
         }
         catch (Exception e)
         {
