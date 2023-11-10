@@ -90,6 +90,7 @@ internal class CrunchyrollDownloadService : GenericDownloadService
                                 .SelectAwait(i => i.FirstAsync())
                                 .Select(o => new WasariEpisodeInput(o.Url, o.Locale, InputType.Subtitle)))
                             .Cast<IWasariEpisodeInput>()
+                            .Where(i => DownloadOptions.Value.IncludeSubs || i.Type != InputType.Subtitle)
                             .ToArrayAsync();
                     }, TimeSpan.FromMilliseconds(commonEpisodeData.DurationMs));
                 });
