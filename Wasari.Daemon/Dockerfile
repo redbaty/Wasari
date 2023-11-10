@@ -1,12 +1,12 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
-RUN apt update && apt install curl python3 ffmpeg -y
+﻿FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine AS base
+RUN apk add curl python3 ffmpeg icu-libs
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
 RUN chmod a+rx /usr/local/bin/yt-dlp
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build
 WORKDIR /src
 COPY ["Wasari.Daemon/Wasari.Daemon.csproj", "Wasari.Daemon/"]
 COPY ["Wasari.App/Wasari.App.csproj", "Wasari.App/"]
@@ -28,4 +28,5 @@ RUN dotnet publish "Wasari.Daemon.csproj" -c Release -o /app/publish /p:UseAppHo
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 ENTRYPOINT ["dotnet", "Wasari.Daemon.dll"]
