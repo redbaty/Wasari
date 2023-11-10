@@ -151,6 +151,7 @@ public partial class FFmpegService
             yield return "-c:v copy";
         }
 
+        yield return "-fflags +shortest -max_interleave_delta 0";
         yield return "-y";
         yield return $"\"{filePath}\"";
     }
