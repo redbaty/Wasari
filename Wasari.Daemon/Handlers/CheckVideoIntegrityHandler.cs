@@ -31,6 +31,19 @@ public class CheckVideoIntegrityHandler
         if (daemonOptions.Value.NotificationEnabled && serviceProvider.GetService<NotificationService>() is { } notificationService)
         {
             var fileName = Path.GetFileName(request.Path);
+            
+            var fileDirectory = Path.GetDirectoryName(request.Path);
+            if (fileDirectory != null)
+            {
+                var dir = new DirectoryInfo(fileDirectory);
+
+                if (dir.Parent?.Parent != null)
+                {
+                    var prefix = $"{dir.Parent.Parent.Name}/{dir.Parent.Name}";
+                    fileName = $"{prefix}/{fileName}";
+                }
+            }
+            
             var sb = new StringBuilder($"File {fileName} was corrupted");
             if(request.DeleteFileIfInvalid) sb.Append(" and was deleted");
             await notificationService.SendNotificationAsync(sb.ToString());
