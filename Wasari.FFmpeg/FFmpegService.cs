@@ -171,22 +171,21 @@ public partial class FFmpegService
             .WithWorkingDirectory(Environment.CurrentDirectory);
     }
 
-    private string? GetTemporaryFile(string? baseFilePath = null)
+    private string? GetTemporaryFile(string extension, string? baseFilePath = null)
     {
         if (baseFilePath != null)
         {
             var fileName = Path.GetFileNameWithoutExtension(baseFilePath);
-            var fileExtension = Path.GetExtension(baseFilePath);
             var fileDirectory = Path.GetDirectoryName(baseFilePath);
             
-            return $"{fileDirectory}{Path.DirectorySeparatorChar}{fileName}_wasari_tmp.{fileExtension}";
+            return $"{fileDirectory}{Path.DirectorySeparatorChar}{fileName}_wasari_tmp{extension}";
         }
         
         if (!Options.Value.UseTemporaryEncodingPath)
             return null;
 
         var tempFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName());
-        return Path.Combine(Path.GetTempPath(), $"{tempFileName}.mp4");
+        return Path.Combine(Path.GetTempPath(), $"{tempFileName}.{extension}");
     }
 
     public TimeSpan? GetVideoDuration(IMediaAnalysis mediaAnalysis)
@@ -247,7 +246,7 @@ public partial class FFmpegService
 
     public async Task DownloadEpisode<T>(T episode, string filePath, IProgress<FFmpegProgressUpdate>? progress) where T : IWasariEpisode
     {
-        var tempFileName = GetTemporaryFile();
+        var tempFileName = GetTemporaryFile(Path.GetExtension(filePath));
         var arguments = await BuildArgumentsForEpisode(episode, tempFileName ?? filePath).ToArrayAsync();
         var ffmpegCommand = CreateCommand()
             .WithValidation(CommandResultValidation.None)
