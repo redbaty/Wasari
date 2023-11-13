@@ -105,6 +105,9 @@ public class DownloadCommand : ICommand
 
     [CommandOption("webhook-url", Description = "Webhook URL to send notifications to", EnvironmentVariable = "WASARI_WEBHOOK_URL")]
     public Uri? WebhookUrl { get; init; }
+    
+    [CommandOption("file-container", Description = "File container to use for final video file")]
+    public string FileContainer { get; set; } = "mp4";
 
     private EnvironmentService EnvironmentService { get; }
 
@@ -158,6 +161,7 @@ public class DownloadCommand : ICommand
             o.Shaders = Shaders;
             o.Resolution = Resolution;
             o.Threads = FfmpegThreads;
+            o.FileContainer = FileContainer;
         });
         serviceCollection.Configure<AuthenticationOptions>(o =>
         {

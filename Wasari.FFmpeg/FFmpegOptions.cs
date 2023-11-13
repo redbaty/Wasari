@@ -3,6 +3,8 @@ namespace Wasari.FFmpeg;
 public record FFmpegOptions
 {
     public bool UseHevc { get; set; }
+    
+    public string FileContainer { get; set; } = "mp4";
 
     public IFFmpegShader[]? Shaders { get; set; }
 

@@ -128,7 +128,8 @@ public class GenericDownloadService : IDownloadService
         if (episode.Number.HasValue || episode.SeasonNumber.HasValue)
             episodeNameBuilder.Append(" - ");
         episodeNameBuilder.Append(episode.Title);
-        episodeNameBuilder.Append(FFmpegOptions.Value.UseHevc ? ".mkv" : ".mp4");
+        episodeNameBuilder.Append('.');
+        episodeNameBuilder.Append(FFmpegOptions.Value.FileContainer);
         return episodeNameBuilder;
     }
 }
