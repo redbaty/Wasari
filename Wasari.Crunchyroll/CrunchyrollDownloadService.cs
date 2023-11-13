@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -36,9 +36,9 @@ internal class CrunchyrollDownloadService : GenericDownloadService
 
     private IServiceProvider ServiceProvider { get; }
 
-    public override async Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, DownloadEpisodeOptions options)
+    public override Task<DownloadedEpisode[]> DownloadEpisodes(string url, int levelOfParallelism, DownloadEpisodeOptions options)
     {
-        var match = Regex.Match(url, @"series\/(?<seriesId>\w+)|watch\/(?<episodeId>\w+)\/");
+        var match = EpisodeIdsRegex().Match(url);
 
         if (match.Groups["seriesId"].Success)
         {
@@ -95,10 +95,10 @@ internal class CrunchyrollDownloadService : GenericDownloadService
                     }, TimeSpan.FromMilliseconds(commonEpisodeData.DurationMs));
                 });
 
-            return await base.DownloadEpisodes(episodes, levelOfParallelism, options);
+            return DownloadEpisodes(episodes, levelOfParallelism, options);
         }
 
-        return await base.DownloadEpisodes(url, levelOfParallelism, options);
+        return base.DownloadEpisodes(url, levelOfParallelism, options);
     }
 
     private async IAsyncEnumerable<IWasariEpisodeInput> ProcessEpisode(ApiEpisode episode, CrunchyrollApiService crunchyrollApiService)
@@ -121,4 +121,7 @@ internal class CrunchyrollDownloadService : GenericDownloadService
 
         yield return new WasariEpisodeInputWithStream(stream.Url, episode.Locale, !episode.IsDubbed ? InputType.VideoWithAudio : InputType.Audio, mediaInfo.PrimaryAudioStream?.Index, !episode.IsDubbed ? bestVideo.Index : null);
     }
+
+    [GeneratedRegex("series\\/(?<seriesId>\\w+)|watch\\/(?<episodeId>\\w+)\\/")]
+    private static partial Regex EpisodeIdsRegex();
 }
