@@ -79,10 +79,16 @@ public class GenericDownloadService : IDownloadService
         var fileName = episodeNameBuilder.ToString().AsSafePath();
         var filepath = Path.Combine(outputDirectory, fileName);
 
-        if (Options.Value.SkipExistingFiles && File.Exists(filepath))
+        if (Options.Value.SkipExistingFiles)
         {
-            Logger.LogWarning("Skipping episode since it already exists: {Path}", filepath);
-            return new DownloadedEpisode(filepath, DownloadedEpisodeStatus.AlreadyExists, episode);
+            var files = Directory.GetFiles(outputDirectory, $"{Path.GetFileNameWithoutExtension(fileName)}.*");
+            var alreadyExists = files.Any();
+
+            if (alreadyExists)
+            {
+                Logger.LogWarning("Skipping episode since it already exists: {Path}", files.First());
+                return new DownloadedEpisode(filepath, DownloadedEpisodeStatus.AlreadyExists, episode);
+            }
         }
 
         var episodeProgress = new Progress<FFmpegProgressUpdate>();
