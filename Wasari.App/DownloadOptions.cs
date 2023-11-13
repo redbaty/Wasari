@@ -19,7 +19,7 @@ public record DownloadOptions
 
     public bool TryEnrichEpisodes { get; set; } = true;
 
-    public bool OnlyDownloadEnrichedEpisodes { get; set; } = true;
+    public bool OnlyDownloadEnrichedEpisodes { get; set; }
 
     public bool SkipUniqueEpisodeCheck { get; set; }
 

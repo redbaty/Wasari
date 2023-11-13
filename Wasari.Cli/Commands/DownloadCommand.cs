@@ -95,7 +95,7 @@ public class DownloadCommand : ICommand
     public bool EnrichEpisodes { get; init; } = true;
 
     [CommandOption("only-enriched-episodes", Description = "If true, will only download episodes that were enriched with metadata from TVDB")]
-    public bool OnlyDownloadEnrichedEpisodes { get; set; } = true;
+    public bool OnlyDownloadEnrichedEpisodes { get; set; } = false;
 
     [CommandOption("ffmpeg-threads", Description = "Number of threads to use for FFmpeg")]
     public int? FfmpegThreads { get; init; }
