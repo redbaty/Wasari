@@ -11,17 +11,21 @@ namespace Wasari.App;
 
 public class GenericDownloadService : IDownloadService
 {
-    public GenericDownloadService(ILogger<GenericDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService)
+    public GenericDownloadService(ILogger<GenericDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, IOptions<FFmpegOptions> fFmpegOptions)
     {
         Logger = logger;
         FFmpegService = fFmpegService;
         Options = options;
         YoutubeDlpService = youtubeDlpService;
+        FFmpegOptions = fFmpegOptions;
     }
 
     protected ILogger<GenericDownloadService> Logger { get; }
 
+    
     private IOptions<DownloadOptions> Options { get; }
+    
+    private IOptions<FFmpegOptions> FFmpegOptions { get; }
 
     private FFmpegService FFmpegService { get; }
 
@@ -107,7 +111,7 @@ public class GenericDownloadService : IDownloadService
         return new DownloadedEpisode(filepath, sucess ? DownloadedEpisodeStatus.Downloaded : DownloadedEpisodeStatus.Failed, episode);
     }
 
-    private static StringBuilder BuildEpisodeName(IWasariEpisode episode)
+    private StringBuilder BuildEpisodeName(IWasariEpisode episode)
     {
         var episodeNameBuilder = new StringBuilder();
 
@@ -118,7 +122,7 @@ public class GenericDownloadService : IDownloadService
         if (episode.Number.HasValue || episode.SeasonNumber.HasValue)
             episodeNameBuilder.Append(" - ");
         episodeNameBuilder.Append(episode.Title);
-        episodeNameBuilder.Append(".mkv");
+        episodeNameBuilder.Append(FFmpegOptions.Value.UseHevc ? ".mkv" : ".mp4");
         return episodeNameBuilder;
     }
 }

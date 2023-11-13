@@ -18,9 +18,9 @@ namespace Wasari.Crunchyroll;
 internal class CrunchyrollDownloadService : GenericDownloadService
 {
     public CrunchyrollDownloadService(ILogger<CrunchyrollDownloadService> logger, FFmpegService fFmpegService, IOptions<DownloadOptions> options, YoutubeDlpService youtubeDlpService, CrunchyrollApiService crunchyrollApiService, IOptions<DownloadOptions> downloadOptions,
-        IServiceProvider serviceProvider, IOptions<AuthenticationOptions> authenticationOptions) : base(logger, fFmpegService,
+        IServiceProvider serviceProvider, IOptions<AuthenticationOptions> authenticationOptions, IOptions<FFmpegOptions> fFmpegOptions) : base(logger, fFmpegService,
         options,
-        youtubeDlpService)
+        youtubeDlpService, fFmpegOptions)
     {
         CrunchyrollApiService = crunchyrollApiService;
         DownloadOptions = downloadOptions;

@@ -154,8 +154,13 @@ public partial class FFmpegService
         {
             yield return "-c:v copy";
         }
-
-        yield return "-shortest -fflags shortest -max_interleave_delta 100M";
+        
+        var fileExtension = Path.GetExtension(filePath);
+        var isMp4 = fileExtension == ".mp4";
+        
+        if (isMp4)
+            yield return "-c:s mov_text";
+        
         yield return "-y";
         yield return $"\"{filePath}\"";
     }
@@ -166,15 +171,49 @@ public partial class FFmpegService
             .WithWorkingDirectory(Environment.CurrentDirectory);
     }
 
-    private string? GetTemporaryFile()
+    private string? GetTemporaryFile(string? baseFilePath = null)
     {
+        if (baseFilePath != null)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(baseFilePath);
+            var fileExtension = Path.GetExtension(baseFilePath);
+            var fileDirectory = Path.GetDirectoryName(baseFilePath);
+            
+            return $"{fileDirectory}{Path.DirectorySeparatorChar}{fileName}_wasari_tmp.{fileExtension}";
+        }
+        
         if (!Options.Value.UseTemporaryEncodingPath)
             return null;
 
         var tempFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName());
-        return Path.Combine(Path.GetTempPath(), $"{tempFileName}.mkv");
+        return Path.Combine(Path.GetTempPath(), $"{tempFileName}.mp4");
     }
 
+    public TimeSpan? GetVideoDuration(IMediaAnalysis mediaAnalysis)
+    {
+        var videoDuration = mediaAnalysis.VideoStreams.Max(o => o.Duration);
+
+        if (videoDuration == TimeSpan.Zero && (mediaAnalysis.PrimaryVideoStream?.Tags?.TryGetValue("DURATION", out var durationStr) ?? false))
+        {
+            var match = DurationRegex().Match(durationStr);
+            var originalTrail = match.Groups["trail"].Value;
+            var correctedTrail = originalTrail.TrimEnd('0');
+            durationStr = durationStr.Replace(originalTrail, correctedTrail);
+
+            if (TimeSpan.TryParse(durationStr, out var newVideoDuratio))
+            {
+                videoDuration = newVideoDuratio;
+            }
+            else
+            {
+                Logger.LogWarning("Failed to parse duration string: {DurationStr}", durationStr);
+                return null;
+            }
+        }
+
+        return videoDuration == TimeSpan.Zero ? null : videoDuration;
+    }
+    
     public async Task<bool> CheckIfVideoStreamIsValid(string filePath)
     {
         try
@@ -184,25 +223,10 @@ public partial class FFmpegService
             if (fileAnalysis.ErrorData.Count > 0)
                 return false;
 
-            var videoDuration = fileAnalysis.VideoStreams.Max(o => o.Duration);
+            var videoDuration = GetVideoDuration(fileAnalysis);
 
-            if (videoDuration == TimeSpan.Zero && (fileAnalysis.PrimaryVideoStream?.Tags?.TryGetValue("DURATION", out var durationStr) ?? false))
-            {
-                var match = DurationRegex().Match(durationStr);
-                var originalTrail = match.Groups["trail"].Value;
-                var correctedTrail = originalTrail.TrimEnd('0');
-                durationStr = durationStr.Replace(originalTrail, correctedTrail);
-
-                if (TimeSpan.TryParse(durationStr, out var newVideoDuratio))
-                {
-                    videoDuration = newVideoDuratio;
-                }
-                else
-                {
-                    Logger.LogWarning("Failed to parse duration string: {DurationStr}", durationStr);
-                    return false;
-                }
-            }
+            if(videoDuration == null)
+                return false;
 
             var delta = fileAnalysis.Duration - videoDuration;
             var isValid = videoDuration >= fileAnalysis.Duration || delta < TimeSpan.FromSeconds(10);
@@ -230,7 +254,7 @@ public partial class FFmpegService
             .WithArguments(arguments, false);
         
         await foreach (var commandEvent in ffmpegCommand.ListenAsync()) ProcessEvent(episode, progress, commandEvent, ffmpegCommand);
-
+        
         if (tempFileName != null)
         {
             var destFileTempName = $"{filePath}.wasari_tmp";
