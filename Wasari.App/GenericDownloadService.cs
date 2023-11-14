@@ -82,7 +82,7 @@ public class GenericDownloadService : IDownloadService
         if (Options.Value.SkipExistingFiles)
         {
             var files = Directory.GetFiles(outputDirectory, $"{Path.GetFileNameWithoutExtension(fileName)}.*");
-            var alreadyExists = files.Any();
+            var alreadyExists = files.Any(x => Path.GetExtension(x) != ".wasari_tmp");
 
             if (alreadyExists)
             {
