@@ -139,13 +139,26 @@ public static partial class EpisodeExtensions
             .Where(i => !i.IsMovie && !i.Matched)
             .SingleOrDefault(o => o.Name.NormalizeUsingRegex() == episodeName);
     }
-
+    
     private static WasariTvdbEpisode FindEpisodeByNormalizedWordProximity(IEnumerable<WasariTvdbEpisode> wasariApiEpisodes, ApiEpisode episode)
     {
         var episodeName = episode.Title
             .ToLowerInvariant()
             .NormalizeUsingRegex();
 
+        var wasariTvdbEpisodes = wasariApiEpisodes.ToList();
+        var result = FindEpisodeByNormalizedWordProximity(wasariTvdbEpisodes, episode, episodeName);
+
+        if (result == null && episodeName.Contains(episode.SeasonTitle, StringComparison.InvariantCultureIgnoreCase))
+        {
+            result = FindEpisodeByNormalizedWordProximity(wasariTvdbEpisodes, episode, episodeName.Replace(episode.SeasonTitle, string.Empty, StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        return result;
+    }
+    
+    private static WasariTvdbEpisode FindEpisodeByNormalizedWordProximity(IEnumerable<WasariTvdbEpisode> wasariApiEpisodes, ApiEpisode episode, string episodeName)
+    {
         var possibleEpisodes = wasariApiEpisodes
             .Where(o => !o.Matched)
             .Select(i => new
@@ -171,7 +184,7 @@ public static partial class EpisodeExtensions
                 .Where(i => i.Episode.SeasonNumber == episode.SeasonNumber && (i.Episode.Number == episode.EpisodeNumber || i.Episode.CalculatedAbsoluteNumber == episode.SequenceNumber))
                 .SingleOrDefaultIfMultiple() is { } ep)
             return ep.Episode;
-
+        
         return default;
     }
 
