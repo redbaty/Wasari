@@ -107,7 +107,7 @@ public class DownloadCommand : ICommand
     public Uri? WebhookUrl { get; init; }
     
     [CommandOption("file-container", Description = "File container to use for final video file")]
-    public string FileContainer { get; set; } = "mp4";
+    public string FileContainer { get; set; } = "mkv";
 
     private EnvironmentService EnvironmentService { get; }
 

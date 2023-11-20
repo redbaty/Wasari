@@ -4,7 +4,7 @@ public record FFmpegOptions
 {
     public bool UseHevc { get; set; }
     
-    public string FileContainer { get; set; } = "mp4";
+    public string FileContainer { get; set; } = "mkv";
 
     public IFFmpegShader[]? Shaders { get; set; }
 
