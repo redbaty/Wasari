@@ -4,13 +4,13 @@ RUN wget https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-m
 RUN mkdir /ffmpeg
 RUN tar -C /ffmpeg -xvf ffmpeg-master-latest-linux64-gpl.tar.xz --strip-components=1
 
-FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
 RUN apt update && apt install curl python3 -y
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
 RUN chmod a+rx /usr/local/bin/yt-dlp
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["Wasari.Cli/Wasari.Cli.csproj", "Wasari.Cli/"]
 COPY ["Wasari.App/Wasari.App.csproj", "Wasari.App/"]

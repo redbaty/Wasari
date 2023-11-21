@@ -1,9 +1,9 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+RUN apk add icu-libs
 WORKDIR /app
 EXPOSE 80
-EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 WORKDIR /src
 COPY ["Wasari.Tvdb.Api/Wasari.Tvdb.Api.csproj", "Wasari.Tvdb.Api/"]
 COPY ["Wasari.Tvdb/Wasari.Tvdb.csproj", "Wasari.Tvdb/"]
@@ -19,4 +19,6 @@ RUN dotnet publish "Wasari.Tvdb.Api.csproj" -c Release --no-self-contained -p:Pu
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+ENV ASPNETCORE_URLS=http://+:80
 ENTRYPOINT ["dotnet", "Wasari.Tvdb.Api.dll"]
