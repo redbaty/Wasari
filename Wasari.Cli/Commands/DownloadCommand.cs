@@ -182,7 +182,7 @@ public class DownloadCommand : ICommand
         var downloadService = serviceProvider.GetRequiredService<DownloadServiceSolver>();
         var episodesRange = ParseRange(EpisodeRange);
         var seasonsRange = ParseRange(SeasonsRange);
-        var downloadedEpisodes = await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism, new DownloadEpisodeOptions(seasonsRange, episodesRange, null));
+        var downloadedEpisodes = await downloadService.GetService(Url).DownloadEpisodes(Url.ToString(), LevelOfParallelism, new DownloadEpisodeOptions(episodesRange, seasonsRange, null));
 
         if (serviceProvider.GetService<NotificationService>() is { } notificationService) await notificationService.SendNotifcationForDownloadedEpisodeAsync(downloadedEpisodes);
     }
