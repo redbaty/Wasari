@@ -3,26 +3,20 @@ using Wasari.Tvdb.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddResponseCaching();
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddTvdbServices();
+builder.Services.AddOutputCache();
 builder.Services.AddScoped<TvdbEpisodesService>();
 
 var app = builder.Build();
+app.UseOutputCache();
+app.MapGet("/episodes", (TvdbEpisodesService tvdbEpisodesService, string query) => tvdbEpisodesService.GetEpisodes(query))
+    .CacheOutput(o => o.Expire(TimeSpan.FromMinutes(5))
+        .SetVaryByQuery(Array.Empty<string>())
+        .VaryByValue(context =>
+        {
+            var value = context.Request.Query["query"].ToString().Trim();
+            return new KeyValuePair<string, string>("query", value);
+        }));
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseResponseCaching();
-app.UseAuthorization();
-app.MapControllers();
 app.Run();
