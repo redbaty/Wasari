@@ -17,4 +17,10 @@ public record FFmpegOptions
     public bool UseTemporaryEncodingPath { get; set; }
 
     public int? Threads { get; set; }
+    
+    public HevcProfile HevcProfile { get; set; } = HevcProfile.Medium;
+    
+    public int? HevcQualityMin { get; set; }
+    
+    public int? HevcQualityMax { get; set; }
 }

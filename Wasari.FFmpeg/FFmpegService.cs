@@ -30,6 +30,15 @@ public partial class FFmpegService
     private EnvironmentService EnvironmentService { get; }
 
     private IServiceProvider Provider { get; }
+    
+    private HevcOptions GetHevcOptions() => Options.Value.HevcProfile switch
+    {
+        HevcProfile.High => new HevcOptions(18, 18),
+        HevcProfile.Medium => new HevcOptions(24, 24),
+        HevcProfile.Low => new HevcOptions(30, 30),
+        HevcProfile.Custom => new HevcOptions(Options.Value.HevcQualityMin ?? 24, Options.Value.HevcQualityMax ?? 24),
+        _ => throw new ArgumentOutOfRangeException()
+    };
 
     private static FileInfo CompileShaders(IEnumerable<IFFmpegShader> shaders)
     {
@@ -147,11 +156,13 @@ public partial class FFmpegService
         {
             if(Options.Value is { UseNvidiaAcceleration: true, UseAmdAcceleration: true } && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu, EnvironmentFeatureType.AmdGpu))
                 throw new MultipleEncodersException("Cannot use both Nvidia and AMD acceleration at the same time");
+         
+            var hevcOptions = GetHevcOptions();
             
             if (Options.Value.UseNvidiaAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu))
-                yield return "-c:v hevc_nvenc -rc vbr -cq 24 -qmin 24 -qmax 24 -profile:v main10 -pix_fmt p010le";
+                yield return $"-c:v hevc_nvenc -rc vbr -qmin {hevcOptions.Qmin} -qmax {hevcOptions.Qmax} -profile:v main10 -pix_fmt p010le";
             else if(Options.Value.UseAmdAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.AmdGpu))
-                yield return "-c:v hevc_amf -rc cbr -qmin 24 -qmax 24 -pix_fmt p010le";
+                yield return $"-c:v hevc_amf -rc cbr -qmin {hevcOptions.Qmin} -qmax {hevcOptions.Qmax} -pix_fmt p010le";
             else
                 yield return "-crf 20 -pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10";
         }

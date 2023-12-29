@@ -112,6 +112,15 @@ public class DownloadCommand : ICommand
     [CommandOption("file-container", Description = "File container to use for final video file")]
     public string FileContainer { get; set; } = "mkv";
 
+    [CommandOption("hevc-profile", Description = "HEVC profile to use for encoding")]
+    public HevcProfile HevcProfile { get; set; } = HevcProfile.Medium;
+    
+    [CommandOption("hevc-quality-min", Description = "Minimum quality to use for HEVC encoding, only used if HEVC profile is set to Custom")]
+    public int? HevcQualityMin { get; set; }
+    
+    [CommandOption("hevc-quality-max", Description = "Maximum quality to use for HEVC encoding, only used if HEVC profile is set to Custom")]
+    public int? HevcQualityMax { get; set; }
+    
     private EnvironmentService EnvironmentService { get; }
 
     private ILogger<DownloadCommand> Logger { get; }
@@ -166,6 +175,9 @@ public class DownloadCommand : ICommand
             o.Resolution = Resolution;
             o.Threads = FfmpegThreads;
             o.FileContainer = FileContainer;
+            o.HevcProfile = HevcProfile;
+            o.HevcQualityMin = HevcQualityMin;
+            o.HevcQualityMax = HevcQualityMax;
         });
         serviceCollection.Configure<AuthenticationOptions>(o =>
         {
