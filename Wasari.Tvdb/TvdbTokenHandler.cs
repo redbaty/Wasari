@@ -7,13 +7,6 @@ using Wasari.Tvdb.Models;
 
 namespace Wasari.Tvdb;
 
-public class MissingEnvironmentVariableException : Exception
-{
-    public MissingEnvironmentVariableException(string variableName) : base($"Missing environment variable: {variableName}")
-    {
-    }
-}
-
 public class TvdbTokenHandler : DelegatingHandler
 {
     private const string TvdbTokenCacheKey = "tvdb_token";
