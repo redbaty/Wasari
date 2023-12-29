@@ -11,6 +11,8 @@ public record FFmpegOptions
     public FFmpegResolution? Resolution { get; set; }
 
     public bool UseNvidiaAcceleration { get; set; }
+    
+    public bool UseAmdAcceleration { get; set; }
 
     public bool UseTemporaryEncodingPath { get; set; }
 

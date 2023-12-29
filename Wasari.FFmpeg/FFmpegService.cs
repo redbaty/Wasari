@@ -145,8 +145,13 @@ public partial class FFmpegService
 
         if (Options.Value.UseHevc)
         {
+            if(Options.Value is { UseNvidiaAcceleration: true, UseAmdAcceleration: true } && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu, EnvironmentFeatureType.AmdGpu))
+                throw new MultipleEncodersException("Cannot use both Nvidia and AMD acceleration at the same time");
+            
             if (Options.Value.UseNvidiaAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu))
                 yield return "-c:v hevc_nvenc -rc vbr -cq 24 -qmin 24 -qmax 24 -profile:v main10 -pix_fmt p010le";
+            else if(Options.Value.UseAmdAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.AmdGpu))
+                yield return "-c:v hevc_amf -rc cbr -qmin 24 -qmax 24 -pix_fmt p010le";
             else
                 yield return "-crf 20 -pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10";
         }

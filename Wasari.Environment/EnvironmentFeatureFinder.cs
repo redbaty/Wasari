@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using CliWrap;
 using CliWrap.Buffered;
+using LibreHardwareMonitor.Hardware;
 using Wasari.App.Abstractions;
 
 namespace WasariEnvironment;
@@ -96,6 +98,49 @@ public static class EnvironmentFeatureFinder
         }
     }
 
+    private static async Task<ICollection<EnvironmentFeature>> FindGpus()
+    {
+        var computer = new Computer
+        {
+            IsGpuEnabled = true
+        };
+
+        try
+        {
+            var features = new HashSet<EnvironmentFeatureType>();
+            
+            computer.Open();
+            
+            foreach (var hardware in computer.Hardware)
+            {
+                switch (hardware.HardwareType)
+                {
+                    case HardwareType.GpuNvidia:
+                        if (await IsProgramAvailable("nvidia-smi", null).DefaultIfFailed())
+                            features.Add(EnvironmentFeatureType.NvidiaGpu);
+                        
+                        break;
+                    case HardwareType.GpuAmd:
+                        features.Add(EnvironmentFeatureType.AmdGpu);
+                        break;
+                }
+            }
+            
+            return features
+                .Select(i => new EnvironmentFeature(i, null, null, string.Empty))
+                .ToHashSet();
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine("Failed to open LibreHardwareMonitor: {0}", e);
+            return Array.Empty<EnvironmentFeature>();
+        }
+        finally
+        {
+            computer.Close();
+        }
+    }
+
     public static async IAsyncEnumerable<EnvironmentFeature> GetEnvironmentFeatures()
     {
         if (await GetProgramWithVersion(Environment.GetEnvironmentVariable("YTDLP") ?? "yt-dlp", "--version",
@@ -113,7 +158,7 @@ public static class EnvironmentFeatureFinder
                 yield return new EnvironmentFeature(EnvironmentFeatureType.FfmpegLibPlacebo, null, null, string.Empty);
         }
 
-        if (await IsProgramAvailable("nvidia-smi", null).DefaultIfFailed())
-            yield return new EnvironmentFeature(EnvironmentFeatureType.NvidiaGpu, null, null, string.Empty);
+        foreach (var gpuFeature in await FindGpus())
+            yield return gpuFeature;
     }
 }

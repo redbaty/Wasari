@@ -44,6 +44,9 @@ public class DownloadCommand : ICommand
 
     [CommandOption("nvenc", Description = "Use NVENC encoding for FFmpeg encoding (Nvidia only)")]
     public bool UseNvenc { get; init; } = true;
+    
+    [CommandOption("amf", Description = "Use AMF encoding for FFmpeg encoding (AMD only)")]
+    public bool UseAmf { get; init; } = true;
 
     [CommandOption("dubs", Description = "Include all available dubs for each episode")]
     public bool IncludeDubs { get; init; } = false;
@@ -157,6 +160,7 @@ public class DownloadCommand : ICommand
         {
             o.UseHevc = UseHevc;
             o.UseNvidiaAcceleration = UseNvenc;
+            o.UseAmdAcceleration = UseAmf;
             o.UseTemporaryEncodingPath = UseTemporaryEncodingPath;
             o.Shaders = Shaders;
             o.Resolution = Resolution;

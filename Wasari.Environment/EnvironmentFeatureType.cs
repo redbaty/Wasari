@@ -5,5 +5,6 @@ public enum EnvironmentFeatureType
     YtDlp,
     Ffmpeg,
     FfmpegLibPlacebo,
-    NvidiaGpu
+    NvidiaGpu,
+    AmdGpu
 }
