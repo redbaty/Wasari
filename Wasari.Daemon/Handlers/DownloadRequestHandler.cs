@@ -5,6 +5,7 @@ using Wasari.App;
 using Wasari.App.Abstractions;
 using Wasari.Daemon.Models;
 using Wasari.Daemon.Options;
+using Wasari.FFmpeg;
 using Wolverine;
 
 namespace Wasari.Daemon.Handlers;
@@ -13,10 +14,8 @@ public class DownloadRequestHandler
 {
     public async ValueTask Handle(DownloadRequest request,
         ILogger<DownloadRequestHandler> logger,
-        DownloadServiceSolver downloadServiceSolver,
         IServiceProvider serviceProvider,
         IOptions<DaemonOptions> daemonOptions,
-        IOptions<DownloadOptions> downloadOptions, 
         IMessageBus messageBus)
     {
         if (daemonOptions.Value.RedisLockEnabled)
@@ -31,17 +30,31 @@ public class DownloadRequestHandler
                 return;
             }
 
-            await DownloadEpisode(request, logger, downloadServiceSolver, serviceProvider, daemonOptions, downloadOptions, messageBus);
+            await DownloadEpisode(request, logger, serviceProvider, messageBus);
         }
         else
         {
-            await DownloadEpisode(request, logger, downloadServiceSolver, serviceProvider, daemonOptions, downloadOptions, messageBus);
+            await DownloadEpisode(request, logger, serviceProvider, messageBus);
         }
     }
 
-    private static async ValueTask DownloadEpisode(DownloadRequest request, ILogger logger, DownloadServiceSolver downloadServiceSolver, IServiceProvider serviceProvider, IOptions<DaemonOptions> daemonOptions, IOptions<DownloadOptions> downloadOptions, IMessageBus messageBus)
+    private static async ValueTask DownloadEpisode(DownloadRequest request, ILogger logger, IServiceProvider serviceProvider, IMessageBus messageBus)
     {
+        await using var serviceScope = serviceProvider.CreateAsyncScope();
+
         logger.LogInformation("Starting download of {Url}", request.Url);
+
+        var downloadOptions = serviceScope.ServiceProvider.GetRequiredService<IOptions<DownloadOptions>>();
+        var daemonOptions = serviceScope.ServiceProvider.GetRequiredService<IOptions<DaemonOptions>>();
+        var downloadServiceSolver = serviceScope.ServiceProvider.GetRequiredService<DownloadServiceSolver>();
+
+        if (request.HevcOptions != null)
+        {
+            var ffmpegOptions = serviceScope.ServiceProvider.GetRequiredService<IOptions<FFmpegOptions>>();
+            ffmpegOptions.Value.HevcProfile = request.HevcOptions.Profile;
+            ffmpegOptions.Value.HevcQualityMin = request.HevcOptions.Qmin;
+            ffmpegOptions.Value.HevcQualityMax = request.HevcOptions.Qmax;
+        }
 
         var downloadService = downloadServiceSolver.GetService(request.Url);
         var episodesRange = new Ranges(request.EpisodeNumber, request.EpisodeNumber);
@@ -57,8 +70,8 @@ public class DownloadRequestHandler
             {
                 case DownloadedEpisodeStatus.Downloaded:
                     logger.LogInformation("Downloaded {Episode}", downloadedEpisode);
-                    
-                    if (downloadedEpisode.FilePath != null && daemonOptions.Value.CheckVideoIntegrityAfterDownload) 
+
+                    if (downloadedEpisode.FilePath != null && daemonOptions.Value.CheckVideoIntegrityAfterDownload)
                         await messageBus.PublishAsync(new CheckVideoIntegrityRequest(downloadedEpisode.FilePath, true));
                     break;
                 case DownloadedEpisodeStatus.AlreadyExists:
