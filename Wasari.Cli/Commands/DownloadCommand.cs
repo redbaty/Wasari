@@ -121,6 +121,9 @@ public class DownloadCommand : ICommand
     [CommandOption("hevc-quality-max", Description = "Maximum quality to use for HEVC encoding, only used if HEVC profile is set to Custom")]
     public int? HevcQualityMax { get; set; }
     
+    [CommandOption("shader-gpu-index", Description = "GPU index to use for shaders")]
+    public int? ShaderGpuIndex { get; set; }
+    
     private EnvironmentService EnvironmentService { get; }
 
     private ILogger<DownloadCommand> Logger { get; }
@@ -178,6 +181,7 @@ public class DownloadCommand : ICommand
             o.HevcProfile = HevcProfile;
             o.HevcQualityMin = HevcQualityMin;
             o.HevcQualityMax = HevcQualityMax;
+            o.ShaderGpuIndex = ShaderGpuIndex;
         });
         serviceCollection.Configure<AuthenticationOptions>(o =>
         {

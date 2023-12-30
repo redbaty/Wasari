@@ -23,4 +23,6 @@ public record FFmpegOptions
     public int? HevcQualityMin { get; set; }
     
     public int? HevcQualityMax { get; set; }
+    
+    public int? ShaderGpuIndex { get; set; }
 }

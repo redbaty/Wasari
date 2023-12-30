@@ -79,7 +79,12 @@ public partial class FFmpegService
                 return videoStream == null ? null : new FFmpegResolution(videoStream.Width, videoStream.Height);
             }).Single(i => i != null);
 
-        if (Options.Value.Shaders != null) yield return "-init_hw_device vulkan";
+        if (Options.Value.Shaders != null)
+        {
+            var gpuSelector = Options.Value.ShaderGpuIndex.HasValue ? $":{Options.Value.ShaderGpuIndex}" : string.Empty;
+            
+            yield return $"-init_hw_device vulkan{gpuSelector}";
+        }
 
         var inputsOrdered = inputs.OrderBy(i => i.Type).ToArray();
         foreach (var input in inputsOrdered) yield return $"-i \"{input.Url}\"";
