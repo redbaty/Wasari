@@ -1,4 +1,6 @@
-﻿namespace WasariEnvironment.Finders;
+﻿using WasariEnvironment.Extensions;
+
+namespace WasariEnvironment.Finders;
 
 internal class YtdlpFeatureFinder : BaseFeatureFinder, IEnvironmentFeatureFinder
 {

@@ -1,10 +1,11 @@
 ﻿using System.Text.RegularExpressions;
 using CliWrap;
 using CliWrap.Buffered;
+using WasariEnvironment.Extensions;
 
 namespace WasariEnvironment.Finders;
 
-internal class FfmpegFeatureFinder : BaseFeatureFinder, IEnvironmentFeatureFinder
+internal partial class FfmpegFeatureFinder : BaseFeatureFinder, IEnvironmentFeatureFinder
 {
     private static async Task<bool> IsLibPlaceboAvailable(EnvironmentFeature ffmpeg)
     {
@@ -19,8 +20,7 @@ internal class FfmpegFeatureFinder : BaseFeatureFinder, IEnvironmentFeatureFinde
 
     private static IEnumerable<EnvironmentFeatureModule> ParseFfmpegModules(string input)
     {
-        foreach (Match match in Regex.Matches(input,
-                     @"(?<Name>\w+) +(?<Version1>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)\/(?<Version2>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)"))
+        foreach (Match match in ModuleRegex().Matches(input))
         {
             if (!match.Success)
                 continue;
@@ -49,4 +49,7 @@ internal class FfmpegFeatureFinder : BaseFeatureFinder, IEnvironmentFeatureFinde
 
         return featuresToReturn;
     }
+
+    [GeneratedRegex(@"(?<Name>\w+) +(?<Version1>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)\/(?<Version2>[0-9 ]+\.[0-9 ]+\.[0-9 ]+)")]
+    private static partial Regex ModuleRegex();
 }

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using LibreHardwareMonitor.Hardware;
+using WasariEnvironment.Extensions;
 
 namespace WasariEnvironment.Finders;
 

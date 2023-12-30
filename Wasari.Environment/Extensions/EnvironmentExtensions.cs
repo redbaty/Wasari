@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace WasariEnvironment;
+namespace WasariEnvironment.Extensions;
 
 public static class EnvironmentExtensions
 {

@@ -14,6 +14,7 @@ using Wasari.FFmpeg;
 using Wasari.Tvdb.Api.Client;
 using Wasari.YoutubeDlp;
 using WasariEnvironment;
+using WasariEnvironment.Extensions;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.FluentValidation;

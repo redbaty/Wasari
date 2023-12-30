@@ -1,4 +1,4 @@
-﻿namespace WasariEnvironment;
+﻿namespace WasariEnvironment.Extensions;
 
 internal static class TaskExtensions
 {
