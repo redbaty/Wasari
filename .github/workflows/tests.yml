@@ -16,7 +16,7 @@ jobs:
 
     services:
       tvdbapi:
-        image: wasari-tvdb-api:latest
+        image: redbaty/wasari-tvdb-api:latest
         env:
           TVDB_API_KEY: ${{ secrets.tvdb_api_key }}
           ASPNETCORE_ENVIRONMENT: Development
