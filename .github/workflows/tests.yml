@@ -22,10 +22,14 @@ jobs:
           ASPNETCORE_ENVIRONMENT: Development
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Run tests
         env:
           WasariTvdbApiUrl: http://tvdbapi  
         run: dotnet test --configuration Release --logger "trx;LogFileName=test_results.xml"
+        
       - name: Upload test results
         uses: actions/upload-artifact@v2
         with:
