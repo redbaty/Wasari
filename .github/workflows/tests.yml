@@ -12,18 +12,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:8.0
+
+    services:
+      tvdbapi:
+        image: wasari-tvdb-api:latest
+        env:
+          TVDB_API_KEY: ${{ secrets.tvdb_api_key }}
+          ASPNETCORE_ENVIRONMENT: Development
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '8.0.x'
-      - name: Restore dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release
       - name: Run tests
+        env:
+          WasariTvdbApiUrl: http://tvdbapi  
         run: dotnet test --configuration Release --logger "trx;LogFileName=test_results.xml"
       - name: Upload test results
         uses: actions/upload-artifact@v2
