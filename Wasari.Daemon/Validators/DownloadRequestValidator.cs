@@ -17,11 +17,11 @@ public class DownloadRequestValidator : AbstractValidator<DownloadRequest>
         RuleFor(i => i.EpisodeNumber).GreaterThanOrEqualTo(0);
         RuleFor(i => i.SeasonNumber).GreaterThan(0);
         RuleFor(i => i.HevcOptions)
-            .Must(i => i is null or 
-                {Profile: HevcProfile.High, Qmax: null,Qmin: null}
-                or {Profile: HevcProfile.Medium, Qmax: null, Qmin: null}
-                or {Profile: HevcProfile.Low, Qmax: null, Qmin: null}
-                or {Profile: HevcProfile.Custom, Qmax: >= 1 and <= 51, Qmin: >= 1 and <= 51}
+            .Must(i => i is null or
+                { Profile: HevcProfile.High, Qmax: null, Qmin: null }
+                or { Profile: HevcProfile.Medium, Qmax: null, Qmin: null }
+                or { Profile: HevcProfile.Low, Qmax: null, Qmin: null }
+                or { Profile: HevcProfile.Custom, Qmax: >= 1 and <= 51, Qmin: >= 1 and <= 51 }
             )
             .WithMessage("Invalid HEVC options");
     }

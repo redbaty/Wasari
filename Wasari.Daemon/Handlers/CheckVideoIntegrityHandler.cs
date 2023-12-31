@@ -16,22 +16,22 @@ public class CheckVideoIntegrityHandler
             logger.LogWarning("File {Path} does not exist", request.Path);
             return;
         }
-        
+
         var fileIsValid = await fFmpegService.CheckIfVideoStreamIsValid(request.Path);
         logger.LogInformation("File {Path} is {Status}", request.Path, fileIsValid ? "valid" : "invalid");
-        
-        if(fileIsValid) return;
+
+        if (fileIsValid) return;
 
         if (request.DeleteFileIfInvalid)
         {
             File.Delete(request.Path);
             logger.LogInformation("File {Path} was deleted", request.Path);
         }
-        
+
         if (daemonOptions.Value.NotificationEnabled && serviceProvider.GetService<NotificationService>() is { } notificationService)
         {
             var fileName = Path.GetFileName(request.Path);
-            
+
             var fileDirectory = Path.GetDirectoryName(request.Path);
             if (fileDirectory != null)
             {
@@ -43,9 +43,9 @@ public class CheckVideoIntegrityHandler
                     fileName = $"{prefix}/{fileName}";
                 }
             }
-            
+
             var sb = new StringBuilder($"File {fileName} was corrupted");
-            if(request.DeleteFileIfInvalid) sb.Append(" and was deleted");
+            if (request.DeleteFileIfInvalid) sb.Append(" and was deleted");
             await notificationService.SendNotificationAsync(sb.ToString());
         }
     }

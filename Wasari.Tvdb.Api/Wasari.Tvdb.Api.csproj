@@ -6,16 +6,16 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <ProjectReference Include="..\Wasari.Tvdb.Abstractions\Wasari.Tvdb.Abstractions.csproj"/>
         <ProjectReference Include="..\Wasari.Tvdb\Wasari.Tvdb.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
 </Project>

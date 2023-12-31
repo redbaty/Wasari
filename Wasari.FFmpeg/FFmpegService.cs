@@ -30,15 +30,18 @@ public partial class FFmpegService
     private EnvironmentService EnvironmentService { get; }
 
     private IServiceProvider Provider { get; }
-    
-    private HevcOptions GetHevcOptions() => Options.Value.HevcProfile switch
+
+    private HevcOptions GetHevcOptions()
     {
-        HevcProfile.High => new HevcOptions(18, 18),
-        HevcProfile.Medium => new HevcOptions(24, 24),
-        HevcProfile.Low => new HevcOptions(30, 30),
-        HevcProfile.Custom => new HevcOptions(Options.Value.HevcQualityMin ?? 24, Options.Value.HevcQualityMax ?? 24),
-        _ => throw new ArgumentOutOfRangeException()
-    };
+        return Options.Value.HevcProfile switch
+        {
+            HevcProfile.High => new HevcOptions(18, 18),
+            HevcProfile.Medium => new HevcOptions(24, 24),
+            HevcProfile.Low => new HevcOptions(30, 30),
+            HevcProfile.Custom => new HevcOptions(Options.Value.HevcQualityMin ?? 24, Options.Value.HevcQualityMax ?? 24),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
 
     private static FileInfo CompileShaders(IEnumerable<IFFmpegShader> shaders)
     {
@@ -82,7 +85,7 @@ public partial class FFmpegService
         if (Options.Value.Shaders != null)
         {
             var gpuSelector = Options.Value.ShaderGpuIndex.HasValue ? $":{Options.Value.ShaderGpuIndex}" : string.Empty;
-            
+
             yield return $"-init_hw_device vulkan{gpuSelector}";
         }
 
@@ -159,14 +162,14 @@ public partial class FFmpegService
 
         if (Options.Value.UseHevc)
         {
-            if(Options.Value is { UseNvidiaAcceleration: true, UseAmdAcceleration: true } && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu, EnvironmentFeatureType.AmdGpu))
+            if (Options.Value is { UseNvidiaAcceleration: true, UseAmdAcceleration: true } && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu, EnvironmentFeatureType.AmdGpu))
                 throw new MultipleEncodersException("Cannot use both Nvidia and AMD acceleration at the same time");
-         
+
             var hevcOptions = GetHevcOptions();
-            
+
             if (Options.Value.UseNvidiaAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.NvidiaGpu))
                 yield return $"-c:v hevc_nvenc -rc vbr -qmin {hevcOptions.Qmin} -qmax {hevcOptions.Qmax} -profile:v main10 -pix_fmt p010le";
-            else if(Options.Value.UseAmdAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.AmdGpu))
+            else if (Options.Value.UseAmdAcceleration && EnvironmentService.IsFeatureAvailable(EnvironmentFeatureType.AmdGpu))
                 yield return $"-c:v hevc_amf -rc cbr -qmin {hevcOptions.Qmin} -qmax {hevcOptions.Qmax} -pix_fmt p010le";
             else
                 yield return "-crf 20 -pix_fmt yuv420p10le -c:v libx265 -tune animation -x265-params profile=main10";
@@ -251,10 +254,7 @@ public partial class FFmpegService
             var delta = fileAnalysis.Duration - videoDuration;
             var isValid = videoDuration >= fileAnalysis.Duration || delta < TimeSpan.FromSeconds(10);
 
-            if (!isValid)
-            {
-                Logger.LogWarning("File was found to be invalid: {FilePath}, the difference between the video duration and the file duration is {Delta}", filePath, delta);
-            }
+            if (!isValid) Logger.LogWarning("File was found to be invalid: {FilePath}, the difference between the video duration and the file duration is {Delta}", filePath, delta);
 
             return isValid;
         }
@@ -322,27 +322,28 @@ public partial class FFmpegService
     {
         var filePath = subtitleFile.FilePath;
         var modifiedFilePath = $"{filePath}.modified{Path.GetExtension(filePath)}";
- 
+
         await using var readStream = File.OpenRead(filePath);
         using var readStreamReader = new StreamReader(readStream);
-        
+
         await using var writeStream = File.OpenWrite(modifiedFilePath);
         await using var streamWriter = new StreamWriter(writeStream);
         var hasReachedEvents = false;
-        
-        while (await readStreamReader.ReadLineAsync() is {} line)
+
+        while (await readStreamReader.ReadLineAsync() is { } line)
         {
             if (!hasReachedEvents && line.StartsWith("[Events]", StringComparison.InvariantCultureIgnoreCase))
             {
                 hasReachedEvents = true;
-            } else if (hasReachedEvents)
+            }
+            else if (hasReachedEvents)
             {
                 var match = AssEventRegex().Match(line);
 
                 if (match.Success)
                 {
                     var dateEnd = TimeSpan.Parse(match.Groups["dateEnd"].Value);
-                    
+
                     if (dateEnd > duration)
                     {
                         line = line.Replace(match.Groups["dateEnd"].Value, duration.ToString(@"hh\:mm\:ss\.ff"));
@@ -351,10 +352,10 @@ public partial class FFmpegService
                     }
                 }
             }
-            
+
             await streamWriter.WriteLineAsync(line);
         }
-        
+
         await streamWriter.FlushAsync();
         return new SubtitleFile(modifiedFilePath, subtitleFile.Language);
     }
@@ -368,11 +369,11 @@ public partial class FFmpegService
                 var outputFile = await ExtractSubtitle(filePath, outputDirectory, duration, mediaAnalysisSubtitleStream);
                 yield return outputFile;
             }
-            
+
             Logger.LogInformation("Extracted subtitles from {FilePath} to {OutputDirectory}", filePath, outputDirectory);
         }
     }
-    
+
     private CommandTask<CommandResult> ReplaceSubtitles(string videoFilePath, ICollection<SubtitleFile> subtitlesFilePaths, string outputFileName)
     {
         var arguments = CreateArguments().ToArray();
@@ -380,29 +381,26 @@ public partial class FFmpegService
             .WithArguments(arguments, false);
 
         Logger.LogInformation("Replacing subtitles for {VideoFilePath} with {SubtitlesFilePaths} to {OutputFileName}", videoFilePath, subtitlesFilePaths, outputFileName);
-        
+
         return ffmpegCommand.ExecuteAsync();
 
         IEnumerable<string> CreateArguments()
         {
             yield return $"-i \"{videoFilePath}\"";
-            
-            foreach (var subtitlesFilePath in subtitlesFilePaths)
-            {
-                yield return $"-i \"{subtitlesFilePath.FilePath}\"";
-            }
+
+            foreach (var subtitlesFilePath in subtitlesFilePaths) yield return $"-i \"{subtitlesFilePath.FilePath}\"";
 
             yield return "-map 0";
             yield return "-map -0:s";
-            
-            foreach (var subtitle in subtitlesFilePaths.Select((s, y) => new {Index = y, s.Language}))
+
+            foreach (var subtitle in subtitlesFilePaths.Select((s, y) => new { Index = y, s.Language }))
             {
                 yield return $"-map {subtitle.Index + 1}";
 
                 if (subtitle.Language != null)
                     yield return $"-metadata:s:s:{subtitle.Index} language=\"{subtitle.Language}\"";
             }
-            
+
             yield return "-c copy";
             yield return "-y";
             yield return $"\"{outputFileName}\"";
@@ -473,6 +471,7 @@ public partial class FFmpegService
 
     [GeneratedRegex("\\d+\\:\\d+\\:\\d+(?<trail>\\.\\d+)")]
     private static partial Regex DurationRegex();
+
     [GeneratedRegex(@"^Dialogue:\s\d+,(?<dateStart>\d+:\d+:\d+\.\d+),(?<dateEnd>\d+:\d+:\d+\.\d+),")]
     private static partial Regex AssEventRegex();
 }

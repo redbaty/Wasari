@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using WasariEnvironment;
 using WasariEnvironment.Extensions;
 
 namespace Wasari.Cli;

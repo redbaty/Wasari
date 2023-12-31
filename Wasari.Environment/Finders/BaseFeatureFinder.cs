@@ -19,7 +19,7 @@ internal abstract class BaseFeatureFinder
         var resultado = await command.ExecuteAsync();
         return resultado.ExitCode == 0;
     }
-    
+
     protected async Task<EnvironmentFeature?> GetProgramWithVersion(string executable, string arguments,
         EnvironmentFeatureType type,
         string? versionRegex = null,

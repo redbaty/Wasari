@@ -32,7 +32,7 @@ public class TvdbTokenHandler : DelegatingHandler
 
         response.EnsureSuccessStatusCode();
 
-        var tokenResponse = await response.Content.ReadFromJsonAsync<TvdbResponse<TvdbTokenResponseData>>(cancellationToken: cancellationToken);
+        var tokenResponse = await response.Content.ReadFromJsonAsync<TvdbResponse<TvdbTokenResponseData>>(cancellationToken);
 
         if (tokenResponse is not { Status: "success" }) throw new Exception("Failed to get token");
 

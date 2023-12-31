@@ -12,14 +12,11 @@ public static class EnvironmentFeatureFinder
         serviceCollection.AddTransient<IEnvironmentFeatureFinder, YtdlpFeatureFinder>();
         serviceCollection.AddTransient<IEnvironmentFeatureFinder, GpuFeatureFinder>();
         var provider = serviceCollection.BuildServiceProvider();
-        
+
         var featureFinders = provider.GetServices<IEnvironmentFeatureFinder>();
         var tasks = featureFinders.Select(f => f.GetFeaturesAsync());
         var features = await Task.WhenAll(tasks);
-        
-        foreach (var feature in features.SelectMany(f => f).Distinct())
-        {
-            yield return feature;
-        }
+
+        foreach (var feature in features.SelectMany(f => f).Distinct()) yield return feature;
     }
 }

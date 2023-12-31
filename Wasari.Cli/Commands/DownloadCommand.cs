@@ -44,7 +44,7 @@ public class DownloadCommand : ICommand
 
     [CommandOption("nvenc", Description = "Use NVENC encoding for FFmpeg encoding (Nvidia only)")]
     public bool UseNvenc { get; init; } = true;
-    
+
     [CommandOption("amf", Description = "Use AMF encoding for FFmpeg encoding (AMD only)")]
     public bool UseAmf { get; init; } = true;
 
@@ -108,22 +108,22 @@ public class DownloadCommand : ICommand
 
     [CommandOption("webhook-url", Description = "Webhook URL to send notifications to", EnvironmentVariable = "WASARI_WEBHOOK_URL")]
     public Uri? WebhookUrl { get; init; }
-    
+
     [CommandOption("file-container", Description = "File container to use for final video file")]
     public string FileContainer { get; set; } = "mkv";
 
     [CommandOption("hevc-profile", Description = "HEVC profile to use for encoding")]
     public HevcProfile HevcProfile { get; set; } = HevcProfile.Medium;
-    
+
     [CommandOption("hevc-quality-min", Description = "Minimum quality to use for HEVC encoding, only used if HEVC profile is set to Custom")]
     public int? HevcQualityMin { get; set; }
-    
+
     [CommandOption("hevc-quality-max", Description = "Maximum quality to use for HEVC encoding, only used if HEVC profile is set to Custom")]
     public int? HevcQualityMax { get; set; }
-    
+
     [CommandOption("shader-gpu-index", Description = "GPU index to use for shaders")]
     public int? ShaderGpuIndex { get; set; }
-    
+
     private EnvironmentService EnvironmentService { get; }
 
     private ILogger<DownloadCommand> Logger { get; }

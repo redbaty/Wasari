@@ -65,7 +65,6 @@ public class DownloadRequestHandler
             new DownloadEpisodeOptions(episodesRange, seasonsRange, outputDirectoryOverride));
 
         foreach (var downloadedEpisode in episodes)
-        {
             switch (downloadedEpisode.Status)
             {
                 case DownloadedEpisodeStatus.Downloaded:
@@ -83,7 +82,6 @@ public class DownloadRequestHandler
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-        }
 
         if (daemonOptions.Value.NotificationEnabled && serviceProvider.GetService<NotificationService>() is { } notificationService) await notificationService.SendNotifcationForDownloadedEpisodeAsync(episodes);
     }

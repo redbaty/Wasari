@@ -20,7 +20,6 @@ internal class GpuFeatureFinder : BaseFeatureFinder, IEnvironmentFeatureFinder
             computer.Open();
 
             foreach (var hardware in computer.Hardware)
-            {
                 switch (hardware.HardwareType)
                 {
                     case HardwareType.GpuNvidia:
@@ -32,7 +31,6 @@ internal class GpuFeatureFinder : BaseFeatureFinder, IEnvironmentFeatureFinder
                         features.Add(EnvironmentFeatureType.AmdGpu);
                         break;
                 }
-            }
 
             return features
                 .Select(i => new EnvironmentFeature(i, null, null, string.Empty))

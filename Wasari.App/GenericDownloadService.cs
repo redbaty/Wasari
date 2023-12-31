@@ -22,9 +22,9 @@ public class GenericDownloadService : IDownloadService
 
     protected ILogger<GenericDownloadService> Logger { get; }
 
-    
+
     private IOptions<DownloadOptions> Options { get; }
-    
+
     private IOptions<FFmpegOptions> FFmpegOptions { get; }
 
     private FFmpegService FFmpegService { get; }

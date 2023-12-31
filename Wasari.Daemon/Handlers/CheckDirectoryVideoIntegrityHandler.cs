@@ -14,9 +14,6 @@ public class CheckDirectoryVideoIntegrityHandler
         }
 
         var files = Directory.GetFiles(request.Directory, "*.mkv", request.IncludeSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-        foreach (var file in files)
-        {
-            await messageBus.PublishAsync(new CheckVideoIntegrityRequest(file, request.DeleteFileIfInvalid));  
-        }
+        foreach (var file in files) await messageBus.PublishAsync(new CheckVideoIntegrityRequest(file, request.DeleteFileIfInvalid));
     }
 }

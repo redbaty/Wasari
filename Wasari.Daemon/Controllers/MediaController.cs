@@ -26,7 +26,7 @@ public class MediaController : ControllerBase
         await Bus.SendAsync(request);
         return Accepted();
     }
-    
+
     [HttpPost("check-video-integrity")]
     public async Task<IActionResult> CheckVideoIntegrity([FromBody] CheckVideoIntegrityRequest request, [FromServices] IValidator<CheckVideoIntegrityRequest> validator)
     {
@@ -37,7 +37,7 @@ public class MediaController : ControllerBase
         await Bus.SendAsync(request);
         return Accepted();
     }
-    
+
     [HttpPost("check-video-integrity/directory")]
     public async Task<IActionResult> CheckVideoIntegrityDirectory([FromBody] CheckDirectoryVideoIntegrityRequest request, [FromServices] IValidator<CheckDirectoryVideoIntegrityRequest> validator)
     {

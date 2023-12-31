@@ -6,7 +6,7 @@ public record DaemonOptions
     public bool NotificationEnabled { get; set; }
 
     public bool RedisLockEnabled { get; set; }
-    
+
     public bool CheckVideoIntegrityAfterDownload { get; set; }
 
     public int? MaxConcurrentDownloads

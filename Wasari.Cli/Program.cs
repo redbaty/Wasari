@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using CliFx;
 using Figgle;
-using LibreHardwareMonitor.Hardware;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Wasari.Anime4k;
