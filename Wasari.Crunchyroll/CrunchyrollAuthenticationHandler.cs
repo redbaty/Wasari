@@ -35,23 +35,26 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
 
     private async Task<string> CreateAccessToken(string username = null, string password = null)
     {
-        var isAuthenticated = string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password);
+        var isAuthenticated = !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password);
         
         var keys = new List<KeyValuePair<string, string>>()
         {
             new("grant_type", isAuthenticated ? "password" : "client_id"),
             new("scope", "offline_access")
         };
-        
-        if(!string.IsNullOrEmpty(username)) keys.Add(new KeyValuePair<string, string>(nameof(username), username));
-        if (!string.IsNullOrEmpty(password)) keys.Add(new KeyValuePair<string, string>(nameof(password), password));
 
+        if (isAuthenticated)
+        {
+            keys.Add(new KeyValuePair<string, string>(nameof(username), username));
+            keys.Add(new KeyValuePair<string, string>(nameof(password), password));
+        }
+        
         using var formUrlEncodedContent = new FormUrlEncodedContent(keys);
         using var httpMessage = new HttpRequestMessage();
         httpMessage.Method = HttpMethod.Post;
         httpMessage.Content = formUrlEncodedContent;
         httpMessage.RequestUri = new Uri("auth/v1/token", UriKind.Relative);
-        httpMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", isAuthenticated ? AuthenticationOptions.Value.AnonymousBasicAuthHeader : AuthenticationOptions.Value.AuthenticatedBasicAuthHeader);
+        httpMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", isAuthenticated ? AuthenticationOptions.Value.AuthenticatedBasicAuthHeader : AuthenticationOptions.Value.AnonymousBasicAuthHeader);
 
         using var authResponse = await AuthHttpClient.SendAsync(httpMessage);
         authResponse.EnsureSuccessStatusCode();
