@@ -22,7 +22,7 @@ Wasari is a tool for downloading anime from various sources, and transcoding the
 * :star: Anime4K Support
 * :memo: Soft subs encoding
 * :arrow_down: Download queue
-* :bullettrain_side: HEVC Transcoding (With NVIDIA Hardware Acceleration support)
+* :bullettrain_side: HEVC Transcoding (With NVIDIA and AMD AMF Hardware Acceleration support)
 
 ## :information_source: Getting Started
 
@@ -38,7 +38,7 @@ To use the CLI tool, you can download the latest release from the [releases page
 
 You can check the full supported arguments list using the `--help` argument.
 
-To use the Docker container, you can pull the latest image from [Docker Hub](https://hub.docker.com/r/redbaty/wasari-daemon), expose the port `80` and you can call the API through the endpoint `/media/download`, you can use Swagger UI to test the API (it is available at the `/swagger` endpoint).
+To utilize the Docker container, you can retrieve the most recent image from Docker Hub. By exposing port 80, you can access the API through the `/media/download` endpoint. To test the API, you can utilize Swagger UI, which is accessible at the `/swagger` endpoint.
 
 ## :+1: Credits
 
