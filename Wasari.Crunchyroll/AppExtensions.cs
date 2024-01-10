@@ -26,8 +26,6 @@ public static class AppExtensions
         serviceCollection.AddHttpClient<CrunchyrollAuthenticationHandler>(c =>
         {
             c.BaseAddress = crunchyBaseAddres;
-            c.DefaultRequestHeaders.Add("Authorization",
-                "Basic a3ZvcGlzdXZ6Yy0teG96Y21kMXk6R21JSTExenVPVnRnTjdlSWZrSlpibzVuLTRHTlZ0cU8=");
         });
         serviceCollection.AddHttpClient<CrunchyrollApiService>(c => c.BaseAddress = crunchyBaseAddres)
             .AddPolicyHandler(GetRetryPolicy())

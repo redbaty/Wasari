@@ -33,28 +33,28 @@ internal class CrunchyrollAuthenticationHandler : DelegatingHandler
 
     private HttpClient AuthHttpClient { get; }
 
-    private async Task<string> CreateAccessToken()
+    private async Task<string> CreateAccessToken(string username = null, string password = null)
     {
-        using var formUrlEncodedContent = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("grant_type", "client_id") });
-        using var authResponse = await AuthHttpClient.PostAsync("auth/v1/token", formUrlEncodedContent);
-        authResponse.EnsureSuccessStatusCode();
-
-        await using var responseStream = await authResponse.Content.ReadAsStreamAsync();
-        var jsonDocument = await JsonDocument.ParseAsync(responseStream);
-        return jsonDocument.RootElement.GetProperty("access_token").GetString();
-    }
-
-    private async Task<string> CreateAccessToken(string username, string password)
-    {
-        using var formUrlEncodedContent = new FormUrlEncodedContent(new[]
+        var keys = new List<KeyValuePair<string, string>>()
         {
-            new KeyValuePair<string, string>("grant_type", "password"),
-            new KeyValuePair<string, string>("username", username),
-            new KeyValuePair<string, string>("password", password),
-            new KeyValuePair<string, string>("scope", "offline_access")
-        });
+            new("grant_type", "password")
+        };
+        
+        if(!string.IsNullOrEmpty(username)) keys.Add(new KeyValuePair<string, string>(nameof(username), username));
+        if (!string.IsNullOrEmpty(password))
+        {
+            keys.Add(new KeyValuePair<string, string>(nameof(password), password));
+            keys.Add(new KeyValuePair<string, string>("scope", "offline_access"));
+        }
 
-        using var authResponse = await AuthHttpClient.PostAsync("auth/v1/token", formUrlEncodedContent);
+        using var formUrlEncodedContent = new FormUrlEncodedContent(keys);
+        using var httpMessage = new HttpRequestMessage();
+        httpMessage.Method = HttpMethod.Post;
+        httpMessage.Content = formUrlEncodedContent;
+        httpMessage.RequestUri = new Uri("auth/v1/token", UriKind.Relative);
+        httpMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password) ? AuthenticationOptions.Value.AnonymousBasicAuthHeader : AuthenticationOptions.Value.AuthenticatedBasicAuthHeader);
+
+        using var authResponse = await AuthHttpClient.SendAsync(httpMessage);
         authResponse.EnsureSuccessStatusCode();
 
         await using var responseStream = await authResponse.Content.ReadAsStreamAsync();
