@@ -11,7 +11,7 @@
         <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.1" />
         <PackageReference Include="Polly.Extensions.Http" Version="3.0.0"/>
         <PackageReference Include="Refit.HttpClientFactory" Version="7.0.0"/>
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
     </ItemGroup>
 
 </Project>
