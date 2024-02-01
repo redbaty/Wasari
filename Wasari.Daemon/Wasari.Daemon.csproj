@@ -14,7 +14,7 @@
         <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
         <PackageReference Include="WolverineFx" Version="1.16.2"/>
         <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="1.14.0" />
-        <PackageReference Include="WolverineFx.FluentValidation" Version="1.14.0"/>
+        <PackageReference Include="WolverineFx.FluentValidation" Version="1.16.2"/>
         <PackageReference Include="WolverineFx.Postgresql" Version="1.16.2"/>
     </ItemGroup>
 
