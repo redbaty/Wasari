@@ -1,4 +1,5 @@
 ﻿using Wasari.Tvdb.Abstractions;
+using Wasari.Tvdb.Models;
 
 namespace Wasari.Tvdb.Api.Services;
 
@@ -14,11 +15,15 @@ public class TvdbEpisodesService
     public async ValueTask<IResult> GetEpisodes(string query)
     {
         var searchResult = await TvdbApi.SearchAsync(query);
+        
+        if(searchResult is null)
+            return Results.BadRequest(new TvdbApiErrorResponse(StatusCodes.Status400BadRequest, "Invalid query", "No series found"));
+        
         var tvdbSearchResponseSeries = searchResult.Data;
 
-        var series = tvdbSearchResponseSeries.SingleOrDefaultIfMultiple();
+        var series = tvdbSearchResponseSeries?.SingleOrDefaultIfMultiple();
 
-        if (tvdbSearchResponseSeries.Count > 1)
+        if (tvdbSearchResponseSeries is { Count: > 1 })
         {
             series ??= tvdbSearchResponseSeries
                 .Where(i => string.Equals(i.Name, query, StringComparison.InvariantCultureIgnoreCase))
@@ -34,18 +39,13 @@ public class TvdbEpisodesService
         }
 
         if (series == null)
-            return Results.BadRequest(new
-            {
-                Status = StatusCodes.Status400BadRequest,
-                Title = "Invalid query",
-                Detail = tvdbSearchResponseSeries.Count > 0 ? "Multiple series found" : "No series found"
-            });
+            return Results.BadRequest(new TvdbApiErrorResponse(StatusCodes.Status400BadRequest, "Invalid query", tvdbSearchResponseSeries is { Count: > 0 } ? "Multiple series found" : "No series found"));
 
         var seriesWithEpisodes = await TvdbApi.GetSeriesAsync(series.TvdbId);
 
         var currentEpiosdeNumber = 1;
 
-        return Results.Ok(seriesWithEpisodes.Data.Episodes
+        return Results.Ok(seriesWithEpisodes?.Data.Episodes
             .Where(i => !string.IsNullOrEmpty(i.Name))
             .OrderBy(i => i.SeasonNumber)
             .ThenBy(i => i.Number)
@@ -68,3 +68,5 @@ public class TvdbEpisodesService
         );
     }
 }
+
+public record TvdbApiErrorResponse(int Status, string Title, string Detail);

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Polly;
 using Polly.Extensions.Http;
-using Refit;
+using Wasari.Tvdb.Models;
 
 namespace Wasari.Tvdb;
 
@@ -17,17 +17,6 @@ public static class AppExtensions
         return new Uri(uriString);
     }
 
-    private static Uri EnsureNoTrailingSlash(this Uri uri)
-    {
-        var uriString = uri.ToString();
-        if (uriString.EndsWith("/"))
-            uriString = uriString[..^1];
-        else
-            return uri;
-
-        return new Uri(uriString);
-    }
-
     public static void AddTvdbServices(this IServiceCollection services)
     {
         var policy = HttpPolicyExtensions
@@ -37,13 +26,16 @@ public static class AppExtensions
 
         var baseAddress = Environment.GetEnvironmentVariable("TVDB_API_URL") is { } baseUrl
             ? new Uri(baseUrl)
-            : new Uri("https://api4.thetvdb.com/v4");
+            : new Uri("https://api4.thetvdb.com");
 
         services.AddMemoryCache();
         services.AddHttpClient<TvdbTokenHandler>(c => { c.BaseAddress = baseAddress.EnsureTrailingSlash(); });
-        services.AddRefitClient<ITvdbApi>()
+        services.AddHttpClient<ITvdbApi, TvdbApi>()
+            .ConfigureHttpClient(c =>
+            {
+                c.BaseAddress = baseAddress;
+            })
             .AddHttpMessageHandler<TvdbTokenHandler>()
-            .ConfigureHttpClient(c => { c.BaseAddress = baseAddress.EnsureNoTrailingSlash(); })
             .AddPolicyHandler(policy);
     }
 }

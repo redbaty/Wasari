@@ -14,7 +14,7 @@ WORKDIR "/src/Wasari.Tvdb.Api"
 RUN dotnet build "Wasari.Tvdb.Api.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Wasari.Tvdb.Api.csproj" -c Release --no-self-contained -p:PublishReadyToRun=true -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Wasari.Tvdb.Api.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app

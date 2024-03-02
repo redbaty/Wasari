@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Http.Json;
 using Wasari.Tvdb;
+using Wasari.Tvdb.Api;
 using Wasari.Tvdb.Api.Policies;
 using Wasari.Tvdb.Api.Services;
 
@@ -11,6 +13,10 @@ builder.Services.AddOutputCache(options =>
     options.AddPolicy(nameof(EpisodeCachePolicy), EpisodeCachePolicy.Instance);
 });
 builder.Services.AddScoped<TvdbEpisodesService>();
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Add(WasariTvdbApiResponseSourceContext.Default);
+});
 
 var app = builder.Build();
 app.UseOutputCache();

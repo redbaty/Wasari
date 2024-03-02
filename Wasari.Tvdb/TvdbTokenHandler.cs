@@ -7,10 +7,11 @@ using Wasari.Tvdb.Models;
 
 namespace Wasari.Tvdb;
 
-public class TvdbTokenHandler : DelegatingHandler
+internal class TvdbTokenHandler : DelegatingHandler
 {
     private const string TvdbTokenCacheKey = "tvdb_token";
     private static readonly JwtSecurityTokenHandler JwtSecurityTokenHandler = new();
+    private static readonly TvdbLoginRequest TvdbLoginRequest = new(Environment.GetEnvironmentVariable("TVDB_API_KEY") ?? throw new MissingEnvironmentVariableException("TVDB_API_KEY"), Environment.GetEnvironmentVariable("TVDB_API_PIN") ?? "TVDB_API_KEY");
 
     public TvdbTokenHandler(IMemoryCache memoryCache, HttpClient tvdbClient)
     {
@@ -24,22 +25,18 @@ public class TvdbTokenHandler : DelegatingHandler
 
     private async Task<string> GetToken(ICacheEntry e, CancellationToken cancellationToken)
     {
-        var response = await TvdbClient.PostAsJsonAsync("login", new
-        {
-            apikey = Environment.GetEnvironmentVariable("TVDB_API_KEY") ?? throw new MissingEnvironmentVariableException("TVDB_API_KEY"),
-            pin = Environment.GetEnvironmentVariable("TVDB_API_PIN") ?? "TVDB_API_KEY"
-        }, cancellationToken);
+        var response = await TvdbClient.PostAsJsonAsync("v4/login", TvdbLoginRequest, TvdbSourceGenerationContext.Default.TvdbLoginRequest, cancellationToken);
 
         response.EnsureSuccessStatusCode();
 
-        var tokenResponse = await response.Content.ReadFromJsonAsync<TvdbResponse<TvdbTokenResponseData>>(cancellationToken);
+        var tokenResponse = await response.Content.ReadFromJsonAsync(TvdbSourceGenerationContext.Default.TvdbResponseTvdbTokenResponseData, cancellationToken);
 
-        if (tokenResponse is not { Status: "success" }) throw new Exception("Failed to get token");
+        if (tokenResponse is not { Status: "success" } || tokenResponse.Data == null) throw new Exception("Failed to get token");
 
-        var jwt = JwtSecurityTokenHandler.ReadJwtToken(tokenResponse.Data.Token);
+        var jwt = JwtSecurityTokenHandler.ReadJwtToken(tokenResponse.Data?.Token);
         e.SetAbsoluteExpiration(jwt.ValidTo);
 
-        return tokenResponse.Data.Token;
+        return tokenResponse.Data!.Token;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
