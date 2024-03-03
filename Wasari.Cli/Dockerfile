@@ -1,4 +1,4 @@
-FROM alpine:3.15 AS ffmpeg-base
+FROM alpine:3.19 AS ffmpeg-base
 RUN apk update && apk add wget
 RUN wget https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
 RUN mkdir /ffmpeg
