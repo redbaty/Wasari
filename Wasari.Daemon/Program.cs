@@ -1,7 +1,3 @@
-#if RELEASE
-using JasperFx.CodeGeneration;
-#endif
-
 using Oakton;
 using Oakton.Resources;
 using StackExchange.Redis;
@@ -86,10 +82,6 @@ builder.Host.UseWolverine(opts =>
 {
     opts.Durability.StaleNodeTimeout = TimeSpan.FromSeconds(10);
     
-#if RELEASE
-    opts.CodeGeneration.TypeLoadMode = TypeLoadMode.Static;
-#endif
-
     var localQueueConfiguration = opts.LocalQueueFor<DownloadRequest>()
         .UseDurableInbox();
 
