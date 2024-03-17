@@ -1,3 +1,5 @@
+# ⚠️ Crunchyroll has apparently gone DRM only, this project is not working at the moment.
+
 <p align="center">
   <img width="256" align="center" src="/assets/logo/logo.png">
 </p>
