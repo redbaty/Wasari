@@ -9,13 +9,13 @@
 
     <ItemGroup>
         <PackageReference Include="DistributedLock.Redis" Version="1.0.3" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.3" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.4" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="WolverineFx" Version="2.2.1" />
-        <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="2.2.1" />
-        <PackageReference Include="WolverineFx.FluentValidation" Version="2.2.1" />
-        <PackageReference Include="WolverineFx.Postgresql" Version="2.2.1" />
+        <PackageReference Include="WolverineFx" Version="2.3.0" />
+        <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="2.3.0" />
+        <PackageReference Include="WolverineFx.FluentValidation" Version="2.3.0" />
+        <PackageReference Include="WolverineFx.Postgresql" Version="2.3.0" />
     </ItemGroup>
 
     <ItemGroup>
